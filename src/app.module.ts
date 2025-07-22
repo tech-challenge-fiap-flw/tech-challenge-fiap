@@ -3,7 +3,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UserModule } from './user/user.module';
+import { AuthModule } from './auth/auth.module';
 import { HistoryModule } from './history/history.module';
+
+import { AppService } from './app.service';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -32,7 +38,16 @@ import { HistoryModule } from './history/history.module';
       }),
     }),
     UserModule,
+    AuthModule,
     HistoryModule,
   ],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+  ],
+  controllers: [AppController]
 })
 export class AppModule {}
