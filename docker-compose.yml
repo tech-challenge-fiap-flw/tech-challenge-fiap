@@ -1,0 +1,48 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    container_name: nest_app
+    restart: on-failure
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mysql
+      - mongodb
+    env_file:
+      - .env
+    networks:
+      - app-network
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app-network
+
+  mongodb:
+    image: mongo:5
+    container_name: mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - app-network
+
+volumes:
+  mysql_data:
+  mongo_data:
+
+networks:
+  app-network:
