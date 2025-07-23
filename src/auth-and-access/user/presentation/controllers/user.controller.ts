@@ -1,12 +1,12 @@
 import { Controller, Post, Put, Delete, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { UserService } from './user.service';
-import { User } from './entities/user.entity';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { UserResponseDto } from './dto/user-response.dto';
-import { IsPublic } from 'src/auth/decorators/is-public.decorator';
-import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import { UserService } from '../../domain/services/user.service';
+import { User } from '../../domain/entities/user.entity';
+import { CreateUserDto } from '../dto/create-user.dto';
+import { UpdateUserDto } from '../dto/update-user.dto';
+import { UserResponseDto } from '../dto/user-response.dto';
+import { IsPublic } from 'src/auth-and-access/auth/presentation/decorators/is-public.decorator';
+import { CurrentUser } from 'src/auth-and-access/auth/presentation/decorators/current-user.decorator';
 
 @ApiTags('Usuários')
 @Controller('users')

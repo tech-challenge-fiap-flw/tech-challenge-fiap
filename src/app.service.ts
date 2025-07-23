@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { User } from './user/entities/user.entity';
+import { User } from './auth-and-access/user/domain/entities/user.entity';
 
 @Injectable()
 export class AppService {

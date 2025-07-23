@@ -7,11 +7,6 @@ export class UpdateUserDto {
   @IsString()
   name?: string;
 
-  @ApiPropertyOptional({ example: 'https://meusite.com/foto.jpg' })
-  @IsOptional()
-  @IsString()
-  photo?: string;
-
   @ApiPropertyOptional({ example: 'joao@email.com' })
   @IsOptional()
   @IsEmail()
@@ -26,9 +21,4 @@ export class UpdateUserDto {
   @IsOptional()
   @MinLength(6)
   password?: string;
-
-  @ApiPropertyOptional({ example: true })
-  @IsOptional()
-  @IsBoolean()
-  active?: boolean;
 }
