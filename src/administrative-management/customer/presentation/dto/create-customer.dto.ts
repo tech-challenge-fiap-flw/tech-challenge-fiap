@@ -47,9 +47,4 @@ export class CreateCustomerDto {
   @IsOptional()
   @IsString()
   zipCode?: string;
-
-  @ApiPropertyOptional({ description: 'Indica se o cliente está ativo', default: true })
-  @IsOptional()
-  @IsBoolean()
-  active?: boolean;
 }
