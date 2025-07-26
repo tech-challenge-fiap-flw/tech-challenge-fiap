@@ -12,6 +12,7 @@ import { JwtAuthGuard } from './auth-and-access/auth/infrastructure/guards/jwt-a
 import { AppController } from './app.controller';
 import { VehicleModule } from './administrative-management/vehicle/vehicle.module';
 import { DiagnosisModule } from './administrative-management/diagnosis/diagnosis.module';
+import { VehiclePartModule } from './administrative-management/vehicle-part/vehicle-part.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { DiagnosisModule } from './administrative-management/diagnosis/diagnosis
     CustomerModule,
     VehicleModule,
     DiagnosisModule,
+    VehiclePartModule,
     AuthModule,
   ],
   providers: [
