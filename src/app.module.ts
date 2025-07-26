@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UserModule } from './auth-and-access/user/user.module';
+import { CustomerModule } from './administrative-management/customer/customer.module';
 import { AuthModule } from './auth-and-access/auth/auth.module';
 
 import { AppService } from './app.service';
@@ -37,6 +38,7 @@ import { AppController } from './app.controller';
       }),
     }),
     UserModule,
+    CustomerModule,
     AuthModule
   ],
   providers: [
