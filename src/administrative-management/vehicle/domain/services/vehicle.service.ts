@@ -4,6 +4,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Vehicle } from '../entities/vehicle.entity';
 import { CustomerService } from '../../../customer/domain/services/customer.service';
+import { VehicleResponseDto } from '../../presentation/dto/vehicle-response.dto';
+import { UpdateVehicleDto } from '../../presentation/dto/update-vehicle.dto';
 
 @Injectable()
 export class VehicleService {
@@ -13,40 +15,43 @@ export class VehicleService {
     private readonly customerService: CustomerService
   ) {}
 
-  async create(createDto: CreateVehicleDto): Promise<Vehicle> {
+  async create(createDto: CreateVehicleDto): Promise<VehicleResponseDto> {
     const owner = await this.customerService.findOne(createDto.ownerId);
-    if (!owner) throw new NotFoundException('Usuário não encontrado');
 
-    const vehicle = this.vehicleRepository.create({
-      ...createDto,
-      owner,
+    if (!owner) {
+      throw new NotFoundException('Usuário não encontrado')
+    }
+
+    return this.vehicleRepository.save(createDto);
+  }
+
+  async findAll(): Promise<VehicleResponseDto[]> {
+    return this.vehicleRepository.find({
+      loadEagerRelations: false,
+    });
+  }
+
+  async findById(id: number): Promise<VehicleResponseDto> {
+    const vehicle = await this.vehicleRepository.findOne({
+      where: { id },
+      loadEagerRelations: false,
     });
 
+    if (!vehicle) {
+      throw new NotFoundException(`Vehicle with id ${id} not found`);
+    }
+
+    return vehicle;
+  }
+
+  async update(id: number, data: UpdateVehicleDto): Promise<VehicleResponseDto> {
+    const vehicle = await this.findById(id);
+    Object.assign(vehicle, data);
     return this.vehicleRepository.save(vehicle);
   }
 
-  async findAll(): Promise<Vehicle[]> {
-    return this.vehicleRepository.find({ relations: ['owner'] });
-  }
-
-  async findOne(id: string): Promise<Vehicle> {
-    const customer = await this.vehicleRepository.findOneBy({ id });
-
-    if (!customer) {
-      throw new NotFoundException(`Customer with id ${id} not found`);
-    }
-
-    return customer;
-  }
-
-  async update(id: string, data: Partial<Vehicle>): Promise<Vehicle> {
-    const customer = await this.findOne(id);
-    Object.assign(customer, data);
-    return this.vehicleRepository.save(customer);
-  }
-
-  async remove(id: string): Promise<void> {
-    const customer = await this.findOne(id);
-    await this.vehicleRepository.softRemove(customer);
+  async remove(id: number): Promise<void> {
+    const vehicle = await this.findById(id);
+    await this.vehicleRepository.softRemove(vehicle);
   }
 }

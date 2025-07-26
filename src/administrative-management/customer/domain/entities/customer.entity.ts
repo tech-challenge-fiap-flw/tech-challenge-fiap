@@ -4,8 +4,8 @@ import { Entity, Column, PrimaryGeneratedColumn, DeleteDateColumn } from 'typeor
 @Entity()
 export class Customer {
   @ApiProperty({ description: 'ID único' })
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn('increment')
+  id: number;
 
   @ApiProperty({ description: 'Nome' })
   @Column({ nullable: false })

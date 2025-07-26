@@ -57,7 +57,7 @@ export class CustomerController {
     description: 'Estrutura resposta da API',
     type: Customer
   })
-  async findOne(@Param('id') id: string): Promise<Customer> {
+  async findOne(@Param('id') id: number): Promise<Customer> {
     return this.customerService.findOne(id);
   }
 
@@ -69,7 +69,7 @@ export class CustomerController {
     description: 'Estrutura resposta da API',
     type: Customer
   })
-  async update(@Param('id') id: string, @Body() data: UpdateCustomerDto): Promise<Customer> {
+  async update(@Param('id') id: number, @Body() data: UpdateCustomerDto): Promise<Customer> {
     return this.customerService.update(id, data);
   }
 
@@ -78,7 +78,7 @@ export class CustomerController {
   @Roles('admin')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Deleta um cliente com base no ID' })
-  async remove(@Param('id') id: string): Promise<void> {
+  async remove(@Param('id') id: number): Promise<void> {
     return this.customerService.remove(id);
   }
 }

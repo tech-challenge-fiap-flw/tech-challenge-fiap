@@ -3,9 +3,9 @@ import { CreateVehicleDto } from '../dto/create-vehicle.dto';
 import { UpdateVehicleDto } from '../dto/update-vehicle.dto';
 import { VehicleService } from '../../domain/services/vehicle.service';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Vehicle } from '../../domain/entities/vehicle.entity';
 import { RolesGuard } from '../../../../auth-and-access/auth/infrastructure/guards/roles.guard';
 import { Roles } from '../../../..//auth-and-access/auth/presentation/decorators/roles.decorator';
+import { VehicleResponseDto } from '../dto/vehicle-response.dto';
 
 @ApiTags('Administrativo: Veiculos')
 @UseGuards(RolesGuard)
@@ -19,7 +19,7 @@ export class VehicleController {
   @ApiOperation({ summary: 'Criar novo veiculo' })
   @ApiCreatedResponse({
     description: 'Estrutura resposta da API',
-    type: Vehicle,
+    type: VehicleResponseDto,
   })
   create(@Body() createVehicleDto: CreateVehicleDto) {
     return this.vehicleService.create(createVehicleDto);
@@ -30,7 +30,7 @@ export class VehicleController {
   @ApiOperation({ summary: 'Devolve uma lista de veiculos' })
   @ApiCreatedResponse({
     description: 'Estrutura resposta da API',
-    type: Vehicle,
+    type: VehicleResponseDto,
     isArray: true,
   })
   findAll() {
@@ -42,10 +42,10 @@ export class VehicleController {
   @ApiOperation({ summary: 'Devolve o veiculo por ID' })
   @ApiCreatedResponse({
     description: 'Estrutura resposta da API',
-    type: Vehicle
+    type: VehicleResponseDto
   })
-  findOne(@Param('id') id: string) {
-    return this.vehicleService.findOne(id);
+  findOne(@Param('id') id: number) {
+    return this.vehicleService.findById(id);
   }
 
   @Put(':id')
@@ -54,9 +54,9 @@ export class VehicleController {
   @ApiOperation({ summary: 'Atualiza o veiculo por ID + Dados parciais' })
   @ApiCreatedResponse({
     description: 'Estrutura resposta da API',
-    type: Vehicle
+    type: VehicleResponseDto
   })
-  update(@Param('id') id: string, @Body() updateVehicleDto: UpdateVehicleDto) {
+  update(@Param('id') id: number, @Body() updateVehicleDto: UpdateVehicleDto) {
     return this.vehicleService.update(id, updateVehicleDto);
   }
 
@@ -64,7 +64,7 @@ export class VehicleController {
   @ApiBearerAuth()
   @Roles('admin')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: string) {
+  remove(@Param('id') id: number) {
     return this.vehicleService.remove(id);
   }
 }

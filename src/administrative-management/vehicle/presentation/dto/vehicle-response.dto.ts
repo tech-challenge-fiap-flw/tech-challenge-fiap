@@ -1,46 +1,33 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsString,
-  IsNotEmpty,
-  IsNumber,
-  Matches
-} from 'class-validator';
 
-export class CreateVehicleDto {
+export class VehicleResponseDto {
+  @ApiProperty({ description: 'ID único' })
+  id: number;
+
   @ApiProperty({ description: 'Placa' })
-  @Matches(/^[A-Z]{3}\d{4}$/, {
-    message: 'Placa inválida (ex: ABC1234)',
-  })
   idPlate: string;
 
   @ApiProperty({ description: 'Tipo' })
-  @IsString()
-  @IsNotEmpty()
   type: string;
 
   @ApiProperty({ description: 'Modelo' })
-  @IsString()
-  @IsNotEmpty()
   model: string;
 
   @ApiProperty({ description: 'Marca' })
-  @IsString()
-  @IsNotEmpty()
   brand: string;
 
   @ApiProperty({ description: 'Ano de fabricação' })
-  @IsNumber()
   manufactureYear: number;
 
   @ApiProperty({ description: 'Ano do modelo' })
-  @IsNumber()
   modelYear: number;
 
   @ApiProperty({ description: 'Cor' })
-  @IsString()
   color: string;
 
-  @ApiProperty()
-  @IsNumber()
+  @ApiProperty({ description: 'Dono' })
   ownerId: number;
+
+  @ApiProperty({ description: 'Data de remoção' })
+  deletedAt: Date | null
 }

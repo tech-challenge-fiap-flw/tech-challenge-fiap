@@ -11,6 +11,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth-and-access/auth/infrastructure/guards/jwt-auth.guard';
 import { AppController } from './app.controller';
 import { VehicleModule } from './administrative-management/vehicle/vehicle.module';
+import { DiagnosisModule } from './administrative-management/diagnosis/diagnosis.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { VehicleModule } from './administrative-management/vehicle/vehicle.modul
     UserModule,
     CustomerModule,
     VehicleModule,
+    DiagnosisModule,
     AuthModule,
   ],
   providers: [

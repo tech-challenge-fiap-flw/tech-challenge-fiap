@@ -2,6 +2,8 @@ import { Injectable, NotFoundException, BadRequestException  } from '@nestjs/com
 import { Repository } from 'typeorm';
 import { Customer } from '../entities/customer.entity';
 import { InjectRepository } from '@nestjs/typeorm';
+import { UpdateCustomerDto } from '../../presentation/dto/update-customer.dto';
+import { CreateCustomerDto } from '../../presentation/dto/create-customer.dto';
 
 @Injectable()
 export class CustomerService {
@@ -10,7 +12,7 @@ export class CustomerService {
     private customerRepository: Repository<Customer>,
   ) {}
 
-  async create(data: Partial<Customer>): Promise<Customer> {
+  async create(data: CreateCustomerDto): Promise<Customer> {
     const existing = await this.customerRepository.findOneBy({ cpf: data.cpf });
 
     if (existing) {
@@ -25,7 +27,7 @@ export class CustomerService {
     return this.customerRepository.find();
   }
 
-  async findOne(id: string): Promise<Customer> {
+  async findOne(id: number): Promise<Customer> {
     const customer = await this.customerRepository.findOneBy({ id });
 
     if (!customer) {
@@ -35,13 +37,13 @@ export class CustomerService {
     return customer;
   }
 
-  async update(id: string, data: Partial<Customer>): Promise<Customer> {
+  async update(id: number, data: UpdateCustomerDto): Promise<Customer> {
     const customer = await this.findOne(id);
     Object.assign(customer, data);
     return this.customerRepository.save(customer);
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: number): Promise<void> {
     const customer = await this.findOne(id);
     await this.customerRepository.softRemove(customer);
   }
