@@ -13,6 +13,8 @@ import { AppController } from './app.controller';
 import { VehicleModule } from './administrative-management/vehicle/vehicle.module';
 import { DiagnosisModule } from './administrative-management/diagnosis/diagnosis.module';
 import { VehiclePartModule } from './administrative-management/vehicle-part/vehicle-part.module';
+import { BudgetModule } from './administrative-management/budget/budget.module';
+import { BudgetVehiclePartModule } from './administrative-management/budget-vehicle-part/budget-vehicle-part.module';
 
 @Module({
   imports: [
@@ -45,7 +47,9 @@ import { VehiclePartModule } from './administrative-management/vehicle-part/vehi
     VehicleModule,
     DiagnosisModule,
     VehiclePartModule,
+    BudgetModule,
     AuthModule,
+    BudgetVehiclePartModule,
   ],
   providers: [
     AppService,

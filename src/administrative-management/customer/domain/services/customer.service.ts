@@ -27,7 +27,7 @@ export class CustomerService {
     return this.customerRepository.find();
   }
 
-  async findOne(id: number): Promise<Customer> {
+  async findById(id: number): Promise<Customer> {
     const customer = await this.customerRepository.findOneBy({ id });
 
     if (!customer) {
@@ -38,13 +38,13 @@ export class CustomerService {
   }
 
   async update(id: number, data: UpdateCustomerDto): Promise<Customer> {
-    const customer = await this.findOne(id);
+    const customer = await this.findById(id);
     Object.assign(customer, data);
     return this.customerRepository.save(customer);
   }
 
   async remove(id: number): Promise<void> {
-    const customer = await this.findOne(id);
+    const customer = await this.findById(id);
     await this.customerRepository.softRemove(customer);
   }
 }

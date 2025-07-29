@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, DeleteDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, DeleteDateColumn, CreateDateColumn } from 'typeorm';
 
 @Entity()
 export class VehiclePart {
@@ -19,4 +19,7 @@ export class VehiclePart {
 
   @DeleteDateColumn()
   deletedAt: Date | null;
+
+  @CreateDateColumn()
+  creationDate: Date | null;
 }

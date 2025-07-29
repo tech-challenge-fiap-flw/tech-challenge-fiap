@@ -1,6 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class VehiclePartResponseDto {
+  @ApiProperty({ description: 'ID' })
+  id: number;
+
   @ApiProperty({ description: 'Tipo' })
   type: string;
 

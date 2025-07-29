@@ -5,7 +5,6 @@ import { Repository } from 'typeorm';
 import { VehicleService } from '../../../../administrative-management/vehicle/domain/services/vehicle.service';
 import { UserService } from '../../../../auth-and-access/user/domain/services/user.service';
 import { Diagnosis } from '../entities/diagnosis.entity';
-import { DiagnosisResponseDto } from '../../presentation/dto/diagnosis-response.dto';
 import { UpdateDiagnosisDto } from '../../presentation/dto/update-diagnosis.dto';
 
 @Injectable()
@@ -17,19 +16,14 @@ export class DiagnosisService {
     private readonly userService: UserService
   ) {}
 
-  async create(data: CreateDiagnosisDto): Promise<DiagnosisResponseDto> {
-    if (!(await this.vehicleService.findById(data.vehicleId))) {
-      throw new NotFoundException('Veiculo não encontrado')
-    }
-
-    if (!(await this.userService.findById(data.responsibleMechanicId))) {
-      throw new NotFoundException('Responsável não encontrado')
-    }
+  async create(data: CreateDiagnosisDto): Promise<Diagnosis> {
+    await this.vehicleService.findById(data.vehicleId)
+    await this.userService.findById(data.responsibleMechanicId)
 
     return this.diagnosisRepository.save(data);
   }
 
-  async findAllByVehicleId(vehicleId: number): Promise<DiagnosisResponseDto[]> {
+  async findAllByVehicleId(vehicleId: number): Promise<Diagnosis[]> {
     const diagnostics = await this.diagnosisRepository.find({
       where: { vehicleId },
     });
@@ -41,7 +35,7 @@ export class DiagnosisService {
     return diagnostics;
   }
 
-  async findById(id: number): Promise<DiagnosisResponseDto> {
+  async findById(id: number): Promise<Diagnosis> {
     const diagnosis = await this.diagnosisRepository.findOneBy({ id });
 
     if (!diagnosis) {
@@ -51,16 +45,12 @@ export class DiagnosisService {
     return diagnosis;
   }
 
-  async update(id: number, data: UpdateDiagnosisDto): Promise<DiagnosisResponseDto> {
-    if (!(await this.vehicleService.findById(data.vehicleId))) {
-      throw new NotFoundException('Veiculo não encontrado')
-    }
-
-    if (!(await this.userService.findById(data.responsibleMechanicId))) {
-      throw new NotFoundException('Responsável não encontrado')
-    }
+  async update(id: number, data: UpdateDiagnosisDto): Promise<Diagnosis> {
+    await this.vehicleService.findById(data.vehicleId)
+    await this.userService.findById(data.responsibleMechanicId)
 
     const diagnosis = await this.findById(id);
+
     Object.assign(diagnosis, data);
     return this.diagnosisRepository.save(diagnosis);
   }

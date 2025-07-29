@@ -4,7 +4,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Vehicle } from '../entities/vehicle.entity';
 import { CustomerService } from '../../../customer/domain/services/customer.service';
-import { VehicleResponseDto } from '../../presentation/dto/vehicle-response.dto';
 import { UpdateVehicleDto } from '../../presentation/dto/update-vehicle.dto';
 
 @Injectable()
@@ -15,23 +14,18 @@ export class VehicleService {
     private readonly customerService: CustomerService
   ) {}
 
-  async create(createDto: CreateVehicleDto): Promise<VehicleResponseDto> {
-    const owner = await this.customerService.findOne(createDto.ownerId);
-
-    if (!owner) {
-      throw new NotFoundException('Usuário não encontrado')
-    }
-
+  async create(createDto: CreateVehicleDto): Promise<Vehicle> {
+    await this.customerService.findById(createDto.ownerId)
     return this.vehicleRepository.save(createDto);
   }
 
-  async findAll(): Promise<VehicleResponseDto[]> {
+  async findAll(): Promise<Vehicle[]> {
     return this.vehicleRepository.find({
       loadEagerRelations: false,
     });
   }
 
-  async findById(id: number): Promise<VehicleResponseDto> {
+  async findById(id: number): Promise<Vehicle> {
     const vehicle = await this.vehicleRepository.findOne({
       where: { id },
       loadEagerRelations: false,
@@ -44,7 +38,7 @@ export class VehicleService {
     return vehicle;
   }
 
-  async update(id: number, data: UpdateVehicleDto): Promise<VehicleResponseDto> {
+  async update(id: number, data: UpdateVehicleDto): Promise<Vehicle> {
     const vehicle = await this.findById(id);
     Object.assign(vehicle, data);
     return this.vehicleRepository.save(vehicle);
