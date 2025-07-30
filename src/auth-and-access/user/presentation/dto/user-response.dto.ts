@@ -18,4 +18,25 @@ export class UserResponseDto {
 
   @ApiProperty({ example: '2024-01-01T12:00:00.000Z' })
   creationDate: Date;
+
+  @ApiProperty({ description: 'CPF' })
+  cpf: string;
+
+  @ApiProperty({ description: 'CNJP' })
+  cnpj: string;
+
+  @ApiProperty({ description: 'Telefone' })
+  phone: string;
+
+  @ApiProperty({ description: 'Endereço' })
+  address: string;
+
+  @ApiProperty({ description: 'Cidade' })
+  city: string;
+
+  @ApiProperty({ description: 'Estado' })
+  state: string;
+
+  @ApiProperty({ description: 'CEP' })
+  zipCode: string;
 }

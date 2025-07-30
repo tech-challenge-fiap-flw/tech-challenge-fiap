@@ -44,6 +44,13 @@ export class UserController {
       type: user.type,
       active: user.active,
       creationDate: user.creationDate,
+      cpf: user.cpf,
+      cnpj: user.cnpj,
+      phone: user.phone,
+      address: user.address,
+      city: user.city,
+      state: user.state,
+      zipCode: user.zipCode,
     };
   }
 }

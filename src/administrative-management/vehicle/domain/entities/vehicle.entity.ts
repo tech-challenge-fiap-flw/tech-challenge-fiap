@@ -1,4 +1,4 @@
-import { Customer } from '../../../customer/domain/entities/customer.entity';
+import { User } from '../../../../auth-and-access/user/domain/entities/user.entity';
 import { Entity, Column, ManyToOne, JoinColumn, DeleteDateColumn, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
@@ -30,9 +30,9 @@ export class Vehicle {
   @Column({ name: 'ownerId' })
   ownerId: number;
 
-  @ManyToOne(() => Customer, { nullable: false, eager: false })
+  @ManyToOne(() => User, { nullable: false, eager: false })
   @JoinColumn({ name: 'ownerId' })
-  owner: Customer;
+  owner: User;
 
   @DeleteDateColumn()
   deletedAt: Date | null;

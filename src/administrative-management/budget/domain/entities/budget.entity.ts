@@ -1,7 +1,7 @@
-import { Customer } from "../../../../administrative-management/customer/domain/entities/customer.entity";
 import { Diagnosis } from "../../../../administrative-management/diagnosis/domain/entities/diagnosis.entity";
 import { BudgetVehiclePart } from "../../../../administrative-management/budget-vehicle-part/domain/entities/budget-vehicle-part.entity";
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { User } from "../../../../auth-and-access/user/domain/entities/user.entity";
 
 @Entity()
 export class Budget {
@@ -20,9 +20,9 @@ export class Budget {
   @Column({ name: 'ownerId' })
   ownerId: number;
 
-  @ManyToOne(() => Customer, { nullable: false, eager: false })
+  @ManyToOne(() => User, { nullable: false, eager: false })
   @JoinColumn({ name: 'ownerId' })
-  owner: Customer;
+  owner: User;
 
   @Column({ name: 'diagnosisId' })
   diagnosisId: number;

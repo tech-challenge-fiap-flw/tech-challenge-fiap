@@ -40,11 +40,7 @@ export class UserService {
   }
 
   async updateUser(userId: number, updateUserDto: UpdateUserDto): Promise<User> {
-    const hashedPassword = await this.hashPassword(updateUserDto.password);
-    await this.userRepository.update({ id: userId }, {
-      ...updateUserDto,
-      password: hashedPassword,
-    });
+    await this.userRepository.update({ id: userId }, updateUserDto);
     return this.userRepository.findOne({ where: { id: userId } });
   }
 

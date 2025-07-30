@@ -27,4 +27,32 @@ export class User {
   @ApiProperty({ description: 'Data de criação' })
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', nullable: false })
   creationDate: Date;
+
+  @ApiProperty({ description: 'CPF' })
+  @Column({ nullable: false })
+  cpf: string;
+
+  @ApiProperty({ description: 'CNJP' })
+  @Column({ nullable: true })
+  cnpj: string;
+
+  @ApiProperty({ description: 'Telefone' })
+  @Column({ nullable: false })
+  phone: string;
+
+  @ApiProperty({ description: 'Endereço' })
+  @Column({ nullable: true })
+  address: string;
+
+  @ApiProperty({ description: 'Cidade' })
+  @Column({ nullable: true })
+  city: string;
+
+  @ApiProperty({ description: 'Estado' })
+  @Column({ nullable: true })
+  state: string;
+
+  @ApiProperty({ description: 'CEP' })
+  @Column({ nullable: true })
+  zipCode: string;
 }

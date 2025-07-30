@@ -3,7 +3,6 @@ import { CreateBudgetDto } from '../../presentation/dto/create-budget.dto';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { Budget } from '../entities/budget.entity';
 import { DataSource, Repository } from 'typeorm';
-import { CustomerService } from '../../../../administrative-management/customer/domain/services/customer.service';
 import { DiagnosisService } from '../../../../administrative-management/diagnosis/domain/services/diagnosis.service';
 import { UpdateBudgetDto } from '../../presentation/dto/update-budget.dto';
 import { BudgetVehiclePartService } from '../../../../administrative-management/budget-vehicle-part/domain/services/budget-vehicle-part.service';
@@ -11,6 +10,7 @@ import { BaseService } from '../../../../shared/domain/services/base-service.ser
 import { UpdateBudgetVehiclePartDto } from '../../../../administrative-management/budget-vehicle-part/presentation/dto/update-budget-vehicle-part.dto';
 import { RemoveBudgetVehiclePartDto } from '../../../../administrative-management/budget-vehicle-part/presentation/dto/remove-budget-vehicle-part.dto';
 import { CreateBudgetVehiclePartDto } from '../../../../administrative-management/budget-vehicle-part/presentation/dto/create-budget-vehicle-part.dto';
+import { UserService } from '../../../../auth-and-access/user/domain/services/user.service';
 
 @Injectable()
 export class BudgetService extends BaseService {
@@ -20,7 +20,7 @@ export class BudgetService extends BaseService {
 
     @InjectRepository(Budget)
     private budgetRepository: Repository<Budget>,
-    private readonly customerService: CustomerService,
+    private readonly userService: UserService,
     private readonly diagnosisService: DiagnosisService,
     private readonly budgetVehiclePartService: BudgetVehiclePartService,
   ) {
@@ -29,7 +29,7 @@ export class BudgetService extends BaseService {
 
   async create(createDto: CreateBudgetDto): Promise<Budget> {
     const savedBudgetId = await this.runInTransaction(async (manager) => {
-      await this.customerService.findById(createDto.ownerId)
+      await this.userService.findById(createDto.ownerId)
       await this.diagnosisService.findById(createDto.diagnosisId)
 
       const { vehicleParts, ...rest } = createDto;

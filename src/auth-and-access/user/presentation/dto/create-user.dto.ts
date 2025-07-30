@@ -1,5 +1,5 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, Matches, MinLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateUserDto {
   @ApiProperty({ example: 'João Silva' })
@@ -21,4 +21,40 @@ export class CreateUserDto {
   @IsNotEmpty()
   @IsString()
   type: string;
+
+  @ApiProperty({ description: 'CPF com 11 números' })
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{11}$/, { message: 'CPF deve conter 11 números' })
+  cpf: string;
+
+  @ApiPropertyOptional({ description: 'CNPJ com 14 números' })
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{14}$/, { message: 'CNPJ deve conter 14 números' })
+  cnpj?: string;
+
+  @ApiProperty({ description: 'Telefone de contato' })
+  @IsString()
+  phone: string;
+
+  @ApiPropertyOptional({ description: 'Endereço' })
+  @IsOptional()
+  @IsString()
+  address?: string;
+
+  @ApiPropertyOptional({ description: 'Cidade' })
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @ApiPropertyOptional({ description: 'Estado' })
+  @IsOptional()
+  @IsString()
+  state?: string;
+
+  @ApiPropertyOptional({ description: 'CEP' })
+  @IsOptional()
+  @IsString()
+  zipCode?: string;
 }
