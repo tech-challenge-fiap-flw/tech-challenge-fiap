@@ -3,8 +3,7 @@ import { CreateBudgetVehiclePartDto } from '../../presentation/dto/create-budget
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository, UpdateResult } from 'typeorm';
 import { BudgetVehiclePart } from '../entities/budget-vehicle-part.entity';
-import { VehiclePartService } from 'src/administrative-management/vehicle-part/domain/services/vehicle-part.service';
-import { VehiclePartItemDto } from 'src/administrative-management/budget/presentation/dto/vehicle-part-item.dto';
+import { VehiclePartService } from '../../../../administrative-management/vehicle-part/domain/services/vehicle-part.service';
 import { UpdateBudgetVehiclePartDto } from '../../presentation/dto/update-budget-vehicle-part.dto';
 import { RemoveBudgetVehiclePartDto } from '../../presentation/dto/remove-budget-vehicle-part.dto';
 

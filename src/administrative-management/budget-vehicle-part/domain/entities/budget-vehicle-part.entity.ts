@@ -1,5 +1,5 @@
-import { VehiclePart } from "src/administrative-management/vehicle-part/domain/entities/vehicle-part.entity";
-import { Budget } from "src/administrative-management/budget/domain/entities/budget.entity";
+import { VehiclePart } from "../../../../administrative-management/vehicle-part/domain/entities/vehicle-part.entity";
+import { Budget } from "../../../../administrative-management/budget/domain/entities/budget.entity";
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()

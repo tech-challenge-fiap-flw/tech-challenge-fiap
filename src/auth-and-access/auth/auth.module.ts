@@ -2,7 +2,7 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AuthService } from './domain/services/auth.service';
 import { AuthController } from './presentation/controllers/auth.controller';
 import { LocalStrategy } from './infrastructure/strategies/local.strategy';
-import { UserModule } from 'src/auth-and-access/user/user.module';
+import { UserModule } from '../../auth-and-access/user/user.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './infrastructure/strategies/jwt.strategy';

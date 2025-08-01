@@ -5,8 +5,8 @@ import { User } from '../../domain/entities/user.entity';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { UserResponseDto } from '../dto/user-response.dto';
-import { IsPublic } from 'src/auth-and-access/auth/presentation/decorators/is-public.decorator';
-import { CurrentUser } from 'src/auth-and-access/auth/presentation/decorators/current-user.decorator';
+import { IsPublic } from '../../../../auth-and-access/auth/presentation/decorators/is-public.decorator';
+import { CurrentUser } from '../../../../auth-and-access/auth/presentation/decorators/current-user.decorator';
 
 @ApiTags('Usuários')
 @Controller('users')
