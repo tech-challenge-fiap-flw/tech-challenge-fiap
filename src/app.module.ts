@@ -14,6 +14,7 @@ import { DiagnosisModule } from './administrative-management/diagnosis/diagnosis
 import { VehiclePartModule } from './administrative-management/vehicle-part/vehicle-part.module';
 import { BudgetModule } from './administrative-management/budget/budget.module';
 import { BudgetVehiclePartModule } from './administrative-management/budget-vehicle-part/budget-vehicle-part.module';
+import { ServiceOrderModule } from './service-order/service-order.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { BudgetVehiclePartModule } from './administrative-management/budget-vehi
     BudgetModule,
     AuthModule,
     BudgetVehiclePartModule,
+    ServiceOrderModule,
   ],
   providers: [
     AppService,

@@ -11,6 +11,9 @@ import { UpdateBudgetVehiclePartDto } from '../../../../administrative-managemen
 import { RemoveBudgetVehiclePartDto } from '../../../../administrative-management/budget-vehicle-part/presentation/dto/remove-budget-vehicle-part.dto';
 import { CreateBudgetVehiclePartDto } from '../../../../administrative-management/budget-vehicle-part/presentation/dto/create-budget-vehicle-part.dto';
 import { UserService } from '../../../../auth-and-access/user/domain/services/user.service';
+import { User } from 'src/auth-and-access/user/domain/entities/user.entity';
+import { ServiceOrder } from 'src/service-order/entities/service-order.entity';
+import { ForbiddenException } from '@nestjs/common';
 
 @Injectable()
 export class BudgetService extends BaseService {
@@ -77,7 +80,6 @@ export class BudgetService extends BaseService {
       const toUpdate: UpdateBudgetVehiclePartDto[] = [];
       const toAdd: CreateBudgetVehiclePartDto = { budgetId: id, vehicleParts: [] };
 
-      // Determina itens a remover e atualizar
       for (const [vehiclePartId, currentItem] of currentMap.entries()) {
         if (!dtoMap.has(vehiclePartId)) {
           toRemove.push({ id: currentItem.id });
@@ -89,18 +91,15 @@ export class BudgetService extends BaseService {
         }
       }
 
-      // Determina itens a adicionar
       for (const item of vehicleParts) {
         if (!currentMap.has(item.id)) {
           toAdd.vehicleParts.push({ id: item.id, quantity: item.quantity })
         }
       }
 
-      // Atualiza o orçamento em si
       Object.assign(budget, rest);
       await manager.getRepository(Budget).save(budget);
 
-      // Aplica operações específicas
       if (toRemove.length) {
         const idsToRemove = toRemove.map(p => ({ id: p.id }));
         await this.budgetVehiclePartService.remove(idsToRemove, manager);
@@ -126,4 +125,39 @@ export class BudgetService extends BaseService {
 
     await this.budgetRepository.softRemove(customer);
   }
+
+  async decideBudget(budgetId: number, accept: boolean, user: User): Promise<ServiceOrder> {
+    return this.runInTransaction(async (manager) => {
+      const budget = await manager.getRepository(Budget).findOne({
+        where: { id: budgetId },
+        relations: ['owner'],
+      });
+  
+      if (!budget) {
+        throw new NotFoundException('Orçamento não encontrado.');
+      }
+  
+      if (budget.ownerId !== user.id) {
+        throw new ForbiddenException('Você não está autorizado a decidir esse orçamento.');
+      }
+  
+      const order = await manager.getRepository(ServiceOrder).findOne({
+        where: { budget: { id: budgetId }, active: true },
+        relations: ['customer'],
+      });
+  
+      if (!order) {
+        throw new NotFoundException('Ordem de serviço relacionada não encontrada.');
+      }
+  
+      if (order.customer.id !== user.id) {
+        throw new ForbiddenException('Você não está autorizado a modificar essa OS.');
+      }
+  
+      order.currentStatus = accept ? 'Aguardando início' : 'Recusado';
+  
+      return manager.getRepository(ServiceOrder).save(order);
+    });
+  }
+  
 }

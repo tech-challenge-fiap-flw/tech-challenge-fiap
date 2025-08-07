@@ -7,6 +7,8 @@ import { RolesGuard } from '../../../../auth-and-access/auth/infrastructure/guar
 import { Roles } from '../../../../auth-and-access/auth/presentation/decorators/roles.decorator';
 import { BudgetResponseDto } from '../dto/budget-response.dto';
 import { Budget } from '../../domain/entities/budget.entity';
+import { User } from 'src/auth-and-access/user/domain/entities/user.entity';
+import { CurrentUser } from 'src/auth-and-access/auth/presentation/decorators/current-user.decorator';
 
 @ApiTags('Administrativo: Budget')
 @UseGuards(RolesGuard)
@@ -50,6 +52,17 @@ export class BudgetController {
   @ApiOperation({ summary: 'Deleta um orçamento com base no ID' })
   remove(@Param('id') id: number): Promise<void> {
     return this.budgetService.remove(id);
+  }
+
+  @Post(':id/accept')
+  @ApiBearerAuth()
+  @Roles('cliente')
+  @ApiOperation({ summary: 'Cliente aceita ou recusa orçamento' })
+  async decideBudget(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('accept') accept: boolean,
+    @CurrentUser() user: User) {
+    return this.budgetService.decideBudget(id, accept, user);
   }
 
   private toBudgetResponseDto(budget: Budget): BudgetResponseDto {
