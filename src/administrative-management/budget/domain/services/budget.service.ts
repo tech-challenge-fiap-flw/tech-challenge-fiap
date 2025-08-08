@@ -14,6 +14,8 @@ import { UserService } from '../../../../auth-and-access/user/domain/services/us
 import { User } from 'src/auth-and-access/user/domain/entities/user.entity';
 import { ServiceOrder } from 'src/service-order/entities/service-order.entity';
 import { ForbiddenException } from '@nestjs/common';
+import { ServiceOrderStatus } from 'src/service-order/enum/service-order-status.enum';
+import { ServiceOrderHistoryService } from 'src/service-order-history/service-order-history.service';
 
 @Injectable()
 export class BudgetService extends BaseService {
@@ -26,6 +28,7 @@ export class BudgetService extends BaseService {
     private readonly userService: UserService,
     private readonly diagnosisService: DiagnosisService,
     private readonly budgetVehiclePartService: BudgetVehiclePartService,
+    private readonly historyService: ServiceOrderHistoryService,
   ) {
     super(dataSource); 
   }
@@ -154,10 +157,25 @@ export class BudgetService extends BaseService {
         throw new ForbiddenException('Você não está autorizado a modificar essa OS.');
       }
   
-      order.currentStatus = accept ? 'Aguardando início' : 'Recusado';
+      const oldStatus = order.currentStatus;
+      const newStatus = accept
+        ? ServiceOrderStatus.AGUARDANDO_INICIO
+        : ServiceOrderStatus.RECUSADA;
   
-      return manager.getRepository(ServiceOrder).save(order);
+      order.currentStatus = newStatus;
+  
+      const savedOrder = await manager.getRepository(ServiceOrder).save(order);
+  
+      await this.historyService.logStatusChange(
+        savedOrder.idServiceOrder,
+        user.id,
+        oldStatus,
+        newStatus,
+      );
+  
+      return savedOrder;
     });
   }
+  
   
 }

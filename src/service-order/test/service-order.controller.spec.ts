@@ -26,10 +26,12 @@ describe('ServiceOrderController', () => {
     findOne: jest.fn().mockResolvedValue(mockServiceOrder),
     findByCustomerEmail: jest.fn().mockResolvedValue([mockServiceOrder]),
     remove: jest.fn().mockResolvedValue(undefined),
-    acceptOrder: jest.fn().mockResolvedValue({
-      ...mockServiceOrder,
-      mechanic: mockUser({ id: 5, type: 'mechanic' }),
-      currentStatus: 'Em diagnóstico',
+    acceptOrder: jest.fn().mockImplementation((user, id, accept) => {
+      return Promise.resolve({
+        ...mockServiceOrder,
+        mechanic: user,
+        currentStatus: accept ? 'Em diagnóstico' : 'Recusada',
+      });
     }),
     assignBudget: jest.fn().mockResolvedValue({
       ...mockServiceOrder,
@@ -97,10 +99,23 @@ describe('ServiceOrderController', () => {
 
   it('deve permitir que um mecânico aceite uma OS', async () => {
     const mechanic = mockUser({ id: 5, type: 'mechanic' });
-    const result = await controller.acceptOrder(mechanic, 1);
+    const result = await controller.decideOrder(mechanic, 1, { accept: true });
     expect(result.mechanic.id).toBe(5);
     expect(result.currentStatus).toBe('Em diagnóstico');
-    expect(service.acceptOrder).toHaveBeenCalledWith(mechanic, 1);
+    expect(service.acceptOrder).toHaveBeenCalledWith(mechanic, 1, true);
+  });
+  
+  it('deve permitir que um mecânico recuse uma OS', async () => {
+    const mechanic = mockUser({ id: 5, type: 'mechanic' });
+    mockService.acceptOrder.mockResolvedValueOnce({
+      ...mockServiceOrder,
+      mechanic,
+      currentStatus: 'Recusada',
+    });
+    const result = await controller.decideOrder(mechanic, 1, { accept: false });
+    expect(result.mechanic.id).toBe(5);
+    expect(result.currentStatus).toBe('Recusada');
+    expect(service.acceptOrder).toHaveBeenCalledWith(mechanic, 1, false);
   });
 
   it('deve permitir que um mecânico atribua um orçamento', async () => {

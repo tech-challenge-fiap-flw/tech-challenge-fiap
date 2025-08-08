@@ -2,6 +2,7 @@ import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToO
 import { Budget } from "src/administrative-management/budget/domain/entities/budget.entity";
 import { User } from "src/auth-and-access/user/domain/entities/user.entity";
 import { Vehicle } from "src/administrative-management/vehicle/domain/entities/vehicle.entity";
+import { ServiceOrderStatus } from "../enum/service-order-status.enum";
 
 @Entity()
 export class ServiceOrder {
@@ -15,7 +16,7 @@ export class ServiceOrder {
     @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     creationDate: Date;
 
-    @Column()
+    @Column({type: 'enum', enum: ServiceOrderStatus,})
     currentStatus: string;
 
     @ManyToOne(() => Budget, { nullable: true, eager: false })

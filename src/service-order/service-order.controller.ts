@@ -65,10 +65,11 @@ export class ServiceOrderController {
   @Post(':id/accept')
   @ApiBearerAuth()
   @Roles('mechanic')
-  @ApiOperation({ summary: 'Aceitar OS' })
-  @ApiOkResponse({ description: 'OS aceita com sucesso' })
-  async acceptOrder(@CurrentUser() user: User, @Param('id', ParseIntPipe) id: number) {
-    return this.serviceOrderService.acceptOrder(user, id);
+  @ApiOperation({ summary: 'Aceitar ou recusar OS' })
+  @ApiOkResponse({ description: 'Decisão registrada com sucesso' })
+  async decideOrder(@CurrentUser() user: User, @Param('id', ParseIntPipe) id: number,@Body() body: { accept: boolean },
+  ) {
+    return this.serviceOrderService.acceptOrder(user, id, body.accept);
   }
 
   @Post(':id/budget/:budgetId')
