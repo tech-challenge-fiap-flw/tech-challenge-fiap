@@ -8,6 +8,7 @@ import { VehiclePartModule } from '../../administrative-management/vehicle-part/
 import { BudgetVehiclePartModule } from '../../administrative-management/budget-vehicle-part/budget-vehicle-part.module';
 import { SharedModule } from '../../shared/shared.module';
 import { UserModule } from '../../auth-and-access/user/user.module';
+import { ServiceOrderHistoryModule } from 'src/service-order-history/service-order-history.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { UserModule } from '../../auth-and-access/user/user.module';
     DiagnosisModule,
     VehiclePartModule,
     BudgetVehiclePartModule,
+    ServiceOrderHistoryModule,
     SharedModule
   ],
   controllers: [BudgetController],

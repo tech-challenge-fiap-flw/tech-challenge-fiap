@@ -1,15 +1,17 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
 
-@Schema({ timestamps: true })
-export class ServiceOrderHistory extends Document {
+@Schema({
+  collection: 'service_order_history',
+  timestamps: true 
+})
+export class ServiceOrderHistory {
   @Prop({ required: true })
   idServiceOrder: number;
 
   @Prop({ required: true })
   userId: number;
 
-  @Prop({ required: true })
+  @Prop({ required: false })
   oldStatus: string;
 
   @Prop({ required: true })

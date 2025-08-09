@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { CreateBudgetDto } from '../../presentation/dto/create-budget.dto';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { Budget } from '../entities/budget.entity';
@@ -13,9 +13,9 @@ import { CreateBudgetVehiclePartDto } from '../../../../administrative-managemen
 import { UserService } from '../../../../auth-and-access/user/domain/services/user.service';
 import { User } from 'src/auth-and-access/user/domain/entities/user.entity';
 import { ServiceOrder } from 'src/service-order/entities/service-order.entity';
-import { ForbiddenException } from '@nestjs/common';
 import { ServiceOrderStatus } from 'src/service-order/enum/service-order-status.enum';
 import { ServiceOrderHistoryService } from 'src/service-order-history/service-order-history.service';
+import { VehiclePartService } from 'src/administrative-management/vehicle-part/domain/services/vehicle-part.service';
 
 @Injectable()
 export class BudgetService extends BaseService {
@@ -27,6 +27,7 @@ export class BudgetService extends BaseService {
     private budgetRepository: Repository<Budget>,
     private readonly userService: UserService,
     private readonly diagnosisService: DiagnosisService,
+    private readonly vehiclePartService: VehiclePartService,
     private readonly budgetVehiclePartService: BudgetVehiclePartService,
     private readonly historyService: ServiceOrderHistoryService,
   ) {
@@ -42,6 +43,20 @@ export class BudgetService extends BaseService {
 
       const savedBudget = await manager.getRepository(Budget).save(rest);
       await this.budgetVehiclePartService.create({ budgetId: savedBudget.id, vehicleParts }, manager)
+
+      for (const part of vehicleParts) {
+        const vehiclePart = await this.vehiclePartService.findOne(part.id);
+
+        if (vehiclePart.quantity < part.quantity) {
+          throw new ForbiddenException(`Insufficient quantity for vehicle part with id ${part.id}`);
+        }
+
+        vehiclePart.quantity -= part.quantity;
+
+        await this.vehiclePartService.updatePart(vehiclePart.id, { quantity: vehiclePart.quantity },
+          manager
+        );
+      }
 
       return savedBudget.id;
     });
@@ -165,6 +180,17 @@ export class BudgetService extends BaseService {
       order.currentStatus = newStatus;
   
       const savedOrder = await manager.getRepository(ServiceOrder).save(order);
+
+      if (!accept) {
+      
+        const vehiclePartIds = await this.budgetVehiclePartService.findByBudgetId(budget.id, manager);
+
+        for (const part of vehiclePartIds) {
+          const vehiclePart = await this.vehiclePartService.findOne(part.vehiclePartId);
+          vehiclePart.quantity += part.quantity;
+          await this.vehiclePartService.updatePart(vehiclePart.id, { quantity: vehiclePart.quantity }, manager);
+        }
+      }
   
       await this.historyService.logStatusChange(
         savedOrder.idServiceOrder,

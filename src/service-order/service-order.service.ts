@@ -9,7 +9,7 @@ import { Repository } from 'typeorm';
 import { ServiceOrder } from './entities/service-order.entity';
 import { CreateServiceOrderDto } from './dto/create-service-order.dto';
 import { User } from 'src/auth-and-access/user/domain/entities/user.entity';
-import { Budget } from 'src/administrative-management/budget/domain/entities/budget.entity';
+import { BudgetService } from 'src/administrative-management/budget/domain/services/budget.service';
 import { ServiceOrderStatus } from './enum/service-order-status.enum';
 import { ServiceOrderHistoryService } from 'src/service-order-history/service-order-history.service';
 
@@ -18,6 +18,7 @@ export class ServiceOrderService {
   constructor(
     @InjectRepository(ServiceOrder)
     private serviceOrderRepository: Repository<ServiceOrder>,
+    private budgetService: BudgetService,
     private readonly historyService: ServiceOrderHistoryService,
   ) {}
 
@@ -92,9 +93,7 @@ export class ServiceOrderService {
       throw new BadRequestException('Essa OS já possui um orçamento atribuído.');
     }
 
-    const budget = await this.serviceOrderRepository.manager.findOne(Budget, {
-      where: { id: budgetId },
-    });
+    const budget = await this.budgetService.findById(budgetId);
 
     if (!budget) {
       throw new NotFoundException('Orçamento não encontrado.');

@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, In, Repository } from 'typeorm';
+import { EntityManager, ILike, In, Repository } from 'typeorm';
 import { VehiclePart } from '../entities/vehicle-part.entity';
 import { CreateVehiclePartDto } from '../../presentation/dto/create-vehicle-part.dto';
+import { UpdateVehiclePartDto } from '../../presentation/dto/update-vehicle-part.dto';
 
 @Injectable()
 export class VehiclePartService {
@@ -31,6 +32,13 @@ export class VehiclePartService {
     }
 
     return customer;
+  }
+
+  async updatePart(vehiclePartId: number, updateVehiclePartDto: UpdateVehiclePartDto, manager?: EntityManager): Promise<VehiclePart> {
+    const vehiclePartRepo = manager ? manager.getRepository(VehiclePart) : this.vehiclePartRepository;
+
+    await vehiclePartRepo.update({ id: vehiclePartId }, updateVehiclePartDto);
+    return vehiclePartRepo.findOne({ where: { id: vehiclePartId } });
   }
 
   findByIds(vehiclePartIds: number[]): Promise<VehiclePart[]> {

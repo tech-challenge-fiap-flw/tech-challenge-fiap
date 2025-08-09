@@ -15,6 +15,11 @@ export class BudgetVehiclePartService {
     private readonly vehiclePartService: VehiclePartService
   ) {}
 
+  async findByBudgetId(budgetId: number, manager?: EntityManager): Promise<BudgetVehiclePart[]> {
+    const repository = manager ? manager.getRepository(BudgetVehiclePart) : this.budgetVehiclePartRepository;
+    return repository.find({ where: { budgetId } });
+  }
+
   private async validateVehiclePartIds(ids: number[]): Promise<void> {
     const existingVehicleParts = await this.vehiclePartService.findByIds(ids);
     const existingIds = existingVehicleParts.map((vp) => vp.id);

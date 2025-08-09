@@ -16,6 +16,7 @@ import {
   ApiOperation,
   ApiCreatedResponse,
   ApiOkResponse,
+  ApiBody,
 } from '@nestjs/swagger';
 import { ServiceOrderService } from './service-order.service';
 import { CreateServiceOrderDto } from './dto/create-service-order.dto';
@@ -23,6 +24,7 @@ import { CurrentUser } from 'src/auth-and-access/auth/presentation/decorators/cu
 import { Roles } from 'src/auth-and-access/auth/presentation/decorators/roles.decorator';
 import { RolesGuard } from 'src/auth-and-access/auth/infrastructure/guards/roles.guard';
 import { User } from 'src/auth-and-access/user/domain/entities/user.entity';
+import { AcceptServiceOrderDto } from './dto/accept-service-order.dto';
 
 @ApiTags('Ordem de Serviço')
 @UseGuards(RolesGuard)
@@ -31,6 +33,8 @@ export class ServiceOrderController {
   constructor(private readonly serviceOrderService: ServiceOrderService) {}
 
   @Post()
+  @ApiBearerAuth()
+  @Roles('mechanic', 'cliente', 'admin')
   @ApiOperation({ summary: 'Criar nova OS' })
   @ApiCreatedResponse({ description: 'OS criada com sucesso' })
   async create(@CurrentUser() user: User, @Body() dto: CreateServiceOrderDto) {
@@ -39,7 +43,7 @@ export class ServiceOrderController {
 
   @Get(':id')
   @ApiBearerAuth()
-  @Roles('mechanic', 'cliente')
+  @Roles('mechanic', 'cliente', 'admin')
   @ApiOperation({ summary: 'Buscar OS por ID' })
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return this.serviceOrderService.findOne(id);
@@ -55,7 +59,7 @@ export class ServiceOrderController {
 
   @Delete(':id')
   @ApiBearerAuth()
-  @Roles('mechanic')
+  @Roles('mechanic', 'admin')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Soft delete da OS' })
   async remove(@Param('id', ParseIntPipe) id: number) {
@@ -64,9 +68,10 @@ export class ServiceOrderController {
 
   @Post(':id/accept')
   @ApiBearerAuth()
-  @Roles('mechanic')
+  @Roles('mechanic', 'admin')
   @ApiOperation({ summary: 'Aceitar ou recusar OS' })
   @ApiOkResponse({ description: 'Decisão registrada com sucesso' })
+  @ApiBody({ type: AcceptServiceOrderDto })
   async decideOrder(@CurrentUser() user: User, @Param('id', ParseIntPipe) id: number,@Body() body: { accept: boolean },
   ) {
     return this.serviceOrderService.acceptOrder(user, id, body.accept);
@@ -74,7 +79,7 @@ export class ServiceOrderController {
 
   @Post(':id/budget/:budgetId')
   @ApiBearerAuth()
-  @Roles('mechanic')
+  @Roles('mechanic', 'admin')
   @ApiOperation({ summary: 'Atribuir orçamento à OS' })
   @ApiOkResponse({ description: 'Orçamento atribuído com sucesso' })
   async assignBudget(@CurrentUser() user: User, @Param('id', ParseIntPipe) id: number, @Param('budgetId', ParseIntPipe) budgetId: number) {
@@ -83,7 +88,7 @@ export class ServiceOrderController {
 
   @Post(':id/start')
   @ApiBearerAuth()
-  @Roles('mechanic')
+  @Roles('mechanic', 'admin')
   @ApiOperation({ summary: 'Iniciar reparo da OS' })
   @ApiOkResponse({ description: 'OS em execução' })
   async startRepair( @CurrentUser() user: User, @Param('id', ParseIntPipe) id: number) {
@@ -92,7 +97,7 @@ export class ServiceOrderController {
   
   @Post(':id/finish')
   @ApiBearerAuth()
-  @Roles('mechanic')
+  @Roles('mechanic', 'admin')
   @ApiOperation({ summary: 'Finalizar reparo da OS' })
   @ApiOkResponse({ description: 'OS finalizada' })
   async finishRepair(@CurrentUser() user: User, @Param('id', ParseIntPipe) id: number) {
@@ -101,7 +106,7 @@ export class ServiceOrderController {
   
   @Post(':id/delivered')
   @ApiBearerAuth()
-  @Roles('cliente')
+  @Roles('cliente', 'admin')
   @ApiOperation({ summary: 'Cliente confirma entrega do veículo' })
   @ApiOkResponse({ description: 'Veículo entregue' })
   async delivered(@CurrentUser() user: User, @Param('id', ParseIntPipe) id: number) {

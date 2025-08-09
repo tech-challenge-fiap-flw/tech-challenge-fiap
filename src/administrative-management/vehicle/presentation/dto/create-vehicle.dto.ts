@@ -8,7 +8,7 @@ import {
 
 export class CreateVehicleDto {
   @ApiProperty({ description: 'Placa' })
-  @Matches(/^[A-Z]{3}\d{4}$/, {
+  @Matches(/^[A-Z]{3}\d{1}[A-Z0-9]{1}\d{2}$/, {
     message: 'Placa inválida (ex: ABC1234)',
   })
   idPlate: string;
