@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { ServiceOrderHistory } from './schema/service-order-history.schema';
+import { ServiceOrderHistory } from '../schema/service-order-history.schema';
 
 @Injectable()
 export class ServiceOrderHistoryService {

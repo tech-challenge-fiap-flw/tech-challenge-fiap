@@ -10,7 +10,7 @@ import { ServiceOrder } from '../entities/service-order.entity';
 import { User } from 'src/auth-and-access/user/domain/entities/user.entity';
 import { BudgetService } from 'src/administrative-management/budget/domain/services/budget.service';
 import { ServiceOrderStatus } from '../enum/service-order-status.enum';
-import { ServiceOrderHistoryService } from 'src/service-order-history/service-order-history.service';
+import { ServiceOrderHistoryService } from 'src/administrative-management/service-order-history/domain/services/service-order-history.service';
 import { DiagnosisService } from '../../../diagnosis/domain/services/diagnosis.service';
 import { CreateFromAutoDiagnosisDto } from '../../presentation/dto/create-from-auto-diagnosis.dto';
 import { CreateBudgetDto } from 'src/administrative-management/budget/presentation/dto/create-budget.dto';
