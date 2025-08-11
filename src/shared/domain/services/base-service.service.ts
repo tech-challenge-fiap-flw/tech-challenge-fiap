@@ -1,13 +1,24 @@
-import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource, QueryRunner } from 'typeorm';
+import { DataSource, EntityManager, QueryRunner, Repository } from 'typeorm';
 
-export class BaseService {
+export class BaseService<T> {
   protected queryRunner: QueryRunner;
+  protected repository: Repository<T>;
 
-  constructor(
-    @InjectDataSource()
-    private readonly dataSource: DataSource,
-  ) {}
+  constructor(protected readonly dataSource: DataSource, entity: Function) {
+    if (!dataSource) {
+      return;
+    }
+
+    this.repository = this.dataSource.getRepository<T>(entity);
+  }
+
+  protected getCurrentRepository(manager?: EntityManager): Repository<T> {
+    if (manager) {
+      return manager.getRepository<T>(this.repository.target as Function);
+    }
+
+    return this.repository;
+  }
 
   async startTransaction(): Promise<void> {
     this.queryRunner = this.dataSource.createQueryRunner();
@@ -34,7 +45,9 @@ export class BaseService {
     return this.queryRunner.manager;
   }
 
-  async runInTransaction<T>(callback: (manager: QueryRunner['manager']) => Promise<T>): Promise<T> {
+  async runInTransaction<R>(
+    callback: (manager: QueryRunner['manager']) => Promise<R>,
+  ): Promise<R> {
     await this.startTransaction();
     try {
       const result = await callback(this.getManager());
@@ -45,6 +58,14 @@ export class BaseService {
       throw error;
     } finally {
       await this.release();
+    }
+  }
+
+  async transactional<R>(operation: (manager: EntityManager) => Promise<R>, manager?: EntityManager): Promise<R> {
+    if (manager) {
+      return operation(manager);
+    } else {
+      return this.runInTransaction(operation);
     }
   }
 }

@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { CreateBudgetDto } from '../../presentation/dto/create-budget.dto';
-import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
 import { Budget } from '../entities/budget.entity';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import { DiagnosisService } from '../../../../administrative-management/diagnosis/domain/services/diagnosis.service';
 import { UpdateBudgetDto } from '../../presentation/dto/update-budget.dto';
 import { BudgetVehiclePartService } from '../../../../administrative-management/budget-vehicle-part/domain/services/budget-vehicle-part.service';
@@ -16,62 +16,80 @@ import { ServiceOrder } from 'src/service-order/entities/service-order.entity';
 import { ServiceOrderStatus } from 'src/service-order/enum/service-order-status.enum';
 import { ServiceOrderHistoryService } from 'src/service-order-history/service-order-history.service';
 import { VehiclePartService } from 'src/administrative-management/vehicle-part/domain/services/vehicle-part.service';
+import { VehicleServiceService } from 'src/vehicle-service/vehicle-service.service';
+import { BudgetVehicleServicesService } from 'src/budget-vehicle-services/budget-vehicle-services.service';
 
 @Injectable()
-export class BudgetService extends BaseService {
+export class BudgetService extends BaseService<Budget> {
   constructor(
     @InjectDataSource()
     dataSource: DataSource, 
 
-    @InjectRepository(Budget)
-    private budgetRepository: Repository<Budget>,
     private readonly userService: UserService,
     private readonly diagnosisService: DiagnosisService,
     private readonly vehiclePartService: VehiclePartService,
     private readonly budgetVehiclePartService: BudgetVehiclePartService,
+    private readonly vehicleServiceService: VehicleServiceService, 
     private readonly historyService: ServiceOrderHistoryService,
+    private readonly budgetVehicleServicesService: BudgetVehicleServicesService,
   ) {
-    super(dataSource); 
+    super(dataSource, Budget);
   }
 
-  async create(createDto: CreateBudgetDto): Promise<Budget> {
-    const savedBudgetId = await this.runInTransaction(async (manager) => {
-      await this.userService.findById(createDto.ownerId)
-      await this.diagnosisService.findById(createDto.diagnosisId)
+  private async executeCreate(createDto: CreateBudgetDto, manager: EntityManager): Promise<number> {
+    await this.userService.findById(createDto.ownerId);
+    await this.diagnosisService.findById(createDto.diagnosisId, manager);
 
-      const { vehicleParts, ...rest } = createDto;
+    const { vehicleParts, vehicleServicesIds, ...rest } = createDto;
 
-      const savedBudget = await manager.getRepository(Budget).save(rest);
-      await this.budgetVehiclePartService.create({ budgetId: savedBudget.id, vehicleParts }, manager)
+    const vehicleServices = await this.vehicleServiceService.findByIds(vehicleServicesIds || []);
+    if (vehicleServices.length !== (vehicleServicesIds?.length || 0)) {
+      throw new NotFoundException('Um ou mais serviços não foram encontrados');
+    }
 
-      for (const part of vehicleParts) {
-        const vehiclePart = await this.vehiclePartService.findOne(part.id);
+    const savedBudget = await manager.getRepository(Budget).save(rest);
+    await this.budgetVehiclePartService.create({ budgetId: savedBudget.id, vehicleParts }, manager);
 
-        if (vehiclePart.quantity < part.quantity) {
-          throw new ForbiddenException(`Insufficient quantity for vehicle part with id ${part.id}`);
-        }
+    await this.budgetVehicleServicesService.create({
+      budgetId: savedBudget.id,
+      vehicleServices: vehicleServices.map(vs => vs.id)
+    }, manager);
 
-        vehiclePart.quantity -= part.quantity;
+    for (const part of vehicleParts) {
+      const vehiclePart = await this.vehiclePartService.findOne(part.id);
 
-        await this.vehiclePartService.updatePart(vehiclePart.id, { quantity: vehiclePart.quantity },
-          manager
-        );
+      if (vehiclePart.quantity < part.quantity) {
+        throw new ForbiddenException(`Insufficient quantity for vehicle part with id ${part.id}`);
       }
 
-      return savedBudget.id;
-    });
+      vehiclePart.quantity -= part.quantity;
 
-    return this.findById(savedBudgetId, ['vehicleParts']);
+      await this.vehiclePartService.updatePart(vehiclePart.id, { quantity: vehiclePart.quantity }, manager);
+    }
+
+    return savedBudget.id;
   }
 
-  async findById(id: number, relations: Array<string> = []): Promise<Budget> {
-    const budget = await this.budgetRepository.findOne({
+  async create(createDto: CreateBudgetDto, manager?: EntityManager): Promise<Budget> {
+    const response = await this.transactional(async (manager) => {
+      const savedBudgetId = manager
+        ? await this.executeCreate(createDto, manager)
+        : await this.runInTransaction((manager) => this.executeCreate(createDto, manager));
+
+        return await this.findById(savedBudgetId, ['vehicleParts'], manager);
+    }, manager);
+
+    return response;
+  }
+
+  async findById(id: number, relations: Array<string> = [], manager?: EntityManager): Promise<Budget> {
+    const budget = await this.getCurrentRepository(manager).findOne({
       where: { id },
       relations,
     });
 
     if (!budget) {
-      throw new NotFoundException(`Diagnosis with id ${id} not found`);
+      throw new NotFoundException(`Budget with id ${id} not found`);
     }
 
     return budget;
@@ -88,7 +106,7 @@ export class BudgetService extends BaseService {
         throw new NotFoundException(`Budget with id ${id} not found`);
       }
 
-      const { vehicleParts, ...rest } = updateDto;
+      const { vehicleParts, vehicleServicesIds, ...rest } = updateDto;
       const currentVehicleParts = budget.vehicleParts || [];
 
       const dtoMap = new Map(vehicleParts.map(item => [item.id, item.quantity]));
@@ -97,6 +115,18 @@ export class BudgetService extends BaseService {
       const toRemove: RemoveBudgetVehiclePartDto[] = [];
       const toUpdate: UpdateBudgetVehiclePartDto[] = [];
       const toAdd: CreateBudgetVehiclePartDto = { budgetId: id, vehicleParts: [] };
+
+      if (vehicleServicesIds) {
+        const vehicleServices = await this.vehicleServiceService.findByIds(vehicleServicesIds);
+        if (vehicleServices.length !== vehicleServicesIds.length) {
+          throw new NotFoundException('Um ou mais serviços não foram encontrados para atualização');
+        }
+
+        await manager.createQueryBuilder()
+          .relation(Budget, 'vehicleServices')
+          .of(budget)
+          .addAndRemove(vehicleServices, budget.vehicleServices);
+      }
 
       for (const [vehiclePartId, currentItem] of currentMap.entries()) {
         if (!dtoMap.has(vehiclePartId)) {
@@ -141,7 +171,7 @@ export class BudgetService extends BaseService {
     const vehiclePartIds = customer.vehicleParts.map(vehiclePart => ({ id: vehiclePart.id }))
     await this.budgetVehiclePartService.remove(vehiclePartIds)
 
-    await this.budgetRepository.softRemove(customer);
+    await this.repository.softRemove(customer);
   }
 
   async decideBudget(budgetId: number, accept: boolean, user: User): Promise<ServiceOrder> {
@@ -201,7 +231,5 @@ export class BudgetService extends BaseService {
   
       return savedOrder;
     });
-  }
-  
-  
+  }  
 }

@@ -20,10 +20,10 @@ export class Diagnosis {
   @JoinColumn({ name: 'vehicleId' })
   vehicle: Vehicle;
 
-  @Column({ name: 'responsibleMechanicId' })
+  @Column({ nullable: true, name: 'responsibleMechanicId' })
   responsibleMechanicId: number;
 
-  @ManyToOne(() => User, { nullable: false, eager: false })
+  @ManyToOne(() => User, { nullable: true, eager: false })
   @JoinColumn({ name: 'responsibleMechanicId' })
   responsibleMechanic: User;
 

@@ -1,22 +1,14 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { Type } from "class-transformer";
-import { ArrayUnique, IsArray, IsNumber, IsString, MinLength, ValidateNested } from "class-validator";
-import { VehiclePartItemDto } from "./vehicle-part-item.dto";
-import { UniqueBy } from "../../../../shared/presentation/decorators/unique-by.decorator";
+import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsArray, ValidateNested, MinLength, IsNumber, ArrayUnique } from 'class-validator';
+import { VehiclePartItemDto } from '../../administrative-management/budget/presentation/dto/vehicle-part-item.dto';
+import { Type } from 'class-transformer';
+import { UniqueBy } from '../../shared/presentation/decorators/unique-by.decorator';
 
-export class CreateBudgetDto {
+export class AssignBudgetDto {
   @ApiProperty({ description: 'Descrição precisa no minimo de 10 caracteres.' })
   @IsString()
   @MinLength(10)
   description: string;
-
-  @ApiProperty({ description: 'Id do Dono' })
-  @IsNumber()
-  ownerId: number;
-
-  @ApiProperty({ description: 'Id do diagnóstico' })
-  @IsNumber()
-  diagnosisId: number;
 
   @ApiProperty({
     type: [VehiclePartItemDto],

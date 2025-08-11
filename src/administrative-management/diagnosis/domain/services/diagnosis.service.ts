@@ -1,30 +1,38 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateDiagnosisDto } from '../../presentation/dto/create-diagnosis.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { VehicleService } from '../../../../administrative-management/vehicle/domain/services/vehicle.service';
 import { UserService } from '../../../../auth-and-access/user/domain/services/user.service';
 import { Diagnosis } from '../entities/diagnosis.entity';
 import { UpdateDiagnosisDto } from '../../presentation/dto/update-diagnosis.dto';
+import { BaseService } from 'src/shared/domain/services/base-service.service';
+import { DataSource, EntityManager } from 'typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
 
 @Injectable()
-export class DiagnosisService {
+export class DiagnosisService extends BaseService<Diagnosis> {
   constructor(
-    @InjectRepository(Diagnosis)
-    private diagnosisRepository: Repository<Diagnosis>,
+    @InjectDataSource()
+    dataSource: DataSource,
+
     private readonly vehicleService: VehicleService,
     private readonly userService: UserService
-  ) {}
+  ) {
+    super(dataSource, Diagnosis);
+  }
 
-  async create(data: CreateDiagnosisDto): Promise<Diagnosis> {
-    await this.vehicleService.findById(data.vehicleId)
-    await this.userService.findById(data.responsibleMechanicId)
+  async create(data: CreateDiagnosisDto, manager?: EntityManager): Promise<Diagnosis> {
+    const response = await this.transactional(async (manager) => {
+      await this.vehicleService.findById(data.vehicleId)
+      await this.userService.findById(data.responsibleMechanicId)
 
-    return this.diagnosisRepository.save(data);
+      return manager.getRepository(Diagnosis).save(data);
+    }, manager);
+
+    return response;
   }
 
   async findAllByVehicleId(vehicleId: number): Promise<Diagnosis[]> {
-    const diagnostics = await this.diagnosisRepository.find({
+    const diagnostics = await this.repository.find({
       where: { vehicleId },
     });
 
@@ -35,8 +43,8 @@ export class DiagnosisService {
     return diagnostics;
   }
 
-  async findById(id: number): Promise<Diagnosis> {
-    const diagnosis = await this.diagnosisRepository.findOneBy({ id });
+  async findById(id: number, manager?: EntityManager): Promise<Diagnosis> {
+    const diagnosis = await this.getCurrentRepository(manager).findOneBy({ id });
 
     if (!diagnosis) {
       throw new NotFoundException(`Diagnosis with id ${id} not found`);
@@ -52,11 +60,11 @@ export class DiagnosisService {
     const diagnosis = await this.findById(id);
 
     Object.assign(diagnosis, data);
-    return this.diagnosisRepository.save(diagnosis);
+    return this.repository.save(diagnosis);
   }
 
   async remove(id: number): Promise<void> {
     const diagnosis = await this.findById(id);
-    await this.diagnosisRepository.softRemove(diagnosis);
+    await this.repository.softRemove(diagnosis);
   }
 }

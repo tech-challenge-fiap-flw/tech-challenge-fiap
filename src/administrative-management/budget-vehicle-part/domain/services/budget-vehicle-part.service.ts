@@ -33,7 +33,7 @@ export class BudgetVehiclePartService {
     }
   }
 
-  async create({ budgetId, vehicleParts }: CreateBudgetVehiclePartDto,manager?: EntityManager): Promise<BudgetVehiclePart[]> {
+  async create({ budgetId, vehicleParts }: CreateBudgetVehiclePartDto, manager?: EntityManager): Promise<BudgetVehiclePart[]> {
     const ids = vehicleParts.map((vp) => vp.id);
     await this.validateVehiclePartIds(ids);
 

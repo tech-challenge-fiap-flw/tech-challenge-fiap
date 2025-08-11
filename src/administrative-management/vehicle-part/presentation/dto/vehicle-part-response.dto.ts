@@ -16,6 +16,9 @@ export class VehiclePartResponseDto {
   @ApiProperty({ description: 'Quantidade de peças' })
   quantity: number;
 
+  @ApiProperty({ description: 'Preço' })
+  price: number;
+
   @ApiProperty({ description: 'Data de remoção' })
   deletedAt: Date | null
 }

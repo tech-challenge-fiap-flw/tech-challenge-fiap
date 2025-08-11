@@ -25,4 +25,8 @@ export class CreateVehiclePartDto {
   @ApiProperty({ description: 'Quantidade de peças' })
   @IsNumber()
   quantity: number;
+
+  @ApiProperty({ description: 'Preço' })
+  @IsNumber()
+  price: number;
 }

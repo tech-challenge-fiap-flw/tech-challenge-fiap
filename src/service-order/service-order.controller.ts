@@ -19,12 +19,14 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { ServiceOrderService } from './service-order.service';
-import { CreateServiceOrderDto } from './dto/create-service-order.dto';
 import { CurrentUser } from 'src/auth-and-access/auth/presentation/decorators/current-user.decorator';
 import { Roles } from 'src/auth-and-access/auth/presentation/decorators/roles.decorator';
 import { RolesGuard } from 'src/auth-and-access/auth/infrastructure/guards/roles.guard';
 import { User } from 'src/auth-and-access/user/domain/entities/user.entity';
 import { AcceptServiceOrderDto } from './dto/accept-service-order.dto';
+import { CreateFromAutoDiagnosisDto } from './dto/create-from-auto-diagnosis.dto';
+import { CreateBudgetDto } from 'src/administrative-management/budget/presentation/dto/create-budget.dto';
+import { AssignBudgetDto } from './dto/assign-budget.dto';
 
 @ApiTags('Ordem de Serviço')
 @UseGuards(RolesGuard)
@@ -35,10 +37,10 @@ export class ServiceOrderController {
   @Post()
   @ApiBearerAuth()
   @Roles('mechanic', 'cliente', 'admin')
-  @ApiOperation({ summary: 'Criar nova OS' })
-  @ApiCreatedResponse({ description: 'OS criada com sucesso' })
-  async create(@CurrentUser() user: User, @Body() dto: CreateServiceOrderDto) {
-    return this.serviceOrderService.create(user, dto);
+  @ApiOperation({ summary: 'Criar nova OS a partir do auto diagnóstico' })
+  @ApiCreatedResponse({ description: 'OS criada com sucesso a partir do auto diagnóstico' })
+  async createFromAutoDiagnosis(@CurrentUser() user: User, @Body() dto: CreateFromAutoDiagnosisDto) {
+    return this.serviceOrderService.createFromAutoDiagnosis(user, dto);
   }
 
   @Get(':id')
@@ -77,13 +79,17 @@ export class ServiceOrderController {
     return this.serviceOrderService.acceptOrder(user, id, body.accept);
   }
 
-  @Post(':id/budget/:budgetId')
+  @Post(':id/budget')
   @ApiBearerAuth()
   @Roles('mechanic', 'admin')
-  @ApiOperation({ summary: 'Atribuir orçamento à OS' })
-  @ApiOkResponse({ description: 'Orçamento atribuído com sucesso' })
-  async assignBudget(@CurrentUser() user: User, @Param('id', ParseIntPipe) id: number, @Param('budgetId', ParseIntPipe) budgetId: number) {
-    return this.serviceOrderService.assignBudget(user, id, budgetId);
+  @ApiOperation({ summary: 'Criar e atribuir orçamento à OS' })
+  @ApiOkResponse({ description: 'Orçamento criado e atribuído com sucesso' })
+  async assignBudget(
+    @CurrentUser() user: User,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() assignBudgetDto: AssignBudgetDto,
+  ) {
+    return this.serviceOrderService.assignBudget(user, id, assignBudgetDto);
   }
 
   @Post(':id/start')

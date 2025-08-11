@@ -6,6 +6,7 @@ import { ServiceOrderHistoryModule } from 'src/service-order-history/service-ord
 import { UserModule } from 'src/auth-and-access/user/user.module';
 import { BudgetModule } from 'src/administrative-management/budget/budget.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { DiagnosisModule } from 'src/administrative-management/diagnosis/diagnosis.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     UserModule,
     BudgetModule,
     ServiceOrderHistoryModule,
+    DiagnosisModule
   ],
   controllers: [ServiceOrderController],
   providers: [ServiceOrderService],

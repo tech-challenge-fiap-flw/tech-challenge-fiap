@@ -15,6 +15,8 @@ import { VehiclePartModule } from './administrative-management/vehicle-part/vehi
 import { BudgetModule } from './administrative-management/budget/budget.module';
 import { BudgetVehiclePartModule } from './administrative-management/budget-vehicle-part/budget-vehicle-part.module';
 import { ServiceOrderModule } from './service-order/service-order.module';
+import { VehicleServiceModule } from './vehicle-service/vehicle-service.module';
+import { BudgetVehicleServicesModule } from './budget-vehicle-services/budget-vehicle-services.module';
 
 @Module({
   imports: [
@@ -50,6 +52,8 @@ import { ServiceOrderModule } from './service-order/service-order.module';
     AuthModule,
     BudgetVehiclePartModule,
     ServiceOrderModule,
+    VehicleServiceModule,
+    BudgetVehicleServicesModule,
   ],
   providers: [
     AppService,

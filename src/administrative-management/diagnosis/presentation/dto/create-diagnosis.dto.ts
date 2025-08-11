@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNumber, MinLength } from 'class-validator';
+import { IsString, IsNumber, MinLength, IsOptional } from 'class-validator';
 
 export class CreateDiagnosisDto {
   @ApiProperty({ description: 'Descrição precisa no minimo de 10 caracteres.' })
@@ -12,6 +12,7 @@ export class CreateDiagnosisDto {
   vehicleId: number;
 
   @ApiProperty({ description: 'ID do mecânico responsável' })
+  @IsOptional()
   @IsNumber()
-  responsibleMechanicId: number;
+  responsibleMechanicId?: number;
 }

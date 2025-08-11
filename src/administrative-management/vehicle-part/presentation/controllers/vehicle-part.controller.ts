@@ -56,6 +56,7 @@ export class VehiclePartController {
       description: vehiclePart.description,
       quantity: vehiclePart.quantity,
       deletedAt: vehiclePart.deletedAt,
+      price: vehiclePart.price,
     };
   }
 }

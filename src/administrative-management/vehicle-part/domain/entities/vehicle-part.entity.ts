@@ -17,6 +17,9 @@ export class VehiclePart {
   @Column()
   quantity: number;
 
+  @Column()
+  price: number;
+
   @DeleteDateColumn()
   deletedAt: Date | null;
 
