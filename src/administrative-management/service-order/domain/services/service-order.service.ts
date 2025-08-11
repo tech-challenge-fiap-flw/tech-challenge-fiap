@@ -13,7 +13,6 @@ import { ServiceOrderStatus } from '../enum/service-order-status.enum';
 import { ServiceOrderHistoryService } from 'src/administrative-management/service-order-history/domain/services/service-order-history.service';
 import { DiagnosisService } from '../../../diagnosis/domain/services/diagnosis.service';
 import { CreateFromAutoDiagnosisDto } from '../../presentation/dto/create-from-auto-diagnosis.dto';
-import { CreateBudgetDto } from 'src/administrative-management/budget/presentation/dto/create-budget.dto';
 import { BaseService } from '../../../../shared/domain/services/base-service.service';
 import { AssignBudgetDto } from '../../presentation/dto/assign-budget.dto';
 
@@ -88,7 +87,7 @@ export class ServiceOrderService extends BaseService<ServiceOrder> {
 
     if (accept) {
       order.mechanic = mechanic;
-      order.currentStatus = ServiceOrderStatus.EM_DIAGNOSTICO;
+      order.currentStatus = order.budget ? ServiceOrderStatus.AGUARDANDO_INICIO : ServiceOrderStatus.EM_DIAGNOSTICO;
     } else {
       order.currentStatus = ServiceOrderStatus.RECUSADA;
     }
