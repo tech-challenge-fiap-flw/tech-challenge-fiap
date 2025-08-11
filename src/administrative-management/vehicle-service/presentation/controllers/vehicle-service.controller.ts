@@ -1,13 +1,13 @@
 import { Controller, Get, Post, Body, Param, Patch, Delete, UseGuards } from '@nestjs/common';
-import { VehicleServiceService } from './vehicle-service.service';
-import { CreateVehicleServiceDto } from './dto/create-vehicle-service.dto';
-import { UpdateVehicleServiceDto } from './dto/update-vehicle-service.dto';
+import { VehicleServiceService } from '../../domain/services/vehicle-service.service';
+import { CreateVehicleServiceDto } from '../dto/create-vehicle-service.dto';
+import { UpdateVehicleServiceDto } from '../dto/update-vehicle-service.dto';
 import { ApiBearerAuth, ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RolesGuard } from 'src/auth-and-access/auth/infrastructure/guards/roles.guard';
 import { Roles } from 'src/auth-and-access/auth/presentation/decorators/roles.decorator';
-import { ResponseItemVehicleServiceDto, VehiclePartDto } from './dto/response-item-vehicle-service.dto';
-import { VehicleService } from './entities/vehicle-service.entity';
-import { VehicleServiceParts } from './entities/vehicle-service-parts.entity';
+import { ResponseItemVehicleServiceDto, VehiclePartDto } from '../dto/response-item-vehicle-service.dto';
+import { VehicleService } from '../../domain/entities/vehicle-service.entity';
+import { VehicleServiceParts } from '../../domain/entities/vehicle-service-parts.entity';
 
 @ApiTags('Administrativo: Vehicle Services')
 @UseGuards(RolesGuard)

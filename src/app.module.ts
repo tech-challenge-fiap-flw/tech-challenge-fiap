@@ -14,9 +14,9 @@ import { DiagnosisModule } from './administrative-management/diagnosis/diagnosis
 import { VehiclePartModule } from './administrative-management/vehicle-part/vehicle-part.module';
 import { BudgetModule } from './administrative-management/budget/budget.module';
 import { BudgetVehiclePartModule } from './administrative-management/budget-vehicle-part/budget-vehicle-part.module';
-import { ServiceOrderModule } from './service-order/service-order.module';
-import { VehicleServiceModule } from './vehicle-service/vehicle-service.module';
-import { BudgetVehicleServicesModule } from './budget-vehicle-services/budget-vehicle-services.module';
+import { ServiceOrderModule } from './administrative-management/service-order/service-order.module';
+import { VehicleServiceModule } from './administrative-management/vehicle-service/vehicle-service.module';
+import { BudgetVehicleServicesModule } from './administrative-management/budget-vehicle-services/budget-vehicle-services.module';
 
 @Module({
   imports: [

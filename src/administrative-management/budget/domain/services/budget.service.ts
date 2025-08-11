@@ -12,12 +12,12 @@ import { RemoveBudgetVehiclePartDto } from '../../../../administrative-managemen
 import { CreateBudgetVehiclePartDto } from '../../../../administrative-management/budget-vehicle-part/presentation/dto/create-budget-vehicle-part.dto';
 import { UserService } from '../../../../auth-and-access/user/domain/services/user.service';
 import { User } from 'src/auth-and-access/user/domain/entities/user.entity';
-import { ServiceOrder } from 'src/service-order/entities/service-order.entity';
-import { ServiceOrderStatus } from 'src/service-order/enum/service-order-status.enum';
+import { ServiceOrder } from 'src/administrative-management/service-order/domain/entities/service-order.entity';
+import { ServiceOrderStatus } from 'src/administrative-management/service-order/domain/enum/service-order-status.enum';
 import { ServiceOrderHistoryService } from 'src/service-order-history/service-order-history.service';
 import { VehiclePartService } from 'src/administrative-management/vehicle-part/domain/services/vehicle-part.service';
-import { VehicleServiceService } from 'src/vehicle-service/vehicle-service.service';
-import { BudgetVehicleServicesService } from 'src/budget-vehicle-services/budget-vehicle-services.service';
+import { VehicleServiceService } from '../../../vehicle-service/domain/services/vehicle-service.service';
+import { BudgetVehicleServicesService } from 'src/administrative-management/budget-vehicle-services/domain/services/budget-vehicle-services.service';
 
 @Injectable()
 export class BudgetService extends BaseService<Budget> {

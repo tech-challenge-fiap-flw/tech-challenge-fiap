@@ -4,9 +4,10 @@ import { Repository } from 'typeorm';
 import { User } from 'src/auth-and-access/user/domain/entities/user.entity';
 import { Budget } from 'src/administrative-management/budget/domain/entities/budget.entity';
 import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { ServiceOrderService } from '../service-order.service';
-import { ServiceOrder } from '../entities/service-order.entity';
+import { ServiceOrderService } from './service-order.service';
+import { ServiceOrder } from '../../domain/entities/service-order.entity';
 import { ServiceOrderStatus } from '../enum/service-order-status.enum';
+import { mockAssignBudget } from '../../infrastructure/test/mocks/mock-assign-budget';
 
 describe('ServiceOrderService', () => {
   let service: ServiceOrderService;
@@ -57,7 +58,7 @@ describe('ServiceOrderService', () => {
     } as ServiceOrder;
     mockRepo.create.mockReturnValue(createdOrder);
     mockRepo.save.mockResolvedValue(createdOrder);
-    const result = await service.create(mockUser, dto as any);
+    const result = await service.createFromAutoDiagnosis(mockUser, dto as any);
     expect(mockRepo.create).toHaveBeenCalledWith(expect.objectContaining({
       description: 'Troca de óleo',
       currentStatus: ServiceOrderStatus.RECEBIDA,
@@ -133,7 +134,7 @@ describe('ServiceOrderService', () => {
     mockRepo.manager.findOne.mockResolvedValue(budget);
     const updatedOrder = { ...order, budget, currentStatus: ServiceOrderStatus.AGUARDANDO_APROVACAO };
     mockRepo.save.mockResolvedValue(updatedOrder);
-    const result = await service.assignBudget(mechanic, 1, 10);
+    const result = await service.assignBudget(mechanic, 1, mockAssignBudget);
     expect(result.budget).toEqual(budget);
     expect(result.currentStatus).toBe(ServiceOrderStatus.AGUARDANDO_APROVACAO);
     expect(historyServiceMock.logStatusChange).toHaveBeenCalledWith(
@@ -148,13 +149,13 @@ describe('ServiceOrderService', () => {
     const mechanic = { id: 5 } as User;
     const order = { idServiceOrder: 1, mechanic, budget: { id: 10 } } as ServiceOrder;
     mockRepo.findOne.mockResolvedValue(order);
-    await expect(service.assignBudget(mechanic, 1, 11)).rejects.toThrow(BadRequestException);
+    await expect(service.assignBudget(mechanic, 1, mockAssignBudget)).rejects.toThrow(BadRequestException);
   });
 
   it('não deve atribuir orçamento se usuário não for mecânico da OS', async () => {
     const order = { idServiceOrder: 1, mechanic: { id: 99 }, budget: null } as ServiceOrder;
     mockRepo.findOne.mockResolvedValue(order);
-    await expect(service.assignBudget({ id: 5 } as User, 1, 10)).rejects.toThrow(ForbiddenException);
+    await expect(service.assignBudget({ id: 5 } as User, 1, mockAssignBudget)).rejects.toThrow(ForbiddenException);
   });
 
   it('deve fazer soft delete da OS', async () => {

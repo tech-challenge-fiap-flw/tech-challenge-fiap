@@ -9,8 +9,8 @@ import { BudgetVehiclePartModule } from '../../administrative-management/budget-
 import { SharedModule } from '../../shared/shared.module';
 import { UserModule } from '../../auth-and-access/user/user.module';
 import { ServiceOrderHistoryModule } from 'src/service-order-history/service-order-history.module';
-import { VehicleServiceModule } from 'src/vehicle-service/vehicle-service.module';
-import { BudgetVehicleServicesModule } from 'src/budget-vehicle-services/budget-vehicle-services.module';
+import { VehicleServiceModule } from '../vehicle-service/vehicle-service.module';
+import { BudgetVehicleServicesModule } from 'src/administrative-management/budget-vehicle-services/budget-vehicle-services.module';
 
 @Module({
   imports: [

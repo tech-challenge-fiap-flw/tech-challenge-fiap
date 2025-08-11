@@ -2,7 +2,7 @@ import { Diagnosis } from "../../../../administrative-management/diagnosis/domai
 import { BudgetVehiclePart } from "../../../../administrative-management/budget-vehicle-part/domain/entities/budget-vehicle-part.entity";
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { User } from "../../../../auth-and-access/user/domain/entities/user.entity";
-import { BudgetVehicleServices } from "src/budget-vehicle-services/entities/budget-vehicle-services.entity";
+import { BudgetVehicleServices } from "src/administrative-management/budget-vehicle-services/domain/entities/budget-vehicle-services.entity";
 
 @Entity()
 export class Budget {

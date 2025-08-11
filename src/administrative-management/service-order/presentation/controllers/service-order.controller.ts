@@ -18,15 +18,15 @@ import {
   ApiOkResponse,
   ApiBody,
 } from '@nestjs/swagger';
-import { ServiceOrderService } from './service-order.service';
+import { ServiceOrderService } from '../../domain/services/service-order.service';
 import { CurrentUser } from 'src/auth-and-access/auth/presentation/decorators/current-user.decorator';
 import { Roles } from 'src/auth-and-access/auth/presentation/decorators/roles.decorator';
 import { RolesGuard } from 'src/auth-and-access/auth/infrastructure/guards/roles.guard';
 import { User } from 'src/auth-and-access/user/domain/entities/user.entity';
-import { AcceptServiceOrderDto } from './dto/accept-service-order.dto';
-import { CreateFromAutoDiagnosisDto } from './dto/create-from-auto-diagnosis.dto';
+import { AcceptServiceOrderDto } from '../dto/accept-service-order.dto';
+import { CreateFromAutoDiagnosisDto } from '../dto/create-from-auto-diagnosis.dto';
+import { AssignBudgetDto } from '../dto/assign-budget.dto';
 import { CreateBudgetDto } from 'src/administrative-management/budget/presentation/dto/create-budget.dto';
-import { AssignBudgetDto } from './dto/assign-budget.dto';
 
 @ApiTags('Ordem de Serviço')
 @UseGuards(RolesGuard)

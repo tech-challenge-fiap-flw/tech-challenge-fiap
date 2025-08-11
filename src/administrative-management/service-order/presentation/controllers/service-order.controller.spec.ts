@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ServiceOrderController } from '../service-order.controller';
-import { ServiceOrderService } from '../service-order.service';
-import { ServiceOrder } from '../entities/service-order.entity';
-import { CreateServiceOrderDto } from '../dto/create-service-order.dto';
+import { ServiceOrderService } from '../domain/services/service-order.service';
+import { ServiceOrder } from '../domain/entities/service-order.entity';
+import { CreateServiceOrderDto } from '../presentation/dto/create-service-order.dto';
 import { mockUser } from './mocks/mock-user';
 
 describe('ServiceOrderController', () => {

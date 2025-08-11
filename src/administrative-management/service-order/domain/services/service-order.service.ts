@@ -6,16 +6,16 @@ import {
 } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, EntityManager } from 'typeorm';
-import { ServiceOrder } from './entities/service-order.entity';
+import { ServiceOrder } from '../entities/service-order.entity';
 import { User } from 'src/auth-and-access/user/domain/entities/user.entity';
 import { BudgetService } from 'src/administrative-management/budget/domain/services/budget.service';
-import { ServiceOrderStatus } from './enum/service-order-status.enum';
+import { ServiceOrderStatus } from '../enum/service-order-status.enum';
 import { ServiceOrderHistoryService } from 'src/service-order-history/service-order-history.service';
-import { DiagnosisService } from '../administrative-management/diagnosis/domain/services/diagnosis.service';
-import { CreateFromAutoDiagnosisDto } from './dto/create-from-auto-diagnosis.dto';
+import { DiagnosisService } from '../../../diagnosis/domain/services/diagnosis.service';
+import { CreateFromAutoDiagnosisDto } from '../../presentation/dto/create-from-auto-diagnosis.dto';
 import { CreateBudgetDto } from 'src/administrative-management/budget/presentation/dto/create-budget.dto';
-import { BaseService } from '../shared/domain/services/base-service.service';
-import { AssignBudgetDto } from './dto/assign-budget.dto';
+import { BaseService } from '../../../../shared/domain/services/base-service.service';
+import { AssignBudgetDto } from '../../presentation/dto/assign-budget.dto';
 
 @Injectable()
 export class ServiceOrderService extends BaseService<ServiceOrder> {

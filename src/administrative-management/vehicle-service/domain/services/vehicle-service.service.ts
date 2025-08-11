@@ -1,12 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, EntityManager, In } from 'typeorm';
-import { CreateVehicleServiceDto } from './dto/create-vehicle-service.dto';
-import { UpdateVehicleServiceDto } from './dto/update-vehicle-service.dto';
+import { CreateVehicleServiceDto } from '../../presentation/dto/create-vehicle-service.dto';
+import { UpdateVehicleServiceDto } from '../../presentation/dto/update-vehicle-service.dto';
 import { BaseService } from 'src/shared/domain/services/base-service.service';
 import { VehiclePartService } from 'src/administrative-management/vehicle-part/domain/services/vehicle-part.service';
-import { VehicleService } from './entities/vehicle-service.entity';
-import { VehicleServiceParts } from './entities/vehicle-service-parts.entity';
+import { VehicleService } from '../entities/vehicle-service.entity';
+import { VehicleServiceParts } from '../entities/vehicle-service-parts.entity';
 
 @Injectable()
 export class VehicleServiceService extends BaseService<VehicleService> {
