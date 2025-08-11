@@ -24,8 +24,9 @@ import { Roles } from 'src/auth-and-access/auth/presentation/decorators/roles.de
 import { RolesGuard } from 'src/auth-and-access/auth/infrastructure/guards/roles.guard';
 import { User } from 'src/auth-and-access/user/domain/entities/user.entity';
 import { AcceptServiceOrderDto } from '../dto/accept-service-order.dto';
-import { CreateFromAutoDiagnosisDto } from '../dto/create-from-auto-diagnosis.dto';
+import { CreateServiceOrderDto } from '../dto/create-service-order.dto';
 import { AssignBudgetDto } from '../dto/assign-budget.dto';
+import { ServiceOrder } from '../../domain/entities/service-order.entity';
 
 @ApiTags('Ordem de Serviço')
 @UseGuards(RolesGuard)
@@ -36,10 +37,13 @@ export class ServiceOrderController {
   @Post()
   @ApiBearerAuth()
   @Roles('mechanic', 'cliente', 'admin')
-  @ApiOperation({ summary: 'Criar nova OS a partir do auto diagnóstico' })
-  @ApiCreatedResponse({ description: 'OS criada com sucesso a partir do auto diagnóstico' })
-  async createFromAutoDiagnosis(@CurrentUser() user: User, @Body() dto: CreateFromAutoDiagnosisDto) {
-    return this.serviceOrderService.createFromAutoDiagnosis(user, dto);
+  @ApiOperation({ summary: 'Criar nova OS' })
+  @ApiCreatedResponse({
+    description: 'OS criada com sucesso',
+    type: ServiceOrder,
+  })
+  async create(@CurrentUser() user: User, @Body() dto: CreateServiceOrderDto) {
+    return this.serviceOrderService.create(user, dto);
   }
 
   @Get(':id')

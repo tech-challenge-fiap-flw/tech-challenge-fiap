@@ -11,11 +11,4 @@ export class CreateVehicleServiceDto {
   @ApiProperty({ example: 'Serviço completo de troca de óleo' })
   @IsString()
   description: string;
-
-  @IsArray()
-  @ArrayNotEmpty()
-  @ValidateNested({ each: true })
-  @Type(() => CreateVehicleServicePartDto)
-  @ApiProperty({ type: [CreateVehicleServicePartDto] })
-  parts: CreateVehicleServicePartDto[];
 }

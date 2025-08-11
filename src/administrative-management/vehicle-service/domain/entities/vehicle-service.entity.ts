@@ -1,5 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, DeleteDateColumn } from 'typeorm';
-import { VehicleServiceParts } from './vehicle-service-parts.entity';
+import { Entity, PrimaryGeneratedColumn, Column, DeleteDateColumn } from 'typeorm';
 
 @Entity()
 export class VehicleService {
@@ -11,9 +10,6 @@ export class VehicleService {
 
   @Column({ nullable: true })
   description: string;
-
-  @OneToMany(() => VehicleServiceParts, (vsp) => vsp.service, { cascade: true, eager: true })
-  vehicleServiceParts: VehicleServiceParts[];
 
   @DeleteDateColumn()
   deletedAt: Date | null;

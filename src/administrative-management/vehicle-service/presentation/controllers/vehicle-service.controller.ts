@@ -5,9 +5,8 @@ import { UpdateVehicleServiceDto } from '../dto/update-vehicle-service.dto';
 import { ApiBearerAuth, ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RolesGuard } from 'src/auth-and-access/auth/infrastructure/guards/roles.guard';
 import { Roles } from 'src/auth-and-access/auth/presentation/decorators/roles.decorator';
-import { ResponseItemVehicleServiceDto, VehiclePartDto } from '../dto/response-item-vehicle-service.dto';
+import { ResponseItemVehicleServiceDto } from '../dto/response-item-vehicle-service.dto';
 import { VehicleService } from '../../domain/entities/vehicle-service.entity';
-import { VehicleServiceParts } from '../../domain/entities/vehicle-service-parts.entity';
 
 @ApiTags('Administrativo: Vehicle Services')
 @UseGuards(RolesGuard)
@@ -77,21 +76,11 @@ export class VehicleServiceController {
     await this.serviceService.remove(id);
   }
 
-  private toVehiclePartItemDto(part: VehicleServiceParts): VehiclePartDto {
-    return {
-      id: part.id,
-      quantity: part.quantity,
-      partId: part.part.id,
-      partName: part.part.name,
-    };
-  }
-
   private toVehicleServiceResponseDto(service: VehicleService): ResponseItemVehicleServiceDto {
     return {
       id: service.id,
       name: service.name,
       description: service.description,
-      parts: service.vehicleServiceParts.map(part => this.toVehiclePartItemDto(part)),
     };
   }
 }

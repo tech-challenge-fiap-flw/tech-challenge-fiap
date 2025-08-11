@@ -12,9 +12,10 @@ import { BudgetService } from 'src/administrative-management/budget/domain/servi
 import { ServiceOrderStatus } from '../enum/service-order-status.enum';
 import { ServiceOrderHistoryService } from 'src/administrative-management/service-order-history/domain/services/service-order-history.service';
 import { DiagnosisService } from '../../../diagnosis/domain/services/diagnosis.service';
-import { CreateFromAutoDiagnosisDto } from '../../presentation/dto/create-from-auto-diagnosis.dto';
+import { CreateServiceOrderDto } from '../../presentation/dto/create-service-order.dto';
 import { BaseService } from '../../../../shared/domain/services/base-service.service';
 import { AssignBudgetDto } from '../../presentation/dto/assign-budget.dto';
+import { Budget } from 'src/administrative-management/budget/domain/entities/budget.entity';
 
 @Injectable()
 export class ServiceOrderService extends BaseService<ServiceOrder> {
@@ -29,28 +30,34 @@ export class ServiceOrderService extends BaseService<ServiceOrder> {
     super(dataSource, ServiceOrder);
   }
 
-  async createFromAutoDiagnosis(userData: User, dto: CreateFromAutoDiagnosisDto): Promise<ServiceOrder> {
+  async create(userData: User, dto: CreateServiceOrderDto): Promise<ServiceOrder> {
     return this.runInTransaction(async (manager) => {
-      const diagnosis = await this.diagnosisService.create({
-        vehicleId: dto.vehicleId,
-        responsibleMechanicId: undefined,
-        description: dto.description,
-      }, manager);
+      const isAutoDiagnosis = dto.vehicleServicesIds && dto.vehicleServicesIds.length > 0;
 
-      const budget = await this.budgetService.create({
-        ownerId: userData.id,
-        diagnosisId: diagnosis.id,
-        description: 'Orçamento para diagnóstico automático',
-        vehicleParts: dto.vehicleParts,
-        vehicleServicesIds: dto.vehicleServicesIds,
-      }, manager);
+      let budget: Budget = null;
+
+      if (isAutoDiagnosis) {
+        const diagnosis = await this.diagnosisService.create({
+          vehicleId: dto.vehicleId,
+          responsibleMechanicId: undefined,
+          description: dto.description,
+        }, manager);
+  
+        budget = await this.budgetService.create({
+          ownerId: userData.id,
+          diagnosisId: diagnosis.id,
+          description: 'Orçamento para diagnóstico automático',
+          vehicleParts: dto.vehicleParts,
+          vehicleServicesIds: dto.vehicleServicesIds,
+        }, manager);
+      }
 
       const serviceOrder = this.repository.create({
-        description: 'Ordem de Serviço - Diagnóstico Automático',
+        description: isAutoDiagnosis ? 'Ordem de Serviço - Diagnóstico Automático' : dto.description,
         currentStatus: ServiceOrderStatus.RECEBIDA,
         customer: userData,
         vehicle: { id: dto.vehicleId },
-        budget: { id: budget.id },
+        budget: budget ? { id: budget.id } : null,
       });
 
       const savedOrder = await manager.getRepository(ServiceOrder).save(serviceOrder);

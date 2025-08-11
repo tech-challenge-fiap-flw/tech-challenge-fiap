@@ -4,57 +4,29 @@ import { DataSource, EntityManager, In } from 'typeorm';
 import { CreateVehicleServiceDto } from '../../presentation/dto/create-vehicle-service.dto';
 import { UpdateVehicleServiceDto } from '../../presentation/dto/update-vehicle-service.dto';
 import { BaseService } from 'src/shared/domain/services/base-service.service';
-import { VehiclePartService } from 'src/administrative-management/vehicle-part/domain/services/vehicle-part.service';
 import { VehicleService } from '../entities/vehicle-service.entity';
-import { VehicleServiceParts } from '../entities/vehicle-service-parts.entity';
 
 @Injectable()
 export class VehicleServiceService extends BaseService<VehicleService> {
   constructor(
     @InjectDataSource()
-    dataSource: DataSource,
-
-    private readonly vehiclePartService: VehiclePartService,
+    dataSource: DataSource
   ) {
     super(dataSource, VehicleService);
   }
 
   async create(createVehicleServiceDto: CreateVehicleServiceDto, manager?: EntityManager): Promise<VehicleService> {
     return this.transactional(async (manager) => {
-      const { name, description, parts } = createVehicleServiceDto;
-
-      const partsIds = parts.map(p => p.partId);
-      const foundParts = await this.vehiclePartService.findByIds(partsIds);
-
-      if (foundParts.length !== partsIds.length) {
-        throw new NotFoundException('Uma ou mais peças não foram encontradas');
-      }
+      const { name, description } = createVehicleServiceDto;
 
       const vehicleServiceRepo = manager.getRepository(VehicleService);
-      const vehicleServicePartsRepo = manager.getRepository(VehicleServiceParts);
 
       const vehicleService = vehicleServiceRepo.create({
         name,
-        description,
-        vehicleServiceParts: [],
+        description
       });
 
-      await vehicleServiceRepo.save(vehicleService);
-
-      const vehicleServiceParts = parts.map(({ partId, quantity }) => {
-        const partEntity = foundParts.find(p => p.id === partId);
-        return vehicleServicePartsRepo.create({
-          quantity,
-          part: partEntity,
-          service: vehicleService,
-        });
-      });
-
-      await vehicleServicePartsRepo.save(vehicleServiceParts);
-
-      vehicleService.vehicleServiceParts = vehicleServiceParts;
-
-      return vehicleService;
+      return await vehicleServiceRepo.save(vehicleService);
     }, manager);
   }
 
@@ -63,21 +35,15 @@ export class VehicleServiceService extends BaseService<VehicleService> {
       return [];
     }
 
-    return this.repository.find({
-      where: { id: In(ids) },
-      relations: ['vehicleServiceParts', 'vehicleServiceParts.part'],
-    });
+    return this.repository.find({ where: { id: In(ids) } });
   }
 
   async findAll(): Promise<VehicleService[]> {
-    return this.repository.find({ relations: ['vehicleServiceParts', 'vehicleServiceParts.part'] });
+    return this.repository.find();
   }
 
   async findOne(id: number): Promise<VehicleService> {
-    const vehicleService = await this.repository.findOne({
-      where: { id },
-      relations: ['vehicleServiceParts', 'vehicleServiceParts.part'],
-    });
+    const vehicleService = await this.repository.findOne({ where: { id } });
 
     if (!vehicleService) {
       throw new NotFoundException(`VehicleService #${id} não encontrado`);
@@ -89,32 +55,6 @@ export class VehicleServiceService extends BaseService<VehicleService> {
   async update(id: number, updateVehicleServiceDto: UpdateVehicleServiceDto, manager?: EntityManager): Promise<VehicleService> {
     return this.transactional(async (manager) => {
       const vehicleService = await this.findOne(id);
-
-      if (updateVehicleServiceDto.parts) {
-        const partsIds = updateVehicleServiceDto.parts.map(p => p.partId);
-        const foundParts = await this.vehiclePartService.findByIds(partsIds);
-
-        if (foundParts.length !== partsIds.length) {
-          throw new NotFoundException('Uma ou mais peças não foram encontradas');
-        }
-
-        const vehicleServicePartsRepo = manager.getRepository(VehicleServiceParts);
-
-        await vehicleServicePartsRepo.delete({ service: { id: vehicleService.id } });
-
-        const newVehicleServiceParts = updateVehicleServiceDto.parts.map(({ partId, quantity }) => {
-          const partEntity = foundParts.find(p => p.id === partId);
-          return vehicleServicePartsRepo.create({
-            quantity,
-            part: partEntity,
-            service: vehicleService,
-          });
-        });
-
-        await vehicleServicePartsRepo.save(newVehicleServiceParts);
-
-        vehicleService.vehicleServiceParts = newVehicleServiceParts;
-      }
 
       Object.assign(vehicleService, {
         name: updateVehicleServiceDto.name ?? vehicleService.name,
