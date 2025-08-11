@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource, EntityManager } from 'typeorm';
+import { DataSource, EntityManager, In } from 'typeorm';
 import { ServiceOrder } from '../entities/service-order.entity';
 import { User } from 'src/auth-and-access/user/domain/entities/user.entity';
 import { BudgetService } from 'src/administrative-management/budget/domain/services/budget.service';
@@ -254,5 +254,57 @@ export class ServiceOrderService extends BaseService<ServiceOrder> {
     );
 
     return updatedOrder;
+  }
+
+  async getExecutionTimeById(id: number): Promise<{ executionTimeMs: number } | { message: string }> {
+    const history = await this.historyService.getHistoryByServiceOrderId(id);
+
+    if (!history || history.length === 0) {
+      return { message: 'Histórico da OS não encontrado.' };
+    }
+
+    console.log('LOGANDO A HISTORY', history)
+
+    const received = history.find(h => h.newStatus === ServiceOrderStatus.RECEBIDA);
+    const finished = history.find(h => h.newStatus === ServiceOrderStatus.FINALIZADA);
+
+    if (!received || !finished) {
+      return { message: 'Status RECEBIDA ou FINALIZADA não encontrados para esta OS.' };
+    }
+
+    const receivedTime = new Date(received.changedAt).getTime();
+    const finishedTime = new Date(finished.changedAt).getTime();
+
+    if (finishedTime < receivedTime) {
+      return { message: 'Status FINALIZADA ocorreu antes de RECEBIDA (dados inconsistentes).' };
+    }
+
+    return { executionTimeMs: finishedTime - receivedTime };
+  }
+
+  async getAverageExecutionTime(): Promise<{ averageExecutionTimeMs: number } | { message: string }> {
+    const serviceOrders = await this.repository.find({
+      where: { currentStatus: In([ServiceOrderStatus.FINALIZADA, ServiceOrderStatus.ENTREGUE]) }
+    });
+
+    if (!serviceOrders.length) {
+      return { message: 'Nenhuma OS ativa encontrada.' };
+    }
+
+    const times: number[] = [];
+
+    for (const order of serviceOrders) {
+      const timeResult = await this.getExecutionTimeById(order.idServiceOrder);
+      if ('executionTimeMs' in timeResult) {
+        times.push(timeResult.executionTimeMs);
+      }
+    }
+
+    if (times.length === 0) {
+      return { message: 'Nenhuma OS possui status RECEBIDA e FINALIZADA para cálculo.' };
+    }
+
+    const sum = times.reduce((acc, cur) => acc + cur, 0);
+    return { averageExecutionTimeMs: sum / times.length };
   }
 }

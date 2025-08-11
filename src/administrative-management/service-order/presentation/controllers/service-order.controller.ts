@@ -26,7 +26,6 @@ import { User } from 'src/auth-and-access/user/domain/entities/user.entity';
 import { AcceptServiceOrderDto } from '../dto/accept-service-order.dto';
 import { CreateFromAutoDiagnosisDto } from '../dto/create-from-auto-diagnosis.dto';
 import { AssignBudgetDto } from '../dto/assign-budget.dto';
-import { CreateBudgetDto } from 'src/administrative-management/budget/presentation/dto/create-budget.dto';
 
 @ApiTags('Ordem de Serviço')
 @UseGuards(RolesGuard)
@@ -117,5 +116,21 @@ export class ServiceOrderController {
   @ApiOkResponse({ description: 'Veículo entregue' })
   async delivered(@CurrentUser() user: User, @Param('id', ParseIntPipe) id: number) {
     return this.serviceOrderService.delivered(user, id);
+  }
+
+  @Get(':id/execution-time')
+  @ApiBearerAuth()
+  @Roles('mechanic', 'admin')
+  @ApiOperation({ summary: 'Obter tempo de execução da OS pelo ID' })
+  async getExecutionTime(@Param('id', ParseIntPipe) id: number) {
+    return this.serviceOrderService.getExecutionTimeById(id);
+  }
+
+  @Get('execution-time/average')
+  @ApiBearerAuth()
+  @Roles('mechanic', 'admin')
+  @ApiOperation({ summary: 'Obter tempo médio de execução de todas as OS' })
+  async getAverageExecutionTime() {
+    return this.serviceOrderService.getAverageExecutionTime();
   }
 }

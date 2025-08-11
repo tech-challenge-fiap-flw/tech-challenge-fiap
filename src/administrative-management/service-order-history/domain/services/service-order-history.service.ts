@@ -26,4 +26,11 @@ export class ServiceOrderHistoryService {
 
     return history.save();
   }
+
+  async getHistoryByServiceOrderId(idServiceOrder: number): Promise<ServiceOrderHistory[]> {
+    return this.orderHistoryModel
+      .find({ idServiceOrder })
+      .sort({ changedAt: 1 })
+      .exec();
+  }
 }
