@@ -1,200 +1,269 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BudgetService } from './budget.service';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
-import { Budget } from '../entities/budget.entity';
-import { DiagnosisService } from '../../../../administrative-management/diagnosis/domain/services/diagnosis.service';
-import { BudgetVehiclePartService } from '../../../../administrative-management/budget-vehicle-part/domain/services/budget-vehicle-part.service';
+import { BudgetService } from '../../domain/services/budget.service';
+import { DataSource, EntityManager, Repository } from 'typeorm';
+import { Budget } from '../../domain/entities/budget.entity';
 import { UserService } from '../../../../auth-and-access/user/domain/services/user.service';
-import { NotFoundException } from '@nestjs/common';
-
-const mockDataSource = () => ({
-  createQueryRunner: jest.fn().mockReturnValue({
-    manager: {
-      getRepository: jest.fn(),
-    },
-    connect: jest.fn(),
-    startTransaction: jest.fn(),
-    commitTransaction: jest.fn(),
-    rollbackTransaction: jest.fn(),
-    release: jest.fn(),
-  }),
-  transaction: jest.fn().mockImplementation(fn => fn({
-    getRepository: jest.fn().mockReturnValue({
-      save: jest.fn().mockResolvedValue({ id: 1 }),
-      findOne: jest.fn().mockResolvedValue({ id: 1, vehicleParts: [] }),
-    }),
-  })),
-});
-
-const mockBudgetRepo = () => ({
-  findOne: jest.fn(),
-  softRemove: jest.fn(),
-});
-
-const mockUserService = () => ({
-  findById: jest.fn(),
-});
-
-const mockDiagnosisService = () => ({
-  findById: jest.fn(),
-});
-
-const mockBudgetVehiclePartService = () => ({
-  create: jest.fn(),
-  updateMany: jest.fn(),
-  remove: jest.fn(),
-});
+import { DiagnosisService } from '../../../../administrative-management/diagnosis/domain/services/diagnosis.service';
+import { VehiclePartService } from '../../../../administrative-management/vehicle-part/domain/services/vehicle-part.service';
+import { BudgetVehiclePartService } from '../../../../administrative-management/budget-vehicle-part/domain/services/budget-vehicle-part.service';
+import { VehicleServiceService } from '../../../vehicle-service/domain/services/vehicle-service.service';
+import { BudgetVehicleServicesService } from '../../../../administrative-management/budget-vehicle-services/domain/services/budget-vehicle-services.service';
+import { ServiceOrderHistoryService } from '../../../../administrative-management/service-order-history/domain/services/service-order-history.service';
+import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { ServiceOrderStatus } from '../../../../administrative-management/service-order/domain/enum/service-order-status.enum';
 
 describe('BudgetService', () => {
   let service: BudgetService;
-  let budgetRepo: jest.Mocked<Repository<Budget>>;
-  let userService: ReturnType<typeof mockUserService>;
-  let diagnosisService: ReturnType<typeof mockDiagnosisService>;
-  let budgetVehiclePartService: ReturnType<typeof mockBudgetVehiclePartService>;
+  let dataSource: DataSource;
+  let manager: EntityManager;
+  let repo: any;
+
+  const userService = { findById: jest.fn() };
+  const diagnosisService = { findById: jest.fn() };
+  const vehiclePartService = { findOne: jest.fn(), updatePart: jest.fn() };
+  const budgetVehiclePartService = { create: jest.fn(), remove: jest.fn(), updateMany: jest.fn(), findByBudgetId: jest.fn() };
+  const vehicleServiceService = { findByIds: jest.fn() };
+  const budgetVehicleServicesService = { create: jest.fn() };
+  const historyService = { logStatusChange: jest.fn() };
 
   beforeEach(async () => {
+    repo = {
+      save: jest.fn(),
+      findOne: jest.fn(),
+      softRemove: jest.fn(),
+    } as any;
+
+    manager = {
+      getRepository: jest.fn().mockReturnValue(repo),
+      createQueryBuilder: jest.fn().mockReturnValue({
+        relation: jest.fn().mockReturnThis(),
+        of: jest.fn().mockReturnThis(),
+        addAndRemove: jest.fn(),
+      }),
+    } as any;
+
+    dataSource = {
+      transaction: jest.fn((cb) => cb(manager)),
+      getRepository: jest.fn().mockReturnValue(repo),
+      createQueryRunner: jest.fn().mockReturnValue({
+        connect: jest.fn(),
+        startTransaction: jest.fn(),
+        commitTransaction: jest.fn(),
+        rollbackTransaction: jest.fn(),
+        release: jest.fn(),
+        manager,
+      }),
+    } as any;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BudgetService,
-        { provide: DataSource, useFactory: mockDataSource },
-        { provide: getRepositoryToken(Budget), useFactory: mockBudgetRepo },
-        { provide: UserService, useFactory: mockUserService },
-        { provide: DiagnosisService, useFactory: mockDiagnosisService },
-        { provide: BudgetVehiclePartService, useFactory: mockBudgetVehiclePartService },
+        { provide: DataSource, useValue: dataSource },
+        { provide: UserService, useValue: userService },
+        { provide: DiagnosisService, useValue: diagnosisService },
+        { provide: VehiclePartService, useValue: vehiclePartService },
+        { provide: BudgetVehiclePartService, useValue: budgetVehiclePartService },
+        { provide: VehicleServiceService, useValue: vehicleServiceService },
+        { provide: BudgetVehicleServicesService, useValue: budgetVehicleServicesService },
+        { provide: ServiceOrderHistoryService, useValue: historyService },
       ],
     }).compile();
 
-    service = module.get(BudgetService);
-    budgetRepo = module.get(getRepositoryToken(Budget));
-    userService = module.get(UserService);
-    diagnosisService = module.get(DiagnosisService);
-    budgetVehiclePartService = module.get(BudgetVehiclePartService);
+    service = module.get<BudgetService>(BudgetService);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   describe('create', () => {
-    it('should create a budget with parts', async () => {
-      const dto = {
+    it('should create a budget and return it', async () => {
+      const createDto = {
+        description: 'Budget description example',
         ownerId: 1,
-        diagnosisId: 2,
-        description: 'Teste orçamento',
+        diagnosisId: 1,
         vehicleParts: [{ id: 10, quantity: 2 }],
+        vehicleServicesIds: [1, 2],
       };
 
-      userService.findById.mockResolvedValue({});
-      diagnosisService.findById.mockResolvedValue({});
+      userService.findById.mockResolvedValue({ id: 1 });
+      diagnosisService.findById.mockResolvedValue({ id: 1 });
+      vehicleServiceService.findByIds.mockResolvedValue([
+        { id: 1, price: 100 },
+        { id: 2, price: 200 },
+      ]);
+      vehiclePartService.findOne.mockResolvedValue({ id: 10, quantity: 5, price: 50 });
+      vehiclePartService.updatePart.mockResolvedValue(undefined);
+      repo.save.mockResolvedValue({ id: 123, ...createDto, total: 400 });
 
-      const mockBudget = { id: 1 };
-      const mockBudgetRepository = {
-        save: jest.fn().mockResolvedValue(mockBudget),
-      };
-
-      const manager = {
-        getRepository: jest.fn().mockImplementation((entity) => {
-          if (entity === Budget) return mockBudgetRepository;
-          return {};
-        }),
-      };
-
-      jest.spyOn(service as any, 'runInTransaction').mockImplementation(async (fn: any) => {
-        return await fn(manager);
+      budgetVehiclePartService.create.mockResolvedValue(undefined);
+      budgetVehicleServicesService.create.mockResolvedValue(undefined);
+      service.findById = jest.fn().mockResolvedValue({
+        id: 123,
+        ...createDto,
+        total: 400,
       });
 
-      jest.spyOn(service, 'findById').mockResolvedValue({
-        id: 1,
-        vehicleParts: [],
-      } as Budget);
+      const result = await service.create(createDto, manager);
 
-      const result = await service.create(dto as any);
+      expect(userService.findById).toHaveBeenCalledWith(createDto.ownerId);
+      expect(diagnosisService.findById).toHaveBeenCalledWith(createDto.diagnosisId, manager);
+      expect(vehicleServiceService.findByIds).toHaveBeenCalledWith(createDto.vehicleServicesIds);
+      expect(vehiclePartService.findOne).toHaveBeenCalledWith(10);
+      expect(vehiclePartService.updatePart).toHaveBeenCalled();
+      expect(repo.save).toHaveBeenCalled();
+      expect(budgetVehiclePartService.create).toHaveBeenCalled();
+      expect(budgetVehicleServicesService.create).toHaveBeenCalled();
+      expect(service.findById).toHaveBeenCalledWith(123, ['vehicleParts'], manager);
+      expect(result.total).toBe(400);
+      expect(result.id).toBe(123);
+    });
 
-      expect(userService.findById).toHaveBeenCalledWith(1);
-      expect(diagnosisService.findById).toHaveBeenCalledWith(2);
-      expect(mockBudgetRepository.save).toHaveBeenCalledWith({
+    it('should throw if a vehicle service id does not exist', async () => {
+      const createDto = {
+        description: 'Budget description example',
         ownerId: 1,
-        diagnosisId: 2,
-        description: 'Teste orçamento',
-      });
-      expect(budgetVehiclePartService.create).toHaveBeenCalledWith(
-        { budgetId: 1, vehicleParts: dto.vehicleParts },
-        manager
-      );
-      expect(result).toEqual({ id: 1, vehicleParts: [] });
+        diagnosisId: 1,
+        vehicleParts: [],
+        vehicleServicesIds: [1, 2],
+      };
+
+      userService.findById.mockResolvedValue({ id: 1 });
+      diagnosisService.findById.mockResolvedValue({ id: 1 });
+      vehicleServiceService.findByIds.mockResolvedValue([{ id: 1, price: 100 }]);
+
+      await expect(service.create(createDto, manager)).rejects.toThrow('Um ou mais serviços não foram encontrados');
+    });
+
+    it('should throw if vehicle part quantity insufficient', async () => {
+      const createDto = {
+        description: 'Budget description example',
+        ownerId: 1,
+        diagnosisId: 1,
+        vehicleParts: [{ id: 10, quantity: 10 }],
+        vehicleServicesIds: [],
+      };
+
+      userService.findById.mockResolvedValue({ id: 1 });
+      diagnosisService.findById.mockResolvedValue({ id: 1 });
+      vehicleServiceService.findByIds.mockResolvedValue([]);
+      vehiclePartService.findOne.mockResolvedValue({ id: 10, quantity: 5, price: 50 });
+
+      await expect(service.create(createDto, manager)).rejects.toThrow('Insufficient quantity for vehicle part with id 10');
     });
   });
 
   describe('findById', () => {
-    it('should return budget by id', async () => {
-      budgetRepo.findOne.mockResolvedValue({ id: 1 } as Budget);
-      const result = await service.findById(1);
-      expect(result).toEqual({ id: 1 });
-    });
-
-    it('should throw NotFoundException if budget not found', async () => {
-      budgetRepo.findOne.mockResolvedValue(null);
-      await expect(service.findById(99)).rejects.toThrow(NotFoundException);
+    it('should find a budget by id', async () => {
+      repo.findOne.mockResolvedValue({ id: 1, description: 'desc' });
+      const result = await service.findById(1, [], undefined, { id: 1, roles: ['admin'] } as any);
+      expect(repo.findOne).toHaveBeenCalled();
+      expect(result.id).toBe(1);
     });
   });
 
   describe('update', () => {
-    it('should update budget, add/update/remove vehicle parts', async () => {
-      const dto = {
-        description: 'Atualizado',
-        vehicleParts: [
-          { id: 10, quantity: 3 },
-          { id: 20, quantity: 1 },
-        ],
-      };
+    it('should throw if budget not found', async () => {
+      repo.findOne.mockResolvedValue(null);
+      await expect(service.update(1, { description: 'desc', vehicleParts: [], vehicleServicesIds: [] })).rejects.toThrow(NotFoundException);
+    });
 
-      const existingBudget = {
-        id: 1,
-        description: 'Antigo',
-        vehicleParts: [
-          { id: 1, vehiclePartId: 10, quantity: 1 },
-          { id: 2, vehiclePartId: 99, quantity: 5 },
-        ],
-      };
+    it('should throw if one of vehicle services does not exist', async () => {
+      repo.findOne.mockResolvedValue({ id: 1, vehicleParts: [] });
+      vehicleServiceService.findByIds.mockResolvedValue([{ id: 1 }]);
 
-      const manager = {
-        getRepository: jest.fn().mockReturnValue({
-          findOne: jest.fn().mockResolvedValue(existingBudget),
-          save: jest.fn().mockResolvedValue({}),
-        }),
-      };
-
-      jest.spyOn(service as any, 'runInTransaction').mockImplementation(async (fn: any) => {
-        return await fn(manager);
-      });
-      jest.spyOn(service, 'findById').mockResolvedValue({ id: 1, vehicleParts: [] } as Budget);
-
-      const result = await service.update(1, dto as any);
-
-      expect(budgetVehiclePartService.remove).toHaveBeenCalledWith([{ id: 2 }], manager);
-      expect(budgetVehiclePartService.updateMany).toHaveBeenCalledWith(
-        [{ id: 1, vehiclePartId: 10, quantity: 3 }],
-        manager
-      );
-      expect(budgetVehiclePartService.create).toHaveBeenCalledWith(
-        { budgetId: 1, vehicleParts: [{ id: 20, quantity: 1 }] },
-        manager
-      );
-      expect(result).toEqual({ id: 1, vehicleParts: [] });
+      await expect(service.update(1, { description: 'desc', vehicleParts: [], vehicleServicesIds: [1, 2] })).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('remove', () => {
-    it('should remove vehicle parts and soft remove budget', async () => {
-      const mockBudget = {
+    it('should soft remove a budget', async () => {
+      const budget = {
         id: 1,
-        vehicleParts: [{ id: 1 }, { id: 2 }],
-      } as any;
+        vehicleParts: [{ id: 100 }, { id: 101 }],
+      };
 
-      jest.spyOn(service, 'findById').mockResolvedValue(mockBudget);
-      budgetRepo.softRemove.mockResolvedValue(undefined);
+      service.findById = jest.fn().mockResolvedValue(budget);
+      budgetVehiclePartService.remove.mockResolvedValue(undefined);
+      repo.softRemove.mockResolvedValue(undefined);
 
       await service.remove(1);
 
-      expect(budgetVehiclePartService.remove).toHaveBeenCalledWith([{ id: 1 }, { id: 2 }]);
-      expect(budgetRepo.softRemove).toHaveBeenCalledWith(mockBudget);
+      expect(service.findById).toHaveBeenCalledWith(1, ['vehicleParts']);
+      expect(budgetVehiclePartService.remove).toHaveBeenCalledWith([{ id: 100 }, { id: 101 }]);
+      expect(repo.softRemove).toHaveBeenCalledWith(budget);
+    });
+  });
+
+  describe('decideBudget', () => {
+    it('should accept budget and update service order status', async () => {
+      const budget = { id: 1, ownerId: 1 };
+      const user = { id: 1 };
+      const order = { currentStatus: ServiceOrderStatus.RECEBIDA, customer: { id: 1 }, budget: { id: 1 }, idServiceOrder: 123 };
+
+      manager.getRepository = jest.fn()
+        .mockReturnValueOnce({ findOne: jest.fn().mockResolvedValue(budget) })
+        .mockReturnValueOnce({ findOne: jest.fn().mockResolvedValue(order) })
+        .mockReturnValueOnce({ save: jest.fn().mockResolvedValue({ ...order, currentStatus: ServiceOrderStatus.AGUARDANDO_INICIO }) });
+
+      historyService.logStatusChange.mockResolvedValue(undefined);
+
+      const result = await service.decideBudget(1, true, user as any);
+
+      expect(result.currentStatus).toBe(ServiceOrderStatus.AGUARDANDO_INICIO);
+      expect(historyService.logStatusChange).toHaveBeenCalledWith(order.idServiceOrder, user.id, ServiceOrderStatus.RECEBIDA, ServiceOrderStatus.AGUARDANDO_INICIO);
+    });
+
+    it('should throw if budget not found', async () => {
+      manager.getRepository = jest.fn().mockReturnValue({ findOne: jest.fn().mockResolvedValue(null) });
+      await expect(service.decideBudget(1, true, { id: 1 } as any)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw if user not owner of budget', async () => {
+      manager.getRepository = jest.fn()
+        .mockReturnValueOnce({ findOne: jest.fn().mockResolvedValue({ id: 1, ownerId: 2 }) });
+      await expect(service.decideBudget(1, true, { id: 1 } as any)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw if service order not found', async () => {
+      manager.getRepository = jest.fn()
+        .mockReturnValueOnce({ findOne: jest.fn().mockResolvedValue({ id: 1, ownerId: 1 }) })
+        .mockReturnValueOnce({ findOne: jest.fn().mockResolvedValue(null) });
+      await expect(service.decideBudget(1, true, { id: 1 } as any)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw if user not owner of service order', async () => {
+      manager.getRepository = jest.fn()
+        .mockReturnValueOnce({ findOne: jest.fn().mockResolvedValue({ id: 1, ownerId: 1 }) })
+        .mockReturnValueOnce({ findOne: jest.fn().mockResolvedValue({ customer: { id: 2 } }) });
+      await expect(service.decideBudget(1, true, { id: 1 } as any)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should reject budget and restore vehicle part quantities', async () => {
+      const budget = { id: 1, ownerId: 1 };
+      const user = { id: 1 };
+      const order = { currentStatus: ServiceOrderStatus.RECEBIDA, customer: { id: 1 }, budget: { id: 1 }, idServiceOrder: 123 };
+
+      const vehiclePartsInBudget = [
+        { vehiclePartId: 10, quantity: 5 },
+        { vehiclePartId: 11, quantity: 3 },
+      ];
+
+      manager.getRepository = jest.fn()
+        .mockReturnValueOnce({ findOne: jest.fn().mockResolvedValue(budget) })
+        .mockReturnValueOnce({ findOne: jest.fn().mockResolvedValue(order) })
+        .mockReturnValueOnce({ save: jest.fn().mockResolvedValue({ ...order, currentStatus: ServiceOrderStatus.RECUSADA }) });
+
+      budgetVehiclePartService.findByBudgetId.mockResolvedValue(vehiclePartsInBudget);
+      vehiclePartService.findOne.mockResolvedValue({ id: 10, quantity: 10 });
+      vehiclePartService.updatePart.mockResolvedValue(undefined);
+      historyService.logStatusChange.mockResolvedValue(undefined);
+
+      const result = await service.decideBudget(1, false, user as any);
+
+      expect(result.currentStatus).toBe(ServiceOrderStatus.RECUSADA);
+      expect(vehiclePartService.updatePart).toHaveBeenCalledTimes(vehiclePartsInBudget.length);
+      expect(historyService.logStatusChange).toHaveBeenCalledWith(order.idServiceOrder, user.id, ServiceOrderStatus.RECEBIDA, ServiceOrderStatus.RECUSADA);
     });
   });
 });
