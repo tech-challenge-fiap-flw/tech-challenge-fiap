@@ -80,7 +80,7 @@ export class ServiceOrderService extends BaseService<ServiceOrder> {
 
   async findOne(id: number, manager?: EntityManager, user?: UserFromJwt): Promise<ServiceOrder> {
     const order = await this.getCurrentRepository(manager).findOne({
-      where: user.roles?.includes('admin') || !user
+      where: user?.roles?.includes('admin') || !user
         ? { idServiceOrder: id, active: true }
         : { idServiceOrder: id, active: true, customer: { id: user.id } },
       relations: ['budget', 'customer', 'mechanic', 'vehicle'],

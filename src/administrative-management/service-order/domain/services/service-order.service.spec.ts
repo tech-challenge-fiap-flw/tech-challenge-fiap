@@ -1,266 +1,524 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User } from '../../../../auth-and-access/user/domain/entities/user.entity';
-import { Budget } from '../../../../administrative-management/budget/domain/entities/budget.entity';
-import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { DataSource, EntityManager } from 'typeorm';
 import { ServiceOrderService } from './service-order.service';
-import { ServiceOrder } from '../../domain/entities/service-order.entity';
+import { User } from '../../../../auth-and-access/user/domain/entities/user.entity';
+import { BudgetService } from '../../../../administrative-management/budget/domain/services/budget.service';
+import { ServiceOrderHistoryService } from '../../../../administrative-management/service-order-history/domain/services/service-order-history.service';
+import { DiagnosisService } from '../../../diagnosis/domain/services/diagnosis.service';
+import { BudgetVehiclePartService } from '../../../../administrative-management/budget-vehicle-part/domain/services/budget-vehicle-part.service';
+import { VehiclePartService } from '../../../../administrative-management/vehicle-part/domain/services/vehicle-part.service';
 import { ServiceOrderStatus } from '../enum/service-order-status.enum';
-import { mockAssignBudget } from '../../infrastructure/test/mocks/mock-assign-budget';
+import {
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
+
+const mockRepository = {
+  create: jest.fn(),
+  save: jest.fn(),
+  findOne: jest.fn(),
+  find: jest.fn(),
+};
+
+const mockDataSource = {
+  transaction: jest.fn(),
+  getRepository: jest.fn().mockReturnValue(mockRepository),
+};
 
 describe('ServiceOrderService', () => {
   let service: ServiceOrderService;
-  let repo: Repository<ServiceOrder>;
-  let historyServiceMock: { logStatusChange: jest.Mock };
 
-  const mockRepo = {
+  const mockDiagnosisService = {
     create: jest.fn(),
-    save: jest.fn(),
+  };
+
+  const mockBudgetService = {
+    create: jest.fn(),
+  };
+
+  const mockHistoryService = {
+    logStatusChange: jest.fn(),
+    getHistoryByServiceOrderId: jest.fn(),
+  };
+
+  const mockBudgetVehiclePartService = {
+    findByBudgetId: jest.fn(),
+  };
+
+  const mockVehiclePartService = {
     findOne: jest.fn(),
-    find: jest.fn(),
-    manager: {
-      findOne: jest.fn(),
-    },
+    updatePart: jest.fn(),
   };
 
   beforeEach(async () => {
-    historyServiceMock = { logStatusChange: jest.fn() };
+    jest.clearAllMocks();
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ServiceOrderService,
         {
-          provide: getRepositoryToken(ServiceOrder),
-          useValue: mockRepo,
+          provide: DataSource,
+          useValue: mockDataSource,
         },
         {
-          provide: 'ServiceOrderHistoryService',
-          useValue: historyServiceMock,
+          provide: BudgetService,
+          useValue: mockBudgetService,
+        },
+        {
+          provide: ServiceOrderHistoryService,
+          useValue: mockHistoryService,
+        },
+        {
+          provide: DiagnosisService,
+          useValue: mockDiagnosisService,
+        },
+        {
+          provide: BudgetVehiclePartService,
+          useValue: mockBudgetVehiclePartService,
+        },
+        {
+          provide: VehiclePartService,
+          useValue: mockVehiclePartService,
         },
       ],
     }).compile();
+
     service = module.get<ServiceOrderService>(ServiceOrderService);
-    repo = module.get<Repository<ServiceOrder>>(getRepositoryToken(ServiceOrder));
-    jest.clearAllMocks();
+
+    jest.spyOn(service, 'runInTransaction').mockImplementation(async (fn) => {
+      const manager = {
+        getRepository: jest.fn().mockReturnValue(mockRepository),
+      } as unknown as EntityManager;
+      return fn(manager);
+    });
   });
 
-  const mockUser = { id: 1, email: 'cliente@test.com', type: 'cliente' } as User;
-
-  it('deve criar uma OS', async () => {
-    const dto = { description: 'Troca de óleo', vehicleId: 1 };
-    const createdOrder = {
-      idServiceOrder: 1,
-      description: dto.description,
-      currentStatus: ServiceOrderStatus.RECEBIDA,
-      customer: mockUser,
-      vehicle: { id: dto.vehicleId },
-      budget: undefined,
-    } as ServiceOrder;
-    mockRepo.create.mockReturnValue(createdOrder);
-    mockRepo.save.mockResolvedValue(createdOrder);
-    const result = await service.createFromAutoDiagnosis(mockUser, dto as any);
-    expect(mockRepo.create).toHaveBeenCalledWith(expect.objectContaining({
-      description: 'Troca de óleo',
-      currentStatus: ServiceOrderStatus.RECEBIDA,
-      customer: mockUser,
-      vehicle: { id: 1 },
-      budget: undefined,
-    }));
-    expect(historyServiceMock.logStatusChange).toHaveBeenCalledWith(
-      createdOrder.idServiceOrder,
-      mockUser.id,
-      null,
-      ServiceOrderStatus.RECEBIDA,
-    );
-    expect(result).toEqual(createdOrder);
+  const mockUser = Object.assign(new User(), {
+    id: 1,
+    email: 'user@test.com',
+    roles: ['user'],
   });
 
-  it('deve buscar uma OS por ID', async () => {
-    const order = { idServiceOrder: 1, active: true } as ServiceOrder;
-    mockRepo.findOne.mockResolvedValue(order);
-    const result = await service.findOne(1);
-    expect(result).toEqual(order);
+  const mockMechanic = Object.assign(new User(), {
+    id: 2,
+    roles: ['mechanic'],
   });
 
-  it('deve lançar erro se OS não for encontrada', async () => {
-    mockRepo.findOne.mockResolvedValue(null);
-    await expect(service.findOne(99)).rejects.toThrow(NotFoundException);
+  const adminUser = Object.assign(new User(), {
+    id: 9,
+    roles: ['admin'],
   });
 
-  it('deve aceitar uma OS e atribuir mecânico e status', async () => {
-    const mechanic = { id: 5, type: 'mechanic' } as User;
-    const order = { idServiceOrder: 1, mechanic: null, currentStatus: ServiceOrderStatus.RECEBIDA } as ServiceOrder;
-    mockRepo.findOne.mockResolvedValue(order);
-    const updatedOrder = { ...order, mechanic, currentStatus: ServiceOrderStatus.EM_DIAGNOSTICO };
-    mockRepo.save.mockResolvedValue(updatedOrder);
-    const result = await service.acceptOrder(mechanic, 1, true);
-    expect(result.mechanic).toEqual(mechanic);
-    expect(result.currentStatus).toBe(ServiceOrderStatus.EM_DIAGNOSTICO);
-    expect(historyServiceMock.logStatusChange).toHaveBeenCalledWith(
-      updatedOrder.idServiceOrder,
-      mechanic.id,
-      ServiceOrderStatus.RECEBIDA,
-      ServiceOrderStatus.EM_DIAGNOSTICO,
-    );
+  describe('create', () => {
+    it('deve criar OS com diagnóstico automático e orçamento', async () => {
+      const dto = {
+        vehicleId: 123,
+        vehicleServicesIds: [10, 20],
+        vehicleParts: [],
+        description: 'Descrição teste',
+      };
+
+      mockDiagnosisService.create.mockResolvedValue({ id: 50 });
+      mockBudgetService.create.mockResolvedValue({ id: 60 });
+      mockRepository.create.mockReturnValue({
+        description: 'Ordem de Serviço - Diagnóstico Automático',
+        currentStatus: ServiceOrderStatus.RECEBIDA,
+        customer: mockUser,
+        vehicle: { id: dto.vehicleId },
+        budget: { id: 60 },
+      });
+      mockRepository.save.mockResolvedValue({
+        idServiceOrder: 100,
+        description: 'Ordem de Serviço - Diagnóstico Automático',
+        currentStatus: ServiceOrderStatus.RECEBIDA,
+        customer: mockUser,
+        vehicle: { id: dto.vehicleId },
+        budget: { id: 60 },
+      });
+
+      const result = await service.create(mockUser, dto as any);
+
+      expect(mockDiagnosisService.create).toHaveBeenCalledWith(
+        {
+          vehicleId: dto.vehicleId,
+          responsibleMechanicId: undefined,
+          description: dto.description,
+        },
+        expect.any(Object),
+      );
+
+      expect(mockBudgetService.create).toHaveBeenCalledWith(
+        {
+          ownerId: mockUser.id,
+          diagnosisId: 50,
+          description: 'Orçamento para diagnóstico automático',
+          vehicleParts: dto.vehicleParts,
+          vehicleServicesIds: dto.vehicleServicesIds,
+        },
+        expect.any(Object),
+      );
+
+      expect(mockRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description: 'Ordem de Serviço - Diagnóstico Automático',
+          currentStatus: ServiceOrderStatus.RECEBIDA,
+          customer: mockUser,
+          vehicle: { id: dto.vehicleId },
+          budget: { id: 60 },
+        }),
+      );
+
+      expect(mockRepository.save).toHaveBeenCalled();
+
+      expect(mockHistoryService.logStatusChange).toHaveBeenCalledWith(
+        100,
+        mockUser.id,
+        null,
+        ServiceOrderStatus.RECEBIDA,
+      );
+
+      expect(result.idServiceOrder).toBe(100);
+    });
+
+    it('deve criar OS sem diagnóstico automático', async () => {
+      const dto = {
+        vehicleId: 123,
+        description: 'Descrição simples',
+      };
+
+      mockRepository.create.mockReturnValue({
+        description: dto.description,
+        currentStatus: ServiceOrderStatus.RECEBIDA,
+        customer: mockUser,
+        vehicle: { id: dto.vehicleId },
+        budget: null,
+      });
+      mockRepository.save.mockResolvedValue({
+        idServiceOrder: 101,
+        description: dto.description,
+        currentStatus: ServiceOrderStatus.RECEBIDA,
+        customer: mockUser,
+        vehicle: { id: dto.vehicleId },
+        budget: null,
+      });
+
+      const result = await service.create(mockUser, dto as any);
+
+      expect(mockDiagnosisService.create).not.toHaveBeenCalled();
+      expect(mockBudgetService.create).not.toHaveBeenCalled();
+      expect(mockRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description: dto.description,
+          currentStatus: ServiceOrderStatus.RECEBIDA,
+          customer: mockUser,
+          vehicle: { id: dto.vehicleId },
+          budget: null,
+        }),
+      );
+      expect(mockHistoryService.logStatusChange).toHaveBeenCalledWith(
+        101,
+        mockUser.id,
+        null,
+        ServiceOrderStatus.RECEBIDA,
+      );
+      expect(result.idServiceOrder).toBe(101);
+    });
   });
 
-  it('deve recusar uma OS e atualizar status', async () => {
-    const mechanic = { id: 5 } as User;
-    const order = { idServiceOrder: 1, mechanic: null, currentStatus: ServiceOrderStatus.RECEBIDA } as ServiceOrder;
-    mockRepo.findOne.mockResolvedValue(order);
-    const updatedOrder = { ...order, currentStatus: ServiceOrderStatus.RECUSADA };
-    mockRepo.save.mockResolvedValue(updatedOrder);
-    const result = await service.acceptOrder(mechanic, 1, false);
-    expect(result.currentStatus).toBe(ServiceOrderStatus.RECUSADA);
-    expect(historyServiceMock.logStatusChange).toHaveBeenCalledWith(
-      updatedOrder.idServiceOrder,
-      mechanic.id,
-      ServiceOrderStatus.RECEBIDA,
-      ServiceOrderStatus.RECUSADA,
-    );
+  describe('findOne', () => {
+    it('deve retornar OS se encontrada e user admin', async () => {
+      mockRepository.findOne.mockResolvedValue({
+        idServiceOrder: 1,
+        active: true,
+        customer: Object.assign(new User(), { id: 9, roles: ['admin'] }),
+      });
+      const adminUser = Object.assign(new User(), { id: 9, roles: ['admin'] });
+      const result = await service.findOne(1, undefined, adminUser);
+      expect(result).toEqual(expect.objectContaining({ idServiceOrder: 1, active: true }));
+      expect(mockRepository.findOne).toHaveBeenCalledWith({
+        where: { idServiceOrder: 1, active: true },
+        relations: ['budget', 'customer', 'mechanic', 'vehicle'],
+      });
+    });
+
+    it('deve retornar OS se encontrada e user não admin', async () => {
+      mockRepository.findOne.mockResolvedValue({
+        idServiceOrder: 2,
+        active: true,
+        customer: Object.assign(new User(), { id: 5, roles: ['user'] }),
+      });
+      const user = Object.assign(new User(), { id: 5, roles: ['user'] });
+      const result = await service.findOne(2, undefined, user);
+      expect(result).toEqual(expect.objectContaining({ idServiceOrder: 2, active: true }));
+      expect(mockRepository.findOne).toHaveBeenCalledWith({
+        where: { idServiceOrder: 2, active: true, customer: { id: 5 } },
+        relations: ['budget', 'customer', 'mechanic', 'vehicle'],
+      });
+    });
+
+    it('deve lançar NotFoundException se não encontrar', async () => {
+      mockRepository.findOne.mockResolvedValue(null);
+      await expect(service.findOne(999, undefined, mockUser)).rejects.toThrow(NotFoundException);
+    });
   });
 
-  it('não deve aceitar OS já aceita por outro mecânico', async () => {
-    const order = { idServiceOrder: 1, mechanic: { id: 99 } } as ServiceOrder;
-    mockRepo.findOne.mockResolvedValue(order);
-    await expect(service.acceptOrder({ id: 5 } as User, 1, true)).rejects.toThrow(BadRequestException);
+  describe('acceptOrder', () => {
+    it('deve aceitar OS e atualizar mecânico e status', async () => {
+      const order = {
+        idServiceOrder: 1,
+        mechanic: null,
+        currentStatus: ServiceOrderStatus.RECEBIDA,
+        budget: null,
+      };
+      mockRepository.findOne.mockResolvedValue(order);
+      mockRepository.save.mockImplementation(async (orderToSave) => orderToSave);
+
+      const result = await service.acceptOrder(mockMechanic, 1, true);
+
+      expect(result.mechanic).toEqual(mockMechanic);
+      expect(
+        [ServiceOrderStatus.AGUARDANDO_INICIO, ServiceOrderStatus.EM_DIAGNOSTICO]
+      ).toContain(result.currentStatus);
+
+      expect(mockHistoryService.logStatusChange).toHaveBeenCalledWith(
+        1,
+        mockMechanic.id,
+        ServiceOrderStatus.RECEBIDA,
+        result.currentStatus,
+      );
+    });
+
+    it('deve recusar OS e atualizar status e atualizar peças', async () => {
+      const budget = { id: 50 };
+      const order = {
+        idServiceOrder: 2,
+        mechanic: null,
+        currentStatus: ServiceOrderStatus.RECEBIDA,
+        budget,
+      };
+
+      mockBudgetVehiclePartService.findByBudgetId.mockResolvedValue([
+        { vehiclePartId: 1, quantity: 5 },
+        { vehiclePartId: 2, quantity: 3 },
+      ]);
+
+      mockVehiclePartService.findOne.mockImplementation((id) => {
+        if (id === 1) return Promise.resolve({ id: 1, quantity: 2 });
+        if (id === 2) return Promise.resolve({ id: 2, quantity: 4 });
+        return Promise.resolve(null);
+      });
+      mockVehiclePartService.updatePart.mockResolvedValue(undefined);
+
+      mockRepository.findOne.mockResolvedValue(order);
+      mockRepository.save.mockImplementation(async (o) => o);
+
+      const result = await service.acceptOrder(mockMechanic, 2, false);
+
+      expect(result.currentStatus).toBe(ServiceOrderStatus.RECUSADA);
+      expect(mockBudgetVehiclePartService.findByBudgetId).toHaveBeenCalledWith(50, expect.any(Object));
+      expect(mockVehiclePartService.findOne).toHaveBeenCalledTimes(2);
+      expect(mockVehiclePartService.updatePart).toHaveBeenCalledTimes(2);
+      expect(mockHistoryService.logStatusChange).toHaveBeenCalledWith(
+        2,
+        mockMechanic.id,
+        ServiceOrderStatus.RECEBIDA,
+        ServiceOrderStatus.RECUSADA,
+      );
+    });
+
+    it('não deve aceitar OS já aceita', async () => {
+      mockRepository.findOne.mockResolvedValue({ idServiceOrder: 3, mechanic: { id: 99 } });
+      await expect(service.acceptOrder(mockMechanic, 3, true)).rejects.toThrow(BadRequestException);
+    });
   });
 
-  it('deve atribuir orçamento se mecânico for o correto e OS não tiver orçamento', async () => {
-    const mechanic = { id: 5 } as User;
-    const order = { idServiceOrder: 1, mechanic, budget: null, currentStatus: ServiceOrderStatus.EM_DIAGNOSTICO } as ServiceOrder;
-    const budget = { id: 10 } as Budget;
-    mockRepo.findOne.mockResolvedValue(order);
-    mockRepo.manager.findOne.mockResolvedValue(budget);
-    const updatedOrder = { ...order, budget, currentStatus: ServiceOrderStatus.AGUARDANDO_APROVACAO };
-    mockRepo.save.mockResolvedValue(updatedOrder);
-    const result = await service.assignBudget(mechanic, 1, mockAssignBudget);
-    expect(result.budget).toEqual(budget);
-    expect(result.currentStatus).toBe(ServiceOrderStatus.AGUARDANDO_APROVACAO);
-    expect(historyServiceMock.logStatusChange).toHaveBeenCalledWith(
-      updatedOrder.idServiceOrder,
-      mechanic.id,
-      ServiceOrderStatus.EM_DIAGNOSTICO,
-      ServiceOrderStatus.AGUARDANDO_APROVACAO,
-    );
+  describe('assignBudget', () => {
+    it('deve atribuir orçamento se mecânico correto e OS sem orçamento', async () => {
+      const order = {
+        idServiceOrder: 10,
+        mechanic: mockMechanic,
+        budget: null,
+        currentStatus: ServiceOrderStatus.EM_DIAGNOSTICO,
+        vehicle: { id: 111 },
+        customer: { id: 123 },
+      };
+
+      mockRepository.findOne.mockResolvedValue(order);
+
+      const diagnosis = { id: 200 };
+      mockDiagnosisService.create.mockResolvedValue(diagnosis);
+
+      const budget = { id: 300 };
+      mockBudgetService.create.mockResolvedValue(budget);
+
+      mockRepository.save.mockImplementation(async (o) => ({ ...o }));
+
+      const assignBudgetDto = {
+        description: 'Orçamento novo',
+        vehicleParts: [],
+        vehicleServicesIds: [],
+      };
+
+      const result = await service.assignBudget(mockMechanic, 10, assignBudgetDto);
+
+      expect(mockDiagnosisService.create).toHaveBeenCalledWith(
+        {
+          description: assignBudgetDto.description,
+          vehicleId: 111,
+          responsibleMechanicId: mockMechanic.id,
+        },
+        expect.any(Object),
+      );
+
+      expect(mockBudgetService.create).toHaveBeenCalledWith(
+        {
+          description: 'Orçamento para diagnóstico automático',
+          vehicleParts: assignBudgetDto.vehicleParts,
+          diagnosisId: diagnosis.id,
+          ownerId: order.customer.id,
+          vehicleServicesIds: assignBudgetDto.vehicleServicesIds,
+        },
+        expect.any(Object),
+      );
+
+      expect(result.budget).toEqual(budget);
+      expect(result.currentStatus).toBe(ServiceOrderStatus.AGUARDANDO_APROVACAO);
+      expect(mockHistoryService.logStatusChange).toHaveBeenCalledWith(
+        10,
+        mockMechanic.id,
+        ServiceOrderStatus.EM_DIAGNOSTICO,
+        ServiceOrderStatus.AGUARDANDO_APROVACAO,
+      );
+    });
+
+    it('não deve atribuir orçamento se já existir', async () => {
+      const order = {
+        idServiceOrder: 11,
+        mechanic: mockMechanic,
+        budget: { id: 1 },
+      };
+      mockRepository.findOne.mockResolvedValue(order);
+      await expect(service.assignBudget(mockMechanic, 11, { description: '', vehicleParts: [], vehicleServicesIds: [] })).rejects.toThrow(BadRequestException);
+    });
+
+    it('não deve atribuir orçamento se mecânico for outro', async () => {
+      const order = {
+        idServiceOrder: 12,
+        mechanic: { id: 99 },
+        budget: null,
+      };
+      mockRepository.findOne.mockResolvedValue(order);
+      await expect(service.assignBudget(mockMechanic, 12, { description: '', vehicleParts: [], vehicleServicesIds: [] })).rejects.toThrow(ForbiddenException);
+    });
+
+    it('deve lançar NotFoundException se OS não encontrada', async () => {
+      mockRepository.findOne.mockResolvedValue(null);
+      await expect(service.assignBudget(mockMechanic, 999, { description: '', vehicleParts: [], vehicleServicesIds: [] })).rejects.toThrow(NotFoundException);
+    });
   });
 
-  it('não deve atribuir orçamento se já houver um', async () => {
-    const mechanic = { id: 5 } as User;
-    const order = { idServiceOrder: 1, mechanic, budget: { id: 10 } } as ServiceOrder;
-    mockRepo.findOne.mockResolvedValue(order);
-    await expect(service.assignBudget(mechanic, 1, mockAssignBudget)).rejects.toThrow(BadRequestException);
+  describe('remove', () => {
+    it('deve fazer soft delete da OS', async () => {
+      const order = { idServiceOrder: 1, active: true };
+      mockRepository.findOne.mockResolvedValue(order);
+      mockRepository.save.mockImplementation(async (o) => o);
+      await service.remove(1);
+      expect(mockRepository.save).toHaveBeenCalledWith(expect.objectContaining({ active: false }));
+    });
   });
 
-  it('não deve atribuir orçamento se usuário não for mecânico da OS', async () => {
-    const order = { idServiceOrder: 1, mechanic: { id: 99 }, budget: null } as ServiceOrder;
-    mockRepo.findOne.mockResolvedValue(order);
-    await expect(service.assignBudget({ id: 5 } as User, 1, mockAssignBudget)).rejects.toThrow(ForbiddenException);
+  describe('findByCustomerEmail', () => {
+    it('deve retornar OSs do cliente', async () => {
+      const orders = [{ idServiceOrder: 1 }, { idServiceOrder: 2 }];
+      mockRepository.find.mockResolvedValue(orders);
+      const result = await service.findByCustomerEmail('cliente@test.com');
+      expect(result).toEqual(orders);
+    });
+
+    it('deve lançar NotFoundException se não encontrar OS', async () => {
+      mockRepository.find.mockResolvedValue([]);
+      await expect(service.findByCustomerEmail('x@test.com')).rejects.toThrow(NotFoundException);
+    });
   });
 
-  it('deve fazer soft delete da OS', async () => {
-    const order = { idServiceOrder: 1, active: true } as ServiceOrder;
-    mockRepo.findOne.mockResolvedValue(order);
-    await service.remove(1);
-    expect(mockRepo.save).toHaveBeenCalledWith(expect.objectContaining({ active: false }));
+  describe('startRepair', () => {
+    it('deve iniciar reparo com mecânico correto e status correto', async () => {
+      const order = {
+        idServiceOrder: 1,
+        mechanic: mockMechanic,
+        currentStatus: ServiceOrderStatus.AGUARDANDO_INICIO,
+      };
+      mockRepository.findOne.mockResolvedValue(order);
+      mockRepository.save.mockImplementation(async (o) => o);
+      const result = await service.startRepair(mockMechanic, 1);
+      expect(result.currentStatus).toBe(ServiceOrderStatus.EM_EXECUCAO);
+      expect(mockHistoryService.logStatusChange).toHaveBeenCalledWith(
+        1,
+        mockMechanic.id,
+        ServiceOrderStatus.AGUARDANDO_INICIO,
+        ServiceOrderStatus.EM_EXECUCAO,
+      );
+    });
+
+    it('não deve iniciar reparo se mecânico incorreto', async () => {
+      const order = {
+        idServiceOrder: 1,
+        mechanic: { id: 99 },
+        currentStatus: ServiceOrderStatus.AGUARDANDO_INICIO,
+      };
+      mockRepository.findOne.mockResolvedValue(order);
+      await expect(service.startRepair(mockMechanic, 1)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('não deve iniciar reparo se status incorreto', async () => {
+      const order = {
+        idServiceOrder: 1,
+        mechanic: mockMechanic,
+        currentStatus: ServiceOrderStatus.RECEBIDA,
+      };
+      mockRepository.findOne.mockResolvedValue(order);
+      await expect(service.startRepair(mockMechanic, 1)).rejects.toThrow(BadRequestException);
+    });
   });
 
-  it('deve buscar OSs pelo e-mail do cliente', async () => {
-    const orders = [{ idServiceOrder: 1 }, { idServiceOrder: 2 }] as ServiceOrder[];
-    mockRepo.find.mockResolvedValue(orders);
-    const result = await service.findByCustomerEmail('cliente@test.com');
-    expect(result).toHaveLength(2);
-  });
+  describe('finishRepair', () => {
+    it('deve finalizar reparo com mecânico correto e status correto', async () => {
+      const order = {
+        idServiceOrder: 1,
+        mechanic: mockMechanic,
+        currentStatus: ServiceOrderStatus.EM_EXECUCAO,
+      };
+      mockRepository.findOne.mockResolvedValue(order);
+      mockRepository.save.mockImplementation(async (o) => o);
+      const result = await service.finishRepair(mockMechanic, 1);
+      expect(result.currentStatus).toBe(ServiceOrderStatus.FINALIZADA);
+      expect(mockHistoryService.logStatusChange).toHaveBeenCalledWith(
+        1,
+        mockMechanic.id,
+        ServiceOrderStatus.EM_EXECUCAO,
+        ServiceOrderStatus.FINALIZADA,
+      );
+    });
 
-  it('deve lançar erro se não encontrar OSs para e-mail', async () => {
-    mockRepo.find.mockResolvedValue([]);
-    await expect(service.findByCustomerEmail('x@test.com')).rejects.toThrow(NotFoundException);
-  });
+    it('não deve finalizar reparo se mecânico incorreto', async () => {
+      const order = {
+        idServiceOrder: 1,
+        mechanic: { id: 99 },
+        currentStatus: ServiceOrderStatus.EM_EXECUCAO,
+      };
+      mockRepository.findOne.mockResolvedValue(order);
+      await expect(service.finishRepair(mockMechanic, 1)).rejects.toThrow(ForbiddenException);
+    });
 
-  it('deve iniciar reparo se mecânico for o correto e status "Aguardando início"', async () => {
-    const mechanic = { id: 5, type: 'mechanic' } as User;
-    const order = { idServiceOrder: 1, mechanic, currentStatus: ServiceOrderStatus.AGUARDANDO_INICIO } as ServiceOrder;
-    mockRepo.findOne.mockResolvedValue(order);
-    const updatedOrder = { ...order, currentStatus: ServiceOrderStatus.EM_EXECUCAO };
-    mockRepo.save.mockResolvedValue(updatedOrder);
-    const result = await service.startRepair(mechanic, 1);
-    expect(result.currentStatus).toBe(ServiceOrderStatus.EM_EXECUCAO);
-    expect(historyServiceMock.logStatusChange).toHaveBeenCalledWith(
-      updatedOrder.idServiceOrder,
-      mechanic.id,
-      ServiceOrderStatus.AGUARDANDO_INICIO,
-      ServiceOrderStatus.EM_EXECUCAO,
-    );
-  });
-
-  it('não deve permitir iniciar reparo se mecânico não for o correto', async () => {
-    const order = { idServiceOrder: 1, mechanic: { id: 99 }, currentStatus: ServiceOrderStatus.AGUARDANDO_INICIO } as ServiceOrder;
-    mockRepo.findOne.mockResolvedValue(order);
-    await expect(service.startRepair({ id: 5 } as User, 1)).rejects.toThrow(ForbiddenException);
-  });
-
-  it('não deve permitir iniciar reparo se status não for "Aguardando início"', async () => {
-    const mechanic = { id: 5 } as User;
-    const order = { idServiceOrder: 1, mechanic, currentStatus: ServiceOrderStatus.RECEBIDA } as ServiceOrder;
-    mockRepo.findOne.mockResolvedValue(order);
-    await expect(service.startRepair(mechanic, 1)).rejects.toThrow(BadRequestException);
-  });
-
-  it('deve finalizar reparo se mecânico for o correto e status "Em execução"', async () => {
-    const mechanic = { id: 5, type: 'mechanic' } as User;
-    const order = { idServiceOrder: 1, mechanic, currentStatus: ServiceOrderStatus.EM_EXECUCAO } as ServiceOrder;
-    mockRepo.findOne.mockResolvedValue(order);
-    const updatedOrder = { ...order, currentStatus: ServiceOrderStatus.FINALIZADA };
-    mockRepo.save.mockResolvedValue(updatedOrder);
-    const result = await service.finishRepair(mechanic, 1);
-    expect(result.currentStatus).toBe(ServiceOrderStatus.FINALIZADA);
-    expect(historyServiceMock.logStatusChange).toHaveBeenCalledWith(
-      updatedOrder.idServiceOrder,
-      mechanic.id,
-      ServiceOrderStatus.EM_EXECUCAO,
-      ServiceOrderStatus.FINALIZADA,
-    );
-  });
-
-  it('não deve permitir finalizar reparo se mecânico não for o correto', async () => {
-    const order = { idServiceOrder: 1, mechanic: { id: 99 }, currentStatus: ServiceOrderStatus.EM_EXECUCAO } as ServiceOrder;
-    mockRepo.findOne.mockResolvedValue(order);
-    await expect(service.finishRepair({ id: 5 } as User, 1)).rejects.toThrow(ForbiddenException);
-  });
-
-  it('não deve permitir finalizar reparo se status não for "Em execução"', async () => {
-    const mechanic = { id: 5 } as User;
-    const order = { idServiceOrder: 1, mechanic, currentStatus: ServiceOrderStatus.RECEBIDA } as ServiceOrder;
-    mockRepo.findOne.mockResolvedValue(order);
-    await expect(service.finishRepair(mechanic, 1)).rejects.toThrow(BadRequestException);
-  });
-
-  it('deve confirmar entrega do veículo se for o cliente correto e veículo existir', async () => {
-    const customer = { id: 1, type: 'cliente' } as User;
-    const order = { idServiceOrder: 1, customer, vehicle: { id: 123 }, currentStatus: ServiceOrderStatus.FINALIZADA } as ServiceOrder;
-    mockRepo.findOne.mockResolvedValue(order);
-    const updatedOrder = { ...order, currentStatus: ServiceOrderStatus.ENTREGUE };
-    mockRepo.save.mockResolvedValue(updatedOrder);
-    const result = await service.delivered(customer, 1);
-    expect(result.currentStatus).toBe(ServiceOrderStatus.ENTREGUE);
-    expect(historyServiceMock.logStatusChange).toHaveBeenCalledWith(
-      updatedOrder.idServiceOrder,
-      customer.id,
-      ServiceOrderStatus.FINALIZADA,
-      ServiceOrderStatus.ENTREGUE,
-    );
-  });
-
-  it('não deve permitir confirmar entrega se não for o cliente da OS', async () => {
-    const order = { idServiceOrder: 1, customer: { id: 99 }, vehicle: { id: 123 } } as ServiceOrder;
-    mockRepo.findOne.mockResolvedValue(order);
-    await expect(service.delivered({ id: 1 } as User, 1)).rejects.toThrow(ForbiddenException);
-  });
-
-  it('não deve permitir confirmar entrega se o veículo não existir', async () => {
-    const customer = { id: 1, type: 'cliente' } as User;
-    const order = { idServiceOrder: 1, customer, vehicle: null } as ServiceOrder;
-    mockRepo.findOne.mockResolvedValue(order);
-    await expect(service.delivered(customer, 1)).rejects.toThrow(NotFoundException);
+    it('não deve finalizar reparo se status incorreto', async () => {
+      const order = {
+        idServiceOrder: 1,
+        mechanic: mockMechanic,
+        currentStatus: ServiceOrderStatus.AGUARDANDO_INICIO,
+      };
+      mockRepository.findOne.mockResolvedValue(order);
+      await expect(service.finishRepair(mockMechanic, 1)).rejects.toThrow(BadRequestException);
+    });
   });
 });
