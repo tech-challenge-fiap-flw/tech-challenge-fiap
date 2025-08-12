@@ -5,7 +5,7 @@ Cada fluxo representa um cenário específico, com **endpoints** para execução
 
 ---
 
-## 1️⃣ Cenário Feliz (com serviços e peças)
+## 1️⃣ Happy path (com serviços e peças)
 1. Criar usuário:  
 POST /users
 
@@ -29,7 +29,7 @@ POST /service-order/{id}/deliverd
 
 ---
 
-## 2️⃣ Cenário Ruim (com serviços e peças - mecânico recusa)
+## 2️⃣ Bad path (com serviços e peças - mecânico recusa)
 1. Criar usuário:  
 POST /users
 
@@ -44,7 +44,7 @@ POST /service-order/{id}/accept
 
 ---
 
-## 3️⃣ Cenário Feliz (sem serviços e peças)
+## 3️⃣ Happy path (sem serviços e peças)
 1. Criar usuário:  
 POST /users
 
@@ -74,7 +74,7 @@ POST /service-order/{id}/deliverd
 
 ---
 
-## 4️⃣ Cenário Ruim (sem serviços e peças - mecânico nega)
+## 4️⃣ Bad path (sem serviços e peças - mecânico recusa)
 1. Criar usuário:  
 POST /users
 
@@ -89,7 +89,7 @@ POST /service-order/{id}/accept
 
 ---
 
-## 5️⃣ Cenário Ruim (sem serviços e peças - cliente nega)
+## 5️⃣ Bad path (sem serviços e peças - cliente recusa)
 1. Criar usuário:  
 POST /users
 

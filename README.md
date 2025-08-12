@@ -22,13 +22,12 @@ O sistema permite o registro de veículos, criação e gerenciamento de ordens d
 ### Passos para execução
 1. **Clone o repositório**
    ```bash
-   git clone https://github.com/seu-usuario/seu-repositorio.git
-   cd seu-repositorio
+   git clone https://github.com/lufepedrosa/tech-challenge-fiap
    ```
 
 2. **Copie o arquivo .env.example para .env e configure as variáveis**
    ```bash
-   cp .env.example .env
+   cp .env.local
    ```
 
 3. **Suba os containers com Docker Compose**
