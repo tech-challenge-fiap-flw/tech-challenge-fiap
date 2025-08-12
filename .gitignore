@@ -56,3 +56,4 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 docker-compose.sonar.yml
 sonar-project.properties
+.scannerwork
