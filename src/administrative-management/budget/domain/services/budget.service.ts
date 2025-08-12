@@ -94,7 +94,7 @@ export class BudgetService extends BaseService<Budget> {
 
   async findById(id: number, relations: Array<string> = [], manager?: EntityManager, user?: UserFromJwt): Promise<Budget> {
     const budget = await this.getCurrentRepository(manager).findOne({
-      where:  user.roles?.includes('admin') || !user
+      where:  user?.roles.includes('admin') || !user
         ? { id }
         : { id, ownerId: user.id },
       relations,

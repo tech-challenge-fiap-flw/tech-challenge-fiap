@@ -16,8 +16,8 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
-    .setTitle('API de Usuários')
-    .setDescription('Documentação da API para criação, atualização e exclusão de usuários')
+    .setTitle('Documentação da API')
+    .setDescription('Documentação da API de gerenciamento de serviço')
     .setVersion('1.0')
     .addBearerAuth()
     .build();
