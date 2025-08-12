@@ -1,25 +1,36 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BudgetController } from './budget.controller';
+import { BudgetController } from '../../presentation/controllers/budget.controller';
 import { BudgetService } from '../../domain/services/budget.service';
-import { CreateBudgetDto } from '../dto/create-budget.dto';
-import { UpdateBudgetDto } from '../dto/update-budget.dto';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, ForbiddenException } from '@nestjs/common';
 
 describe('BudgetController', () => {
   let controller: BudgetController;
   let service: BudgetService;
 
-  const mockBudgetService = {
-    create: jest.fn(),
-    update: jest.fn(),
-    remove: jest.fn(),
+  const mockBudget = {
+    id: 1,
+    description: 'Budget description',
+    deletedAt: null,
+    creationDate: new Date(),
+    ownerId: 10,
+    diagnosisId: 5,
+    total: 1000,
+    vehicleParts: [{ id: 1, quantity: 2 }],
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [BudgetController],
       providers: [
-        { provide: BudgetService, useValue: mockBudgetService },
+        {
+          provide: BudgetService,
+          useValue: {
+            update: jest.fn(),
+            findById: jest.fn(),
+            remove: jest.fn(),
+            decideBudget: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -31,38 +42,28 @@ describe('BudgetController', () => {
     jest.clearAllMocks();
   });
 
-  describe('create', () => {
-    it('should create and return a budget response dto', async () => {
-      const createDto: CreateBudgetDto = {
-        ownerId: 1,
-        diagnosisId: 2,
-        description: 'Orçamento teste',
-        vehicleParts: [{ id: 10, quantity: 2 }],
+  describe('update', () => {
+    it('should call service.update and return mapped response', async () => {
+      service.update = jest.fn().mockResolvedValue(mockBudget);
+
+      const updateDto = {
+        description: 'Updated description',
+        vehicleParts: [{ id: 1, quantity: 3 }],
+        vehicleServicesIds: [1, 2],
       };
 
-      const createdBudget = {
-        id: 1,
-        description: createDto.description,
-        deletedAt: null,
-        creationDate: new Date(),
-        ownerId: createDto.ownerId,
-        diagnosisId: createDto.diagnosisId,
-        vehicleParts: [{ id: 10, quantity: 2 }],
-      };
+      const result = await controller.update(1, updateDto);
 
-      mockBudgetService.create.mockResolvedValue(createdBudget);
-
-      const result = await controller.create(createDto);
-
-      expect(service.create).toHaveBeenCalledWith(createDto);
+      expect(service.update).toHaveBeenCalledWith(1, updateDto);
       expect(result).toEqual({
-        id: createdBudget.id,
-        description: createdBudget.description,
-        deletedAt: createdBudget.deletedAt,
-        creationDate: createdBudget.creationDate,
-        ownerId: createdBudget.ownerId,
-        diagnosisId: createdBudget.diagnosisId,
-        vehicleParts: createdBudget.vehicleParts.map((vp) => ({
+        id: mockBudget.id,
+        description: mockBudget.description,
+        deletedAt: mockBudget.deletedAt,
+        creationDate: mockBudget.creationDate,
+        ownerId: mockBudget.ownerId,
+        diagnosisId: mockBudget.diagnosisId,
+        total: mockBudget.total,
+        vehicleParts: mockBudget.vehicleParts.map(vp => ({
           id: vp.id,
           quantity: vp.quantity,
         })),
@@ -70,53 +71,68 @@ describe('BudgetController', () => {
     });
   });
 
-  describe('update', () => {
-    it('should update and return a budget response dto', async () => {
-      const id = 1;
-      const updateDto: UpdateBudgetDto = {
-        description: 'Atualizado',
-        vehicleParts: [{ id: 10, quantity: 3 }],
-      };
+  describe('findOne', () => {
+    it('should call service.findById and return mapped response', async () => {
+      service.findById = jest.fn().mockResolvedValue(mockBudget);
 
-      const updatedBudget = {
-        id,
-        description: updateDto.description,
-        deletedAt: null,
-        creationDate: new Date(),
-        ownerId: 1,
-        diagnosisId: 2,
-        vehicleParts: updateDto.vehicleParts,
-      };
+      const mockUser = { id: 10, name: 'tester da silva', email: 'test@test.com', roles: ['user'] };
 
-      mockBudgetService.update.mockResolvedValue(updatedBudget);
+      const result = await controller.findOne(mockUser, 1);
 
-      const result = await controller.update(id, updateDto);
-
-      expect(service.update).toHaveBeenCalledWith(id, updateDto);
+      expect(service.findById).toHaveBeenCalledWith(1, ['vehicleParts'], null, mockUser);
       expect(result).toEqual({
-        id: updatedBudget.id,
-        description: updatedBudget.description,
-        deletedAt: updatedBudget.deletedAt,
-        creationDate: updatedBudget.creationDate,
-        ownerId: updatedBudget.ownerId,
-        diagnosisId: updatedBudget.diagnosisId,
-        vehicleParts: updatedBudget.vehicleParts.map((vp) => ({
+        id: mockBudget.id,
+        description: mockBudget.description,
+        deletedAt: mockBudget.deletedAt,
+        creationDate: mockBudget.creationDate,
+        ownerId: mockBudget.ownerId,
+        diagnosisId: mockBudget.diagnosisId,
+        total: mockBudget.total,
+        vehicleParts: mockBudget.vehicleParts.map(vp => ({
           id: vp.id,
           quantity: vp.quantity,
         })),
       });
+    });
+
+    it('should throw if service.findById throws', async () => {
+      service.findById = jest.fn().mockRejectedValue(new NotFoundException());
+      const mockUser = { id: 10, name: 'tester da silva', email: 'test@test.com', roles: ['user'] };
+
+      await expect(controller.findOne(mockUser, 1)).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('remove', () => {
-    it('should call remove service method with correct id', async () => {
-      const id = 1;
+    it('should call service.remove', async () => {
+      service.remove = jest.fn().mockResolvedValue(undefined);
 
-      mockBudgetService.remove.mockResolvedValue(undefined);
+      await controller.remove(1);
 
-      await expect(controller.remove(id)).resolves.toBeUndefined();
+      expect(service.remove).toHaveBeenCalledWith(1);
+    });
+  });
 
-      expect(service.remove).toHaveBeenCalledWith(id);
+  describe('decideBudget', () => {
+    it('should call service.decideBudget with correct params', async () => {
+      const acceptDto = { accept: true };
+      const mockUser = { id: 10 };
+
+      service.decideBudget = jest.fn().mockResolvedValue('result');
+
+      const result = await controller.decideBudget(1, acceptDto.accept, mockUser as any);
+
+      expect(service.decideBudget).toHaveBeenCalledWith(1, true, mockUser);
+      expect(result).toBe('result');
+    });
+
+    it('should propagate error from service.decideBudget', async () => {
+      const acceptDto = { accept: false };
+      const mockUser = { id: 10 };
+
+      service.decideBudget = jest.fn().mockRejectedValue(new ForbiddenException());
+
+      await expect(controller.decideBudget(1, acceptDto.accept, mockUser as any)).rejects.toThrow(ForbiddenException);
     });
   });
 });
