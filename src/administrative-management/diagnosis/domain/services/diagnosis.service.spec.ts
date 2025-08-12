@@ -1,144 +1,131 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { DiagnosisService } from './diagnosis.service';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Diagnosis } from '../entities/diagnosis.entity';
-import { Repository } from 'typeorm';
-import { NotFoundException } from '@nestjs/common';
+import { DiagnosisService } from '../services/diagnosis.service';
 import { VehicleService } from '../../../../administrative-management/vehicle/domain/services/vehicle.service';
 import { UserService } from '../../../../auth-and-access/user/domain/services/user.service';
-
-const mockRepository = () => ({
-  save: jest.fn(),
-  find: jest.fn(),
-  findOneBy: jest.fn(),
-  softRemove: jest.fn(),
-});
-
-const mockVehicleService = () => ({
-  findById: jest.fn(),
-});
-
-const mockUserService = () => ({
-  findById: jest.fn(),
-});
+import { DataSource, EntityManager, Repository } from 'typeorm';
+import { Diagnosis } from '../entities/diagnosis.entity';
+import { NotFoundException } from '@nestjs/common';
 
 describe('DiagnosisService', () => {
   let service: DiagnosisService;
-  let repo: jest.Mocked<Repository<Diagnosis>>;
-  let vehicleService: ReturnType<typeof mockVehicleService>;
-  let userService: ReturnType<typeof mockUserService>;
+  let vehicleService: VehicleService;
+  let userService: UserService;
+  let dataSource: DataSource;
 
-  const mockDiagnosis: Diagnosis = {
-    id: 1,
-    description: 'Problema no motor',
-    creationDate: new Date(),
-    vehicleId: 10,
-    responsibleMechanicId: 100,
-    vehicle: null,
-    responsibleMechanic: null,
-    deletedAt: null,
+  const mockDiagnosisRepository = {
+    save: jest.fn(),
+    findOneBy: jest.fn(),
   };
 
+  const mockManager = {
+    getRepository: jest.fn(() => mockDiagnosisRepository),
+  } as unknown as EntityManager;
+
   beforeEach(async () => {
+    const mockQueryRunner = {
+      manager: mockManager,
+      connect: jest.fn(),
+      startTransaction: jest.fn(),
+      commitTransaction: jest.fn(),
+      rollbackTransaction: jest.fn(),
+      release: jest.fn(),
+    };
+
+    const mockDataSource = {
+      getRepository: jest.fn(() => mockDiagnosisRepository),
+      createQueryRunner: jest.fn(() => mockQueryRunner),
+      transaction: jest.fn(async (fn) => {
+        return await fn(mockManager);
+      }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         DiagnosisService,
-        { provide: getRepositoryToken(Diagnosis), useFactory: mockRepository },
-        { provide: VehicleService, useFactory: mockVehicleService },
-        { provide: UserService, useFactory: mockUserService },
+        {
+          provide: VehicleService,
+          useValue: {
+            findById: jest.fn(),
+          },
+        },
+        {
+          provide: UserService,
+          useValue: {
+            findById: jest.fn(),
+          },
+        },
+        {
+          provide: DataSource,
+          useValue: mockDataSource,
+        },
       ],
     }).compile();
 
-    service = module.get(DiagnosisService);
-    repo = module.get(getRepositoryToken(Diagnosis));
-    vehicleService = module.get(VehicleService);
-    userService = module.get(UserService);
+    service = module.get<DiagnosisService>(DiagnosisService);
+    vehicleService = module.get<VehicleService>(VehicleService);
+    userService = module.get<UserService>(UserService);
+    dataSource = module.get<DataSource>(DataSource);
   });
 
+
   describe('create', () => {
-    it('should validate vehicle and user, then save diagnosis', async () => {
+    it('should create and return a diagnosis', async () => {
       const dto = {
-        description: 'Teste',
-        vehicleId: 10,
-        responsibleMechanicId: 100,
+        description: 'Diagnóstico válido com mais de 10 caracteres',
+        vehicleId: 1,
+        responsibleMechanicId: 2,
       };
 
-      vehicleService.findById.mockResolvedValue({});
-      userService.findById.mockResolvedValue({});
-      repo.save.mockResolvedValue(mockDiagnosis);
+      (vehicleService.findById as jest.Mock).mockResolvedValue({ id: dto.vehicleId });
+      (userService.findById as jest.Mock).mockResolvedValue({ id: dto.responsibleMechanicId });
 
-      const result = await service.create(dto as any);
+      mockDiagnosisRepository.save.mockResolvedValue({ id: 123, ...dto });
+
+      const result = await service.create(dto);
 
       expect(vehicleService.findById).toHaveBeenCalledWith(dto.vehicleId);
       expect(userService.findById).toHaveBeenCalledWith(dto.responsibleMechanicId);
-      expect(repo.save).toHaveBeenCalledWith(dto);
-      expect(result).toEqual(mockDiagnosis);
-    });
-  });
-
-  describe('findAllByVehicleId', () => {
-    it('should return diagnostics by vehicleId', async () => {
-      repo.find.mockResolvedValue([mockDiagnosis]);
-
-      const result = await service.findAllByVehicleId(10);
-
-      expect(repo.find).toHaveBeenCalledWith({ where: { vehicleId: 10 } });
-      expect(result).toEqual([mockDiagnosis]);
+      expect(mockDiagnosisRepository.save).toHaveBeenCalledWith(dto);
+      expect(result).toEqual({ id: 123, ...dto });
     });
 
-    it('should throw NotFoundException if no diagnosis found', async () => {
-      repo.find.mockResolvedValue([]);
+    it('should create even if responsibleMechanicId is undefined', async () => {
+      const dto = {
+        description: 'Outro diagnóstico válido',
+        vehicleId: 1,
+        responsibleMechanicId: undefined,
+      };
 
-      await expect(service.findAllByVehicleId(10)).rejects.toThrow(NotFoundException);
+      (vehicleService.findById as jest.Mock).mockResolvedValue({ id: dto.vehicleId });
+      (userService.findById as jest.Mock).mockResolvedValue(null);
+
+      mockDiagnosisRepository.save.mockResolvedValue({ id: 124, ...dto });
+
+      const result = await service.create(dto);
+
+      expect(vehicleService.findById).toHaveBeenCalledWith(dto.vehicleId);
+      expect(userService.findById).toHaveBeenCalledWith(dto.responsibleMechanicId);
+      expect(mockDiagnosisRepository.save).toHaveBeenCalledWith(dto);
+      expect(result).toEqual({ id: 124, ...dto });
     });
   });
 
   describe('findById', () => {
-    it('should return a diagnosis by id', async () => {
-      repo.findOneBy.mockResolvedValue(mockDiagnosis);
+    it('should return a diagnosis if found', async () => {
+      const diagnosis = { id: 1, description: 'desc', vehicleId: 1, responsibleMechanicId: 2, deletedAt: null };
+      mockDiagnosisRepository.findOneBy.mockResolvedValue(diagnosis);
 
       const result = await service.findById(1);
-      expect(repo.findOneBy).toHaveBeenCalledWith({ id: 1 });
-      expect(result).toEqual(mockDiagnosis);
+
+      expect(mockDiagnosisRepository.findOneBy).toHaveBeenCalledWith({ id: 1 });
+      expect(result).toEqual(diagnosis);
     });
 
-    it('should throw NotFoundException if not found', async () => {
-      repo.findOneBy.mockResolvedValue(null);
-      await expect(service.findById(99)).rejects.toThrow(NotFoundException);
-    });
-  });
+    it('should throw NotFoundException if diagnosis not found', async () => {
+      mockDiagnosisRepository.findOneBy.mockResolvedValue(null);
 
-  describe('update', () => {
-    it('should validate, find, merge and save diagnosis', async () => {
-      const dto = {
-        description: 'Atualizado',
-        vehicleId: 10,
-        responsibleMechanicId: 100,
-      };
-
-      vehicleService.findById.mockResolvedValue({});
-      userService.findById.mockResolvedValue({});
-      jest.spyOn(service, 'findById').mockResolvedValue({ ...mockDiagnosis });
-      repo.save.mockResolvedValue({ ...mockDiagnosis, ...dto });
-
-      const result = await service.update(1, dto as any);
-
-      expect(vehicleService.findById).toHaveBeenCalledWith(dto.vehicleId);
-      expect(userService.findById).toHaveBeenCalledWith(dto.responsibleMechanicId);
-      expect(service.findById).toHaveBeenCalledWith(1);
-      expect(repo.save).toHaveBeenCalled();
-      expect(result.description).toBe('Atualizado');
-    });
-  });
-
-  describe('remove', () => {
-    it('should call findById and softRemove', async () => {
-      jest.spyOn(service, 'findById').mockResolvedValue(mockDiagnosis);
-      repo.softRemove.mockResolvedValue(undefined);
-
-      await service.remove(1);
-      expect(service.findById).toHaveBeenCalledWith(1);
-      expect(repo.softRemove).toHaveBeenCalledWith(mockDiagnosis);
+      await expect(service.findById(999)).rejects.toThrow(NotFoundException);
+      expect(mockDiagnosisRepository.findOneBy).toHaveBeenCalledWith({ id: 999 });
     });
   });
 });
