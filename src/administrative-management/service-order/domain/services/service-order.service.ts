@@ -101,12 +101,14 @@ export class ServiceOrderService extends BaseService<ServiceOrder> {
         order.mechanic = mechanic;
         order.currentStatus = order.budget ? ServiceOrderStatus.AGUARDANDO_INICIO : ServiceOrderStatus.EM_DIAGNOSTICO;
       } else {
-        const vehiclePartIds = await this.budgetVehiclePartService.findByBudgetId(order.budget.id, manager);
-
-        for (const part of vehiclePartIds) {
-          const vehiclePart = await this.vehiclePartService.findOne(part.vehiclePartId);
-          vehiclePart.quantity += part.quantity;
-          await this.vehiclePartService.updatePart(vehiclePart.id, { quantity: vehiclePart.quantity }, manager);
+        if (order.budget) {
+          const vehiclePartIds = await this.budgetVehiclePartService.findByBudgetId(order.budget.id, manager);
+  
+          for (const part of vehiclePartIds) {
+            const vehiclePart = await this.vehiclePartService.findOne(part.vehiclePartId);
+            vehiclePart.quantity += part.quantity;
+            await this.vehiclePartService.updatePart(vehiclePart.id, { quantity: vehiclePart.quantity }, manager);
+          }
         }
 
         order.currentStatus = ServiceOrderStatus.RECUSADA;
