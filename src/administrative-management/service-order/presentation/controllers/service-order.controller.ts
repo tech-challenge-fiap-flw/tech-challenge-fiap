@@ -27,7 +27,7 @@ import { AcceptServiceOrderDto } from '../dto/accept-service-order.dto';
 import { CreateServiceOrderDto } from '../dto/create-service-order.dto';
 import { AssignBudgetDto } from '../dto/assign-budget.dto';
 import { ServiceOrder } from '../../domain/entities/service-order.entity';
-import { UserFromJwt } from 'src/auth-and-access/auth/domain/models/UserFromJwt';
+import { UserFromJwt } from '../../../../auth-and-access/auth/domain/models/UserFromJwt';
 
 @ApiTags('Ordem de Serviço')
 @UseGuards(RolesGuard)

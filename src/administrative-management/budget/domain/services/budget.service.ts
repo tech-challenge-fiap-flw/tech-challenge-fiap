@@ -18,7 +18,7 @@ import { ServiceOrderHistoryService } from '../../../../administrative-managemen
 import { VehiclePartService } from '../../../../administrative-management/vehicle-part/domain/services/vehicle-part.service';
 import { VehicleServiceService } from '../../../vehicle-service/domain/services/vehicle-service.service';
 import { BudgetVehicleServicesService } from '../../../../administrative-management/budget-vehicle-services/domain/services/budget-vehicle-services.service';
-import { UserFromJwt } from 'src/auth-and-access/auth/domain/models/UserFromJwt';
+import { UserFromJwt } from '../../../../auth-and-access/auth/domain/models/UserFromJwt';
 
 @Injectable()
 export class BudgetService extends BaseService<Budget> {

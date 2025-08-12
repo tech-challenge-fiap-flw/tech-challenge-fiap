@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { Vehicle } from '../entities/vehicle.entity';
 import { UpdateVehicleDto } from '../../presentation/dto/update-vehicle.dto';
 import { UserService } from '../../../../auth-and-access/user/domain/services/user.service';
-import { UserFromJwt } from 'src/auth-and-access/auth/domain/models/UserFromJwt';
+import { UserFromJwt } from '../../../../auth-and-access/auth/domain/models/UserFromJwt';
 
 @Injectable()
 export class VehicleService {

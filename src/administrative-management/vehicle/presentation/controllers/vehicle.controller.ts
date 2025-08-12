@@ -6,8 +6,8 @@ import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags
 import { RolesGuard } from '../../../../auth-and-access/auth/infrastructure/guards/roles.guard';
 import { VehicleResponseDto } from '../dto/vehicle-response.dto';
 import { Vehicle } from '../../domain/entities/vehicle.entity';
-import { CurrentUser } from 'src/auth-and-access/auth/presentation/decorators/current-user.decorator';
-import { UserFromJwt } from 'src/auth-and-access/auth/domain/models/UserFromJwt';
+import { CurrentUser } from '../../../../auth-and-access/auth/presentation/decorators/current-user.decorator';
+import { UserFromJwt } from '../../../../auth-and-access/auth/domain/models/UserFromJwt';
 
 @ApiTags('Administrativo: Veiculos')
 @UseGuards(RolesGuard)

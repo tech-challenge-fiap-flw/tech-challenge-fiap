@@ -18,7 +18,7 @@ import { AssignBudgetDto } from '../../presentation/dto/assign-budget.dto';
 import { Budget } from '../../../../administrative-management/budget/domain/entities/budget.entity';
 import { BudgetVehiclePartService } from '../../../../administrative-management/budget-vehicle-part/domain/services/budget-vehicle-part.service';
 import { VehiclePartService } from '../../../../administrative-management/vehicle-part/domain/services/vehicle-part.service';
-import { UserFromJwt } from 'src/auth-and-access/auth/domain/models/UserFromJwt';
+import { UserFromJwt } from '../../../../auth-and-access/auth/domain/models/UserFromJwt';
 
 @Injectable()
 export class ServiceOrderService extends BaseService<ServiceOrder> {

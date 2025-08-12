@@ -9,7 +9,7 @@ import { Budget } from '../../domain/entities/budget.entity';
 import { User } from '../../../../auth-and-access/user/domain/entities/user.entity';
 import { CurrentUser } from '../../../../auth-and-access/auth/presentation/decorators/current-user.decorator';
 import { AcceptBudgetDto } from '../dto/accept-budget.dto';
-import { UserFromJwt } from 'src/auth-and-access/auth/domain/models/UserFromJwt';
+import { UserFromJwt } from '../../../../auth-and-access/auth/domain/models/UserFromJwt';
 
 @ApiTags('Administrativo: Budget')
 @UseGuards(RolesGuard)
