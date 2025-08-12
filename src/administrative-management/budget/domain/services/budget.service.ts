@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { CreateBudgetDto } from '../../presentation/dto/create-budget.dto';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { Budget } from '../entities/budget.entity';
@@ -213,7 +213,11 @@ export class BudgetService extends BaseService<Budget> {
       if (order.customer.id !== user.id) {
         throw new ForbiddenException('Você não está autorizado a modificar essa OS.');
       }
-  
+
+      if (order.currentStatus !== ServiceOrderStatus.AGUARDANDO_APROVACAO) {
+        throw new ConflictException('Ordem de serviço não está aguardando aprovação.');
+      }
+
       const oldStatus = order.currentStatus;
       const newStatus = accept
         ? ServiceOrderStatus.AGUARDANDO_INICIO
@@ -224,7 +228,6 @@ export class BudgetService extends BaseService<Budget> {
       const savedOrder = await manager.getRepository(ServiceOrder).save(order);
 
       if (!accept) {
-      
         const vehiclePartIds = await this.budgetVehiclePartService.findByBudgetId(budget.id, manager);
 
         for (const part of vehiclePartIds) {
