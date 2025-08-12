@@ -16,6 +16,7 @@ describe('VehiclePartController', () => {
     quantity: 15,
     deletedAt: null,
     creationDate: new Date(),
+    price: 0
   };
 
   beforeEach(async () => {
@@ -44,6 +45,7 @@ describe('VehiclePartController', () => {
         name: mockPart.name,
         description: mockPart.description,
         quantity: mockPart.quantity,
+        price: 0
       };
       service.create.mockResolvedValue(mockPart);
 
@@ -57,6 +59,7 @@ describe('VehiclePartController', () => {
         description: mockPart.description,
         quantity: mockPart.quantity,
         deletedAt: mockPart.deletedAt,
+        price: mockPart.price,
       });
     });
   });
@@ -76,6 +79,7 @@ describe('VehiclePartController', () => {
           description: mockPart.description,
           quantity: mockPart.quantity,
           deletedAt: mockPart.deletedAt,
+          price: mockPart.price,
         },
       ]);
     });

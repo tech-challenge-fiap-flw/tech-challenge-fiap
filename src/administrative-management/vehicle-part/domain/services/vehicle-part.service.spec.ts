@@ -24,6 +24,7 @@ describe('VehiclePartService', () => {
     quantity: 10,
     deletedAt: null,
     creationDate: new Date(),
+    price: 0
   };
 
   beforeEach(async () => {
@@ -50,6 +51,7 @@ describe('VehiclePartService', () => {
         name: mockPart.name,
         description: mockPart.description,
         quantity: mockPart.quantity,
+        price: 0
       });
 
       expect(repository.save).toHaveBeenCalled();
