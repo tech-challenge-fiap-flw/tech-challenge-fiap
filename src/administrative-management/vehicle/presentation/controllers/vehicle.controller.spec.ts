@@ -4,10 +4,18 @@ import { VehicleService } from '../../domain/services/vehicle.service';
 import { Vehicle } from '../../domain/entities/vehicle.entity';
 import { CreateVehicleDto } from '../dto/create-vehicle.dto';
 import { UpdateVehicleDto } from '../dto/update-vehicle.dto';
+import { UserFromJwt } from '../../../../auth-and-access/auth/domain/models/UserFromJwt';
 
 describe('VehicleController', () => {
   let controller: VehicleController;
   let service: jest.Mocked<VehicleService>;
+
+  const mockUser: UserFromJwt = {
+    id: 999,
+    email: 'testuser@example.com',
+    name: 'Test User',
+    roles: ['admin']
+  };
 
   const mockVehicle: Vehicle = {
     id: 1,
@@ -41,7 +49,7 @@ describe('VehicleController', () => {
     }).compile();
 
     controller = module.get<VehicleController>(VehicleController);
-    service = module.get(VehicleService);
+    service = module.get(VehicleService) as jest.Mocked<VehicleService>;
   });
 
   describe('create', () => {
@@ -58,8 +66,8 @@ describe('VehicleController', () => {
       };
       service.create.mockResolvedValue(mockVehicle);
 
-      const result = await controller.create(dto);
-      expect(service.create).toHaveBeenCalledWith(dto);
+      const result = await controller.create(mockUser, dto);
+      expect(service.create).toHaveBeenCalledWith(mockUser, dto);
       expect(result).toMatchObject({ id: mockVehicle.id, brand: mockVehicle.brand });
     });
   });
@@ -68,8 +76,8 @@ describe('VehicleController', () => {
     it('should return a list of vehicles', async () => {
       service.findAll.mockResolvedValue([mockVehicle]);
 
-      const result = await controller.findAll();
-      expect(service.findAll).toHaveBeenCalled();
+      const result = await controller.findAll(mockUser);
+      expect(service.findAll).toHaveBeenCalledWith(mockUser);
       expect(result).toEqual([
         {
           id: mockVehicle.id,
@@ -91,8 +99,8 @@ describe('VehicleController', () => {
     it('should return one vehicle', async () => {
       service.findById.mockResolvedValue(mockVehicle);
 
-      const result = await controller.findOne(1);
-      expect(service.findById).toHaveBeenCalledWith(1);
+      const result = await controller.findOne(mockUser, 1);
+      expect(service.findById).toHaveBeenCalledWith(1, mockUser);
       expect(result.id).toBe(1);
     });
   });
@@ -103,8 +111,8 @@ describe('VehicleController', () => {
       const updatedVehicle = { ...mockVehicle, ...updateDto };
       service.update.mockResolvedValue(updatedVehicle);
 
-      const result = await controller.update(1, updateDto);
-      expect(service.update).toHaveBeenCalledWith(1, updateDto);
+      const result = await controller.update(mockUser, 1, updateDto);
+      expect(service.update).toHaveBeenCalledWith(mockUser, 1, updateDto);
       expect(result.color).toBe('Black');
     });
   });
@@ -113,8 +121,8 @@ describe('VehicleController', () => {
     it('should call service.remove', async () => {
       service.remove.mockResolvedValue();
 
-      await controller.remove(1);
-      expect(service.remove).toHaveBeenCalledWith(1);
+      await controller.remove(mockUser, 1);
+      expect(service.remove).toHaveBeenCalledWith(mockUser, 1);
     });
   });
 });
