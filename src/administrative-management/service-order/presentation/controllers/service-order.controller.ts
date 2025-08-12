@@ -27,6 +27,7 @@ import { AcceptServiceOrderDto } from '../dto/accept-service-order.dto';
 import { CreateServiceOrderDto } from '../dto/create-service-order.dto';
 import { AssignBudgetDto } from '../dto/assign-budget.dto';
 import { ServiceOrder } from '../../domain/entities/service-order.entity';
+import { UserFromJwt } from 'src/auth-and-access/auth/domain/models/UserFromJwt';
 
 @ApiTags('Ordem de Serviço')
 @UseGuards(RolesGuard)
@@ -36,7 +37,6 @@ export class ServiceOrderController {
 
   @Post()
   @ApiBearerAuth()
-  @Roles('mechanic', 'cliente', 'admin')
   @ApiOperation({ summary: 'Criar nova OS' })
   @ApiCreatedResponse({
     description: 'OS criada com sucesso',
@@ -48,15 +48,21 @@ export class ServiceOrderController {
 
   @Get(':id')
   @ApiBearerAuth()
-  @Roles('mechanic', 'cliente', 'admin')
   @ApiOperation({ summary: 'Buscar OS por ID' })
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.serviceOrderService.findOne(id);
+  async findOne(@CurrentUser() user: UserFromJwt, @Param('id', ParseIntPipe) id: number) {
+    return this.serviceOrderService.findOne(id, null, user);
+  }
+
+  @Get()
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Buscar todas as OS' })
+  async findAll(@CurrentUser() user: UserFromJwt) {
+    return this.serviceOrderService.findAll(user);
   }
 
   @Get('customer/:email')
   @ApiBearerAuth()
-  @Roles('mechanic', 'cliente')
+  @Roles('admin')
   @ApiOperation({ summary: 'Buscar OS por e-mail do cliente' })
   async findByCustomerEmail(@Param('email') email: string) {
     return this.serviceOrderService.findByCustomerEmail(email);
@@ -64,7 +70,7 @@ export class ServiceOrderController {
 
   @Delete(':id')
   @ApiBearerAuth()
-  @Roles('mechanic', 'admin')
+  @Roles('admin')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Soft delete da OS' })
   async remove(@Param('id', ParseIntPipe) id: number) {
@@ -73,7 +79,7 @@ export class ServiceOrderController {
 
   @Post(':id/accept')
   @ApiBearerAuth()
-  @Roles('mechanic', 'admin')
+  @Roles('admin')
   @ApiOperation({ summary: 'Aceitar ou recusar OS' })
   @ApiOkResponse({ description: 'Decisão registrada com sucesso' })
   @ApiBody({ type: AcceptServiceOrderDto })
@@ -84,7 +90,7 @@ export class ServiceOrderController {
 
   @Post(':id/budget')
   @ApiBearerAuth()
-  @Roles('mechanic', 'admin')
+  @Roles('admin')
   @ApiOperation({ summary: 'Criar e atribuir orçamento à OS' })
   @ApiOkResponse({ description: 'Orçamento criado e atribuído com sucesso' })
   async assignBudget(
@@ -106,7 +112,7 @@ export class ServiceOrderController {
   
   @Post(':id/finish')
   @ApiBearerAuth()
-  @Roles('mechanic', 'admin')
+  @Roles('admin')
   @ApiOperation({ summary: 'Finalizar reparo da OS' })
   @ApiOkResponse({ description: 'OS finalizada' })
   async finishRepair(@CurrentUser() user: User, @Param('id', ParseIntPipe) id: number) {
@@ -115,7 +121,6 @@ export class ServiceOrderController {
   
   @Post(':id/delivered')
   @ApiBearerAuth()
-  @Roles('cliente', 'admin')
   @ApiOperation({ summary: 'Cliente confirma entrega do veículo' })
   @ApiOkResponse({ description: 'Veículo entregue' })
   async delivered(@CurrentUser() user: User, @Param('id', ParseIntPipe) id: number) {
@@ -124,7 +129,7 @@ export class ServiceOrderController {
 
   @Get(':id/execution-time')
   @ApiBearerAuth()
-  @Roles('mechanic', 'admin')
+  @Roles('admin')
   @ApiOperation({ summary: 'Obter tempo de execução da OS pelo ID' })
   async getExecutionTime(@Param('id', ParseIntPipe) id: number) {
     return this.serviceOrderService.getExecutionTimeById(id);
@@ -132,7 +137,7 @@ export class ServiceOrderController {
 
   @Get('execution-time/average')
   @ApiBearerAuth()
-  @Roles('mechanic', 'admin')
+  @Roles('admin')
   @ApiOperation({ summary: 'Obter tempo médio de execução de todas as OS' })
   async getAverageExecutionTime() {
     return this.serviceOrderService.getAverageExecutionTime();

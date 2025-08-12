@@ -18,6 +18,7 @@ import { AssignBudgetDto } from '../../presentation/dto/assign-budget.dto';
 import { Budget } from '../../../../administrative-management/budget/domain/entities/budget.entity';
 import { BudgetVehiclePartService } from '../../../../administrative-management/budget-vehicle-part/domain/services/budget-vehicle-part.service';
 import { VehiclePartService } from '../../../../administrative-management/vehicle-part/domain/services/vehicle-part.service';
+import { UserFromJwt } from 'src/auth-and-access/auth/domain/models/UserFromJwt';
 
 @Injectable()
 export class ServiceOrderService extends BaseService<ServiceOrder> {
@@ -77,14 +78,27 @@ export class ServiceOrderService extends BaseService<ServiceOrder> {
     });
   }
 
-  async findOne(id: number, manager?: EntityManager): Promise<ServiceOrder> {
+  async findOne(id: number, manager?: EntityManager, user?: UserFromJwt): Promise<ServiceOrder> {
     const order = await this.getCurrentRepository(manager).findOne({
-      where: { idServiceOrder: id, active: true },
+      where: user.roles?.includes('admin') || !user
+        ? { idServiceOrder: id, active: true }
+        : { idServiceOrder: id, active: true, customer: { id: user.id } },
       relations: ['budget', 'customer', 'mechanic', 'vehicle'],
     });
 
     if (!order) throw new NotFoundException(`OS ${id} não encontrada`);
     return order;
+  }
+
+  async findAll(user: UserFromJwt): Promise<ServiceOrder[]> {
+    const where = user.roles?.includes('admina')
+      ? { active: true }
+      : { active: true, customer: { id: user.id } };
+
+    return this.repository.find({
+      where,
+      relations: ['budget', 'customer', 'mechanic', 'vehicle'],
+    });
   }
 
   async acceptOrder(mechanic: User, id: number, accept: boolean): Promise<ServiceOrder> {
