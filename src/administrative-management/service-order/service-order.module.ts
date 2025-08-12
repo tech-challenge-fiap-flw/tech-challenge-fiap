@@ -7,6 +7,8 @@ import { UserModule } from 'src/auth-and-access/user/user.module';
 import { BudgetModule } from 'src/administrative-management/budget/budget.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DiagnosisModule } from 'src/administrative-management/diagnosis/diagnosis.module';
+import { BudgetVehiclePartModule } from '../budget-vehicle-part/budget-vehicle-part.module';
+import { VehiclePartModule } from '../vehicle-part/vehicle-part.module';
 
 @Module({
   imports: [
@@ -14,7 +16,9 @@ import { DiagnosisModule } from 'src/administrative-management/diagnosis/diagnos
     UserModule,
     BudgetModule,
     ServiceOrderHistoryModule,
-    DiagnosisModule
+    DiagnosisModule,
+    BudgetVehiclePartModule,
+    VehiclePartModule,
   ],
   controllers: [ServiceOrderController],
   providers: [ServiceOrderService],

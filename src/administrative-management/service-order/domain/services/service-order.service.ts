@@ -16,6 +16,8 @@ import { CreateServiceOrderDto } from '../../presentation/dto/create-service-ord
 import { BaseService } from '../../../../shared/domain/services/base-service.service';
 import { AssignBudgetDto } from '../../presentation/dto/assign-budget.dto';
 import { Budget } from 'src/administrative-management/budget/domain/entities/budget.entity';
+import { BudgetVehiclePartService } from 'src/administrative-management/budget-vehicle-part/domain/services/budget-vehicle-part.service';
+import { VehiclePartService } from 'src/administrative-management/vehicle-part/domain/services/vehicle-part.service';
 
 @Injectable()
 export class ServiceOrderService extends BaseService<ServiceOrder> {
@@ -26,6 +28,8 @@ export class ServiceOrderService extends BaseService<ServiceOrder> {
     private budgetService: BudgetService,
     private readonly historyService: ServiceOrderHistoryService,
     private readonly diagnosisService: DiagnosisService,
+    private readonly budgetVehiclePartService: BudgetVehiclePartService,
+    private readonly vehiclePartService: VehiclePartService
   ) {
     super(dataSource, ServiceOrder);
   }
@@ -84,31 +88,41 @@ export class ServiceOrderService extends BaseService<ServiceOrder> {
   }
 
   async acceptOrder(mechanic: User, id: number, accept: boolean): Promise<ServiceOrder> {
-    const order = await this.findOne(id);
+    return this.runInTransaction(async (manager) => {
+      const order = await this.findOne(id);
 
-    if (order.mechanic) {
-      throw new BadRequestException('Essa OS já foi aceita ou recusada por outro mecânico.');
-    }
+      if (order.mechanic) {
+        throw new BadRequestException('Essa OS já foi aceita ou recusada por outro mecânico.');
+      }
 
-    const oldStatus = order.currentStatus;
+      const oldStatus = order.currentStatus;
 
-    if (accept) {
-      order.mechanic = mechanic;
-      order.currentStatus = order.budget ? ServiceOrderStatus.AGUARDANDO_INICIO : ServiceOrderStatus.EM_DIAGNOSTICO;
-    } else {
-      order.currentStatus = ServiceOrderStatus.RECUSADA;
-    }
+      if (accept) {
+        order.mechanic = mechanic;
+        order.currentStatus = order.budget ? ServiceOrderStatus.AGUARDANDO_INICIO : ServiceOrderStatus.EM_DIAGNOSTICO;
+      } else {
+        const vehiclePartIds = await this.budgetVehiclePartService.findByBudgetId(order.budget.id, manager);
 
-    const updatedOrder = await this.repository.save(order);
+        for (const part of vehiclePartIds) {
+          const vehiclePart = await this.vehiclePartService.findOne(part.vehiclePartId);
+          vehiclePart.quantity += part.quantity;
+          await this.vehiclePartService.updatePart(vehiclePart.id, { quantity: vehiclePart.quantity }, manager);
+        }
 
-    await this.historyService.logStatusChange(
-      updatedOrder.idServiceOrder,
-      mechanic.id,
-      oldStatus,
-      updatedOrder.currentStatus,
-    );
+        order.currentStatus = ServiceOrderStatus.RECUSADA;
+      }
 
-    return updatedOrder;
+      const updatedOrder = await this.getCurrentRepository().save(order);
+
+      await this.historyService.logStatusChange(
+        updatedOrder.idServiceOrder,
+        mechanic.id,
+        oldStatus,
+        updatedOrder.currentStatus,
+      );
+
+      return updatedOrder;
+    });
   }
 
   async assignBudget(mechanic: User, id: number, assignBudgetDto: AssignBudgetDto): Promise<ServiceOrder> {
@@ -268,8 +282,6 @@ export class ServiceOrderService extends BaseService<ServiceOrder> {
     if (!history || history.length === 0) {
       return { message: 'Histórico da OS não encontrado.' };
     }
-
-    console.log('LOGANDO A HISTORY', history)
 
     const received = history.find(h => h.newStatus === ServiceOrderStatus.RECEBIDA);
     const finished = history.find(h => h.newStatus === ServiceOrderStatus.FINALIZADA);
