@@ -3,7 +3,8 @@ import {
   IsString,
   IsNotEmpty,
   IsNumber,
-  Matches
+  Matches,
+  IsOptional
 } from 'class-validator';
 
 export class CreateVehicleDto {
@@ -40,7 +41,7 @@ export class CreateVehicleDto {
   @IsString()
   color: string;
 
-  @ApiProperty()
+  @IsOptional()
   @IsNumber()
-  ownerId: number;
+  ownerId?: number;
 }

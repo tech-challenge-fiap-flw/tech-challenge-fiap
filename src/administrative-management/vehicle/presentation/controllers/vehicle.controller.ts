@@ -4,9 +4,10 @@ import { UpdateVehicleDto } from '../dto/update-vehicle.dto';
 import { VehicleService } from '../../domain/services/vehicle.service';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RolesGuard } from '../../../../auth-and-access/auth/infrastructure/guards/roles.guard';
-import { Roles } from '../../../..//auth-and-access/auth/presentation/decorators/roles.decorator';
 import { VehicleResponseDto } from '../dto/vehicle-response.dto';
 import { Vehicle } from '../../domain/entities/vehicle.entity';
+import { CurrentUser } from 'src/auth-and-access/auth/presentation/decorators/current-user.decorator';
+import { UserFromJwt } from 'src/auth-and-access/auth/domain/models/UserFromJwt';
 
 @ApiTags('Administrativo: Veiculos')
 @UseGuards(RolesGuard)
@@ -16,14 +17,13 @@ export class VehicleController {
 
   @Post()
   @ApiBearerAuth()
-  @Roles('admin')
   @ApiOperation({ summary: 'Criar novo veiculo' })
   @ApiCreatedResponse({
     description: 'Estrutura resposta da API',
     type: VehicleResponseDto,
   })
-  async create(@Body() createVehicleDto: CreateVehicleDto): Promise<VehicleResponseDto> {
-    const vehicle = await this.vehicleService.create(createVehicleDto);
+  async create(@CurrentUser() user: UserFromJwt, @Body() createVehicleDto: CreateVehicleDto): Promise<VehicleResponseDto> {
+    const vehicle = await this.vehicleService.create(user, createVehicleDto);
     return this.toVehicleResponseDto(vehicle);
   }
 
@@ -35,8 +35,8 @@ export class VehicleController {
     type: VehicleResponseDto,
     isArray: true,
   })
-  async findAll(): Promise<VehicleResponseDto[]> {
-    const listVehicle = await this.vehicleService.findAll();
+  async findAll(@CurrentUser() user: UserFromJwt): Promise<VehicleResponseDto[]> {
+    const listVehicle = await this.vehicleService.findAll(user);
     return listVehicle.map(this.toVehicleResponseDto);
   }
 
@@ -47,30 +47,28 @@ export class VehicleController {
     description: 'Estrutura resposta da API',
     type: VehicleResponseDto
   })
-  async findOne(@Param('id') id: number): Promise<VehicleResponseDto> {
-    const vehicle = await this.vehicleService.findById(id);
+  async findOne(@CurrentUser() user: UserFromJwt, @Param('id') id: number): Promise<VehicleResponseDto> {
+    const vehicle = await this.vehicleService.findById(id, user);
     return this.toVehicleResponseDto(vehicle);
   }
 
   @Put(':id')
   @ApiBearerAuth()
-  @Roles('admin')
   @ApiOperation({ summary: 'Atualiza o veiculo por ID + Dados parciais' })
   @ApiOkResponse({
     description: 'Estrutura resposta da API',
     type: VehicleResponseDto
   })
-  async update(@Param('id') id: number, @Body() updateVehicleDto: UpdateVehicleDto): Promise<VehicleResponseDto> {
-    const vehicle = await this.vehicleService.update(id, updateVehicleDto);
+  async update(@CurrentUser() user: UserFromJwt, @Param('id') id: number, @Body() updateVehicleDto: UpdateVehicleDto): Promise<VehicleResponseDto> {
+    const vehicle = await this.vehicleService.update(user, id, updateVehicleDto);
     return this.toVehicleResponseDto(vehicle);
   }
 
   @Delete(':id')
   @ApiBearerAuth()
-  @Roles('admin')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: number): Promise<void> {
-    return this.vehicleService.remove(id);
+  remove(@CurrentUser() user: UserFromJwt, @Param('id') id: number): Promise<void> {
+    return this.vehicleService.remove(user, id);
   }
 
   private toVehicleResponseDto(vehicle: Vehicle): VehicleResponseDto {

@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { Vehicle } from '../entities/vehicle.entity';
 import { UpdateVehicleDto } from '../../presentation/dto/update-vehicle.dto';
 import { UserService } from '../../../../auth-and-access/user/domain/services/user.service';
+import { UserFromJwt } from 'src/auth-and-access/auth/domain/models/UserFromJwt';
 
 @Injectable()
 export class VehicleService {
@@ -14,20 +15,34 @@ export class VehicleService {
     private readonly userService: UserService
   ) {}
 
-  async create(createDto: CreateVehicleDto): Promise<Vehicle> {
-    await this.userService.findById(createDto.ownerId)
-    return this.vehicleRepository.save(createDto);
+  async create(user: UserFromJwt, createDto: CreateVehicleDto): Promise<Vehicle> {
+    let newCreateDto = createDto;
+
+    if (user.roles.includes('admin')) {
+      await this.userService.findById(createDto.ownerId);
+      newCreateDto.ownerId = createDto.ownerId;
+    } else {
+      newCreateDto.ownerId = user.id;
+    }
+
+    return this.vehicleRepository.save(newCreateDto);
   }
 
-  async findAll(): Promise<Vehicle[]> {
+  async findAll(user: UserFromJwt): Promise<Vehicle[]> {
     return this.vehicleRepository.find({
+      where: 
+        user.roles.includes('admin')
+          ? {}
+          : { ownerId: user.id },
       loadEagerRelations: false,
     });
   }
 
-  async findById(id: number): Promise<Vehicle> {
+  async findById(id: number, user?: UserFromJwt): Promise<Vehicle> {
     const vehicle = await this.vehicleRepository.findOne({
-      where: { id },
+      where: user?.roles.includes('admin') || !user
+        ? { id }
+        : { id, ownerId: user.id },
       loadEagerRelations: false,
     });
 
@@ -38,14 +53,14 @@ export class VehicleService {
     return vehicle;
   }
 
-  async update(id: number, data: UpdateVehicleDto): Promise<Vehicle> {
-    const vehicle = await this.findById(id);
+  async update(user: UserFromJwt, id: number, data: UpdateVehicleDto): Promise<Vehicle> {
+    const vehicle = await this.findById(id, user);
     Object.assign(vehicle, data);
     return this.vehicleRepository.save(vehicle);
   }
 
-  async remove(id: number): Promise<void> {
-    const vehicle = await this.findById(id);
+  async remove(user: UserFromJwt, id: number): Promise<void> {
+    const vehicle = await this.findById(id, user);
     await this.vehicleRepository.softRemove(vehicle);
   }
 }

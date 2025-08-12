@@ -15,7 +15,10 @@ export class UserController {
 
   @IsPublic()
   @Post()
-  @ApiOperation({ summary: 'Criar novo usuário' })
+  @ApiOperation({
+    summary: 'Criar novo usuário',
+    description: 'O type ficou habilitado para fins de testes',
+  })
   async createUser(@Body() createUserDto: CreateUserDto): Promise<UserResponseDto> {
     const user = await this.userService.createUser(createUserDto);
     return this.toUserResponseDto(user);

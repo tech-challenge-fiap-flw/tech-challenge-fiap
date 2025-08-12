@@ -1,5 +1,5 @@
 import { User } from '../../../../auth-and-access/user/domain/entities/user.entity';
-import { Entity, Column, ManyToOne, JoinColumn, DeleteDateColumn, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, DeleteDateColumn, PrimaryGeneratedColumn, Unique } from 'typeorm';
 
 @Entity()
 export class Vehicle {
@@ -7,6 +7,7 @@ export class Vehicle {
   id: number;
 
   @Column()
+  @Unique(['idPlate'])
   idPlate: string;
 
   @Column()
