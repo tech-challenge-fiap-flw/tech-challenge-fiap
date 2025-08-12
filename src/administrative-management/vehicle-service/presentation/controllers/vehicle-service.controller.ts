@@ -30,7 +30,6 @@ export class VehicleServiceController {
 
   @Get()
   @ApiBearerAuth()
-  @Roles('admin')
   @ApiOperation({ summary: 'Listar todos os Serviços de Veículo' })
   @ApiOkResponse({
     description: 'Estrutura resposta da API',
@@ -44,7 +43,6 @@ export class VehicleServiceController {
 
   @Get(':id')
   @ApiBearerAuth()
-  @Roles('admin')
   @ApiOperation({ summary: 'Buscar Serviço de Veículo por ID' })
   @ApiOkResponse({
     description: 'Estrutura resposta da API',
