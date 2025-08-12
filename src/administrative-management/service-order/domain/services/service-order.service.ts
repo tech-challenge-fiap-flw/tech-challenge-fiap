@@ -7,17 +7,17 @@ import {
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, EntityManager, In } from 'typeorm';
 import { ServiceOrder } from '../entities/service-order.entity';
-import { User } from 'src/auth-and-access/user/domain/entities/user.entity';
-import { BudgetService } from 'src/administrative-management/budget/domain/services/budget.service';
+import { User } from '../../../../auth-and-access/user/domain/entities/user.entity';
+import { BudgetService } from '../../../../administrative-management/budget/domain/services/budget.service';
 import { ServiceOrderStatus } from '../enum/service-order-status.enum';
-import { ServiceOrderHistoryService } from 'src/administrative-management/service-order-history/domain/services/service-order-history.service';
+import { ServiceOrderHistoryService } from '../../../../administrative-management/service-order-history/domain/services/service-order-history.service';
 import { DiagnosisService } from '../../../diagnosis/domain/services/diagnosis.service';
 import { CreateServiceOrderDto } from '../../presentation/dto/create-service-order.dto';
 import { BaseService } from '../../../../shared/domain/services/base-service.service';
 import { AssignBudgetDto } from '../../presentation/dto/assign-budget.dto';
-import { Budget } from 'src/administrative-management/budget/domain/entities/budget.entity';
-import { BudgetVehiclePartService } from 'src/administrative-management/budget-vehicle-part/domain/services/budget-vehicle-part.service';
-import { VehiclePartService } from 'src/administrative-management/vehicle-part/domain/services/vehicle-part.service';
+import { Budget } from '../../../../administrative-management/budget/domain/entities/budget.entity';
+import { BudgetVehiclePartService } from '../../../../administrative-management/budget-vehicle-part/domain/services/budget-vehicle-part.service';
+import { VehiclePartService } from '../../../../administrative-management/vehicle-part/domain/services/vehicle-part.service';
 
 @Injectable()
 export class ServiceOrderService extends BaseService<ServiceOrder> {

@@ -1,4 +1,4 @@
-import { User } from 'src/auth-and-access/user/domain/entities/user.entity';
+import { User } from '../../../../../auth-and-access/user/domain/entities/user.entity';
 
 export function mockUser(overrides: Partial<User> = {}): User {
   return {

@@ -19,10 +19,10 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { ServiceOrderService } from '../../domain/services/service-order.service';
-import { CurrentUser } from 'src/auth-and-access/auth/presentation/decorators/current-user.decorator';
-import { Roles } from 'src/auth-and-access/auth/presentation/decorators/roles.decorator';
-import { RolesGuard } from 'src/auth-and-access/auth/infrastructure/guards/roles.guard';
-import { User } from 'src/auth-and-access/user/domain/entities/user.entity';
+import { CurrentUser } from '../../../../auth-and-access/auth/presentation/decorators/current-user.decorator';
+import { Roles } from '../../../../auth-and-access/auth/presentation/decorators/roles.decorator';
+import { RolesGuard } from '../../../../auth-and-access/auth/infrastructure/guards/roles.guard';
+import { User } from '../../../../auth-and-access/user/domain/entities/user.entity';
 import { AcceptServiceOrderDto } from '../dto/accept-service-order.dto';
 import { CreateServiceOrderDto } from '../dto/create-service-order.dto';
 import { AssignBudgetDto } from '../dto/assign-budget.dto';

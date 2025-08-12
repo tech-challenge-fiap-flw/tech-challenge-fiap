@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, DeleteDateColumn, Column } from 'typeorm';
-import { VehicleService } from 'src/administrative-management/vehicle-service/domain/entities/vehicle-service.entity';
-import { Budget } from 'src/administrative-management/budget/domain/entities/budget.entity';
+import { VehicleService } from '../../../../administrative-management/vehicle-service/domain/entities/vehicle-service.entity';
+import { Budget } from '../../../../administrative-management/budget/domain/entities/budget.entity';
 
 @Entity()
 export class BudgetVehicleServices {

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { BaseService } from 'src/shared/domain/services/base-service.service';
+import { BaseService } from '../../../../shared/domain/services/base-service.service';
 import { BudgetVehicleServices } from '../entities/budget-vehicle-services.entity';
 import { DataSource, EntityManager } from 'typeorm';
 import { CreateBudgetVehicleServiceDto } from '../../presentation/dto/create-budget-vehicle-service.dto';

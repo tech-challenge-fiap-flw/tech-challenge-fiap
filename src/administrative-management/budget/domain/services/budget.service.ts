@@ -3,21 +3,21 @@ import { CreateBudgetDto } from '../../presentation/dto/create-budget.dto';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { Budget } from '../entities/budget.entity';
 import { DataSource, EntityManager } from 'typeorm';
-import { DiagnosisService } from 'src/administrative-management/diagnosis/domain/services/diagnosis.service';
+import { DiagnosisService } from '../../../../administrative-management/diagnosis/domain/services/diagnosis.service';
 import { UpdateBudgetDto } from '../../presentation/dto/update-budget.dto';
-import { BudgetVehiclePartService } from 'src/administrative-management/budget-vehicle-part/domain/services/budget-vehicle-part.service';
+import { BudgetVehiclePartService } from '../../../../administrative-management/budget-vehicle-part/domain/services/budget-vehicle-part.service';
 import { BaseService } from '../../../../shared/domain/services/base-service.service';
-import { UpdateBudgetVehiclePartDto } from 'src/administrative-management/budget-vehicle-part/presentation/dto/update-budget-vehicle-part.dto';
-import { RemoveBudgetVehiclePartDto } from 'src/administrative-management/budget-vehicle-part/presentation/dto/remove-budget-vehicle-part.dto';
-import { CreateBudgetVehiclePartDto } from 'src/administrative-management/budget-vehicle-part/presentation/dto/create-budget-vehicle-part.dto';
-import { UserService } from 'src/auth-and-access/user/domain/services/user.service';
-import { User } from 'src/auth-and-access/user/domain/entities/user.entity';
-import { ServiceOrder } from 'src/administrative-management/service-order/domain/entities/service-order.entity';
-import { ServiceOrderStatus } from 'src/administrative-management/service-order/domain/enum/service-order-status.enum';
-import { ServiceOrderHistoryService } from 'src/administrative-management/service-order-history/domain/services/service-order-history.service';
-import { VehiclePartService } from 'src/administrative-management/vehicle-part/domain/services/vehicle-part.service';
+import { UpdateBudgetVehiclePartDto } from '../../../../administrative-management/budget-vehicle-part/presentation/dto/update-budget-vehicle-part.dto';
+import { RemoveBudgetVehiclePartDto } from '../../../../administrative-management/budget-vehicle-part/presentation/dto/remove-budget-vehicle-part.dto';
+import { CreateBudgetVehiclePartDto } from '../../../../administrative-management/budget-vehicle-part/presentation/dto/create-budget-vehicle-part.dto';
+import { UserService } from '../../../../auth-and-access/user/domain/services/user.service';
+import { User } from '../../../../auth-and-access/user/domain/entities/user.entity';
+import { ServiceOrder } from '../../../../administrative-management/service-order/domain/entities/service-order.entity';
+import { ServiceOrderStatus } from '../../../../administrative-management/service-order/domain/enum/service-order-status.enum';
+import { ServiceOrderHistoryService } from '../../../../administrative-management/service-order-history/domain/services/service-order-history.service';
+import { VehiclePartService } from '../../../../administrative-management/vehicle-part/domain/services/vehicle-part.service';
 import { VehicleServiceService } from '../../../vehicle-service/domain/services/vehicle-service.service';
-import { BudgetVehicleServicesService } from 'src/administrative-management/budget-vehicle-services/domain/services/budget-vehicle-services.service';
+import { BudgetVehicleServicesService } from '../../../../administrative-management/budget-vehicle-services/domain/services/budget-vehicle-services.service';
 
 @Injectable()
 export class BudgetService extends BaseService<Budget> {
@@ -43,18 +43,14 @@ export class BudgetService extends BaseService<Budget> {
     const { vehicleParts, vehicleServicesIds, ...rest } = createDto;
 
     const vehicleServices = await this.vehicleServiceService.findByIds(vehicleServicesIds || []);
+
     if (vehicleServices.length !== (vehicleServicesIds?.length || 0)) {
       throw new NotFoundException('Um ou mais serviços não foram encontrados');
     }
 
-    const savedBudget = await manager.getRepository(Budget).save(rest);
-    await this.budgetVehiclePartService.create({ budgetId: savedBudget.id, vehicleParts }, manager);
+    const totalServices = vehicleServices.reduce((sum, vs) => sum + vs.price, 0);
 
-    await this.budgetVehicleServicesService.create({
-      budgetId: savedBudget.id,
-      vehicleServices: vehicleServices.map(vs => vs.id)
-    }, manager);
-
+    let totalParts = 0;
     for (const part of vehicleParts) {
       const vehiclePart = await this.vehiclePartService.findOne(part.id);
 
@@ -63,9 +59,22 @@ export class BudgetService extends BaseService<Budget> {
       }
 
       vehiclePart.quantity -= part.quantity;
+      totalParts += vehiclePart.price * part.quantity;
 
       await this.vehiclePartService.updatePart(vehiclePart.id, { quantity: vehiclePart.quantity }, manager);
     }
+
+    const savedBudget = await manager.getRepository(Budget).save({
+      ...rest,
+      total: totalParts + totalServices
+    });
+
+    await this.budgetVehiclePartService.create({ budgetId: savedBudget.id, vehicleParts }, manager);
+
+    await this.budgetVehicleServicesService.create({
+      budgetId: savedBudget.id,
+      vehicleServices: vehicleServices.map(vs => vs.id)
+    }, manager);
 
     return savedBudget.id;
   }

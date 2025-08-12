@@ -3,8 +3,8 @@ import { VehicleServiceService } from '../../domain/services/vehicle-service.ser
 import { CreateVehicleServiceDto } from '../dto/create-vehicle-service.dto';
 import { UpdateVehicleServiceDto } from '../dto/update-vehicle-service.dto';
 import { ApiBearerAuth, ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { RolesGuard } from 'src/auth-and-access/auth/infrastructure/guards/roles.guard';
-import { Roles } from 'src/auth-and-access/auth/presentation/decorators/roles.decorator';
+import { RolesGuard } from '../../../../auth-and-access/auth/infrastructure/guards/roles.guard';
+import { Roles } from '../../../../auth-and-access/auth/presentation/decorators/roles.decorator';
 import { ResponseItemVehicleServiceDto } from '../dto/response-item-vehicle-service.dto';
 import { VehicleService } from '../../domain/entities/vehicle-service.entity';
 
@@ -81,6 +81,7 @@ export class VehicleServiceController {
       id: service.id,
       name: service.name,
       description: service.description,
+      price: service.price,
     };
   }
 }

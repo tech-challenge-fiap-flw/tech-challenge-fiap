@@ -1,7 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, ArrayNotEmpty, ValidateNested, IsString, IsOptional } from 'class-validator';
-import { Type } from 'class-transformer';
-import { CreateVehicleServicePartDto } from './create-vehicle-service-part.dto';
+import { IsNumber, IsString } from 'class-validator';
 
 export class CreateVehicleServiceDto {
   @ApiProperty({ example: 'Troca de óleo' })
@@ -11,4 +9,8 @@ export class CreateVehicleServiceDto {
   @ApiProperty({ example: 'Serviço completo de troca de óleo' })
   @IsString()
   description: string;
+
+  @ApiProperty({ description: 'Preço' })
+  @IsNumber()
+  price: number;
 }

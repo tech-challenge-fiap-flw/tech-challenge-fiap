@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, Delete, UseGuards, HttpCode, HttpStatus, ParseIntPipe, Put } from '@nestjs/common';
+import { Controller, Post, Body, Param, Delete, UseGuards, HttpCode, HttpStatus, ParseIntPipe, Put, Get } from '@nestjs/common';
 import { BudgetService } from '../../domain/services/budget.service';
 import { CreateBudgetDto } from '../dto/create-budget.dto';
 import { UpdateBudgetDto } from '../dto/update-budget.dto';
@@ -7,8 +7,8 @@ import { RolesGuard } from '../../../../auth-and-access/auth/infrastructure/guar
 import { Roles } from '../../../../auth-and-access/auth/presentation/decorators/roles.decorator';
 import { BudgetResponseDto } from '../dto/budget-response.dto';
 import { Budget } from '../../domain/entities/budget.entity';
-import { User } from 'src/auth-and-access/user/domain/entities/user.entity';
-import { CurrentUser } from 'src/auth-and-access/auth/presentation/decorators/current-user.decorator';
+import { User } from '../../../../auth-and-access/user/domain/entities/user.entity';
+import { CurrentUser } from '../../../../auth-and-access/auth/presentation/decorators/current-user.decorator';
 import { AcceptBudgetDto } from '../dto/accept-budget.dto';
 
 @ApiTags('Administrativo: Budget')
@@ -46,6 +46,18 @@ export class BudgetController {
     return this.toBudgetResponseDto(budget);
   }
 
+  @Get(':id')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Devolve o orçamento por ID' })
+  @ApiOkResponse({
+    description: 'Estrutura resposta da API',
+    type: BudgetResponseDto
+  })
+  async findOne(@Param('id') id: number): Promise<BudgetResponseDto> {
+    const budget = await this.budgetService.findById(id, ['vehicleParts']);
+    return this.toBudgetResponseDto(budget);
+  }
+
   @Delete(':id')
   @ApiBearerAuth()
   @Roles('admin')
@@ -75,6 +87,7 @@ export class BudgetController {
       creationDate: budget.creationDate,
       ownerId: budget.ownerId,
       diagnosisId: budget.diagnosisId,
+      total: budget.total,
       vehicleParts: budget.vehicleParts.map(vehiclePart => ({
         id: vehiclePart.id,
         quantity: vehiclePart.quantity,

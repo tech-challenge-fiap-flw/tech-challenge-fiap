@@ -4,7 +4,7 @@ import { VehicleService } from '../../../../administrative-management/vehicle/do
 import { UserService } from '../../../../auth-and-access/user/domain/services/user.service';
 import { Diagnosis } from '../entities/diagnosis.entity';
 import { UpdateDiagnosisDto } from '../../presentation/dto/update-diagnosis.dto';
-import { BaseService } from 'src/shared/domain/services/base-service.service';
+import { BaseService } from '../../../../shared/domain/services/base-service.service';
 import { DataSource, EntityManager } from 'typeorm';
 import { InjectDataSource } from '@nestjs/typeorm';
 

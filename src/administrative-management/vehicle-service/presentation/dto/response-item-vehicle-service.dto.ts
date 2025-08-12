@@ -9,4 +9,7 @@ export class ResponseItemVehicleServiceDto {
 
   @ApiProperty({ example: 'Serviço para troca de óleo do motor' })
   description?: string;
+
+  @ApiProperty({ description: 'Preço' })
+  price: number;
 }

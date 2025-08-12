@@ -1,7 +1,7 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "typeorm";
-import { Budget } from "src/administrative-management/budget/domain/entities/budget.entity";
-import { User } from "src/auth-and-access/user/domain/entities/user.entity";
-import { Vehicle } from "src/administrative-management/vehicle/domain/entities/vehicle.entity";
+import { Budget } from "../../../../administrative-management/budget/domain/entities/budget.entity";
+import { User } from "../../../../auth-and-access/user/domain/entities/user.entity";
+import { Vehicle } from "../../../../administrative-management/vehicle/domain/entities/vehicle.entity";
 import { ServiceOrderStatus } from "../enum/service-order-status.enum";
 
 @Entity()

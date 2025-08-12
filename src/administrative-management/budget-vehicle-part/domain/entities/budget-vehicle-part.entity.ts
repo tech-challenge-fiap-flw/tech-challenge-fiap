@@ -27,5 +27,6 @@ export class BudgetVehiclePart {
   vehiclePartId: number;
 
   @ManyToOne(() => VehiclePart, { nullable: false, eager: false })
+  @JoinColumn({ name: 'vehiclePartId' })
   vehiclePart: VehiclePart;
 }

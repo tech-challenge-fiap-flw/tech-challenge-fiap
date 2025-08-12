@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from 'src/auth-and-access/user/domain/entities/user.entity';
-import { Budget } from 'src/administrative-management/budget/domain/entities/budget.entity';
+import { User } from '../../../../auth-and-access/user/domain/entities/user.entity';
+import { Budget } from '../../../../administrative-management/budget/domain/entities/budget.entity';
 import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { ServiceOrderService } from './service-order.service';
 import { ServiceOrder } from '../../domain/entities/service-order.entity';

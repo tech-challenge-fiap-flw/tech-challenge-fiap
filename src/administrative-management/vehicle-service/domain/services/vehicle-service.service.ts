@@ -3,7 +3,7 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, EntityManager, In } from 'typeorm';
 import { CreateVehicleServiceDto } from '../../presentation/dto/create-vehicle-service.dto';
 import { UpdateVehicleServiceDto } from '../../presentation/dto/update-vehicle-service.dto';
-import { BaseService } from 'src/shared/domain/services/base-service.service';
+import { BaseService } from '../../../../shared/domain/services/base-service.service';
 import { VehicleService } from '../entities/vehicle-service.entity';
 
 @Injectable()
@@ -17,13 +17,14 @@ export class VehicleServiceService extends BaseService<VehicleService> {
 
   async create(createVehicleServiceDto: CreateVehicleServiceDto, manager?: EntityManager): Promise<VehicleService> {
     return this.transactional(async (manager) => {
-      const { name, description } = createVehicleServiceDto;
+      const { name, description, price } = createVehicleServiceDto;
 
       const vehicleServiceRepo = manager.getRepository(VehicleService);
 
       const vehicleService = vehicleServiceRepo.create({
         name,
-        description
+        description,
+        price
       });
 
       return await vehicleServiceRepo.save(vehicleService);

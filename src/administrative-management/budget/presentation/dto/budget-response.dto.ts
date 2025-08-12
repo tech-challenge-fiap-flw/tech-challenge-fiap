@@ -20,6 +20,9 @@ export class BudgetResponseDto {
   @ApiProperty({ description: 'Dono' })
   ownerId: number;
 
+  @ApiProperty({ description: 'Total do orçamento' })
+  total: number;
+
   @ApiProperty({ description: 'Id do diagnóstico' })
   diagnosisId: number;
 

@@ -8,6 +8,9 @@ export class VehicleService {
   @Column({ nullable: false })
   name: string;
 
+  @Column({ default: 0 })
+  price: number;
+
   @Column({ nullable: true })
   description: string;
 
