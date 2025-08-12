@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { DiagnosisService } from './domain/services/diagnosis.service';
-import { DiagnosisController } from './presentation/controllers/diagnosis.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { VehicleModule } from '../../administrative-management/vehicle/vehicle.module';
 import { UserModule } from '../../auth-and-access/user/user.module';
@@ -12,7 +11,6 @@ import { Diagnosis } from './domain/entities/diagnosis.entity';
     VehicleModule,
     UserModule
   ],
-  controllers: [DiagnosisController],
   providers: [DiagnosisService],
   exports: [DiagnosisService]
 })
