@@ -1,8 +1,7 @@
 import { Controller, Post, Body, Param, Delete, UseGuards, HttpCode, HttpStatus, ParseIntPipe, Put, Get } from '@nestjs/common';
 import { BudgetService } from '../../domain/services/budget.service';
-import { CreateBudgetDto } from '../dto/create-budget.dto';
 import { UpdateBudgetDto } from '../dto/update-budget.dto';
-import { ApiBearerAuth, ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RolesGuard } from '../../../../auth-and-access/auth/infrastructure/guards/roles.guard';
 import { Roles } from '../../../../auth-and-access/auth/presentation/decorators/roles.decorator';
 import { BudgetResponseDto } from '../dto/budget-response.dto';
@@ -10,25 +9,13 @@ import { Budget } from '../../domain/entities/budget.entity';
 import { User } from '../../../../auth-and-access/user/domain/entities/user.entity';
 import { CurrentUser } from '../../../../auth-and-access/auth/presentation/decorators/current-user.decorator';
 import { AcceptBudgetDto } from '../dto/accept-budget.dto';
+import { UserFromJwt } from 'src/auth-and-access/auth/domain/models/UserFromJwt';
 
 @ApiTags('Administrativo: Budget')
 @UseGuards(RolesGuard)
 @Controller('budget')
 export class BudgetController {
   constructor(private readonly budgetService: BudgetService) {}
-
-  @Post()
-  @ApiBearerAuth()
-  @Roles('admin')
-  @ApiOperation({ summary: 'Criar novo Orçamento' })
-  @ApiCreatedResponse({
-    description: 'Estrutura resposta da API',
-    type: BudgetResponseDto,
-  })
-  async create(@Body() createBudgetDto: CreateBudgetDto): Promise<BudgetResponseDto> {
-    const budget = await this.budgetService.create(createBudgetDto);
-    return this.toBudgetResponseDto(budget);
-  }
 
   @Put(':id')
   @ApiBearerAuth()
@@ -53,8 +40,8 @@ export class BudgetController {
     description: 'Estrutura resposta da API',
     type: BudgetResponseDto
   })
-  async findOne(@Param('id') id: number): Promise<BudgetResponseDto> {
-    const budget = await this.budgetService.findById(id, ['vehicleParts']);
+  async findOne(@CurrentUser() user: UserFromJwt, @Param('id') id: number): Promise<BudgetResponseDto> {
+    const budget = await this.budgetService.findById(id, ['vehicleParts'], null, user);
     return this.toBudgetResponseDto(budget);
   }
 
@@ -69,7 +56,6 @@ export class BudgetController {
 
   @Post(':id/accept')
   @ApiBearerAuth()
-  @Roles('cliente', 'admin')
   @ApiOperation({ summary: 'Cliente aceita ou recusa orçamento' })
   @ApiBody({ type: AcceptBudgetDto })
   async decideBudget(

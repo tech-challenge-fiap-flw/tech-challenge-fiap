@@ -18,6 +18,7 @@ import { ServiceOrderHistoryService } from '../../../../administrative-managemen
 import { VehiclePartService } from '../../../../administrative-management/vehicle-part/domain/services/vehicle-part.service';
 import { VehicleServiceService } from '../../../vehicle-service/domain/services/vehicle-service.service';
 import { BudgetVehicleServicesService } from '../../../../administrative-management/budget-vehicle-services/domain/services/budget-vehicle-services.service';
+import { UserFromJwt } from 'src/auth-and-access/auth/domain/models/UserFromJwt';
 
 @Injectable()
 export class BudgetService extends BaseService<Budget> {
@@ -91,9 +92,11 @@ export class BudgetService extends BaseService<Budget> {
     return response;
   }
 
-  async findById(id: number, relations: Array<string> = [], manager?: EntityManager): Promise<Budget> {
+  async findById(id: number, relations: Array<string> = [], manager?: EntityManager, user?: UserFromJwt): Promise<Budget> {
     const budget = await this.getCurrentRepository(manager).findOne({
-      where: { id },
+      where:  user.roles?.includes('admin') || !user
+        ? { id }
+        : { id, ownerId: user.id },
       relations,
     });
 
