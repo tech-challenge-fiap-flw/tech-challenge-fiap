@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { VehiclePartService } from './vehicle-part.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { VehiclePart } from '../entities/vehicle-part.entity';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
 
 const mockRepository = () => ({
@@ -113,4 +113,41 @@ describe('VehiclePartService', () => {
       expect(repository.softRemove).toHaveBeenCalledWith(mockPart);
     });
   });
+
+  describe('updatePart', () => {
+    const updateDto = {
+      name: 'Correia Nova',
+      quantity: 20,
+    };
+  
+    it('should update using vehiclePartRepository if no manager is passed', async () => {
+      repository.update = jest.fn().mockResolvedValue(undefined);
+      repository.findOne = jest.fn().mockResolvedValue({ ...mockPart, ...updateDto });
+  
+      const result = await service.updatePart(mockPart.id, updateDto);
+  
+      expect(repository.update).toHaveBeenCalledWith({ id: mockPart.id }, updateDto);
+      expect(repository.findOne).toHaveBeenCalledWith({ where: { id: mockPart.id } });
+      expect(result).toEqual({ ...mockPart, ...updateDto });
+    });
+  
+    it('should update using manager.getRepository when manager is passed', async () => {
+      const mockManagerRepo = {
+        update: jest.fn().mockResolvedValue(undefined),
+        findOne: jest.fn().mockResolvedValue({ ...mockPart, ...updateDto }),
+      };
+  
+      const mockManager = {
+        getRepository: jest.fn().mockReturnValue(mockManagerRepo),
+      } as unknown as EntityManager;
+  
+      const result = await service.updatePart(mockPart.id, updateDto, mockManager);
+  
+      expect(mockManager.getRepository).toHaveBeenCalledWith(VehiclePart);
+      expect(mockManagerRepo.update).toHaveBeenCalledWith({ id: mockPart.id }, updateDto);
+      expect(mockManagerRepo.findOne).toHaveBeenCalledWith({ where: { id: mockPart.id } });
+      expect(result).toEqual({ ...mockPart, ...updateDto });
+    });
+  });
+  
 });

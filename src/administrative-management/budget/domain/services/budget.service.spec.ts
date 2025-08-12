@@ -163,18 +163,134 @@ describe('BudgetService', () => {
   });
 
   describe('update', () => {
-    it('should throw if budget not found', async () => {
+    it('should throw NotFoundException if budget not found', async () => {
       repo.findOne.mockResolvedValue(null);
-      await expect(service.update(1, { description: 'desc', vehicleParts: [], vehicleServicesIds: [] })).rejects.toThrow(NotFoundException);
+  
+      await expect(
+        service.update(1, { description: 'desc', vehicleParts: [], vehicleServicesIds: [] }),
+      ).rejects.toThrow(NotFoundException);
     });
+  
+    it('should throw NotFoundException if some vehicle services not found', async () => {
+      repo.findOne.mockResolvedValue({ id: 1, vehicleParts: [], vehicleServices: [] });
+      vehicleServiceService.findByIds.mockResolvedValue([{ id: 1 }]); 
+  
+      await expect(
+        service.update(1, { description: 'desc', vehicleParts: [], vehicleServicesIds: [1, 2] }),
+      ).rejects.toThrow('Um ou mais serviços não foram encontrados para atualização');
+    });
+  
+    it('should update budget removing, updating and adding vehicle parts correctly and update vehicle services', async () => {
+      const budget = {
+        id: 1,
+        vehicleParts: [
+          { id: 100, vehiclePartId: 10, quantity: 5 },
+          { id: 101, vehiclePartId: 11, quantity: 3 },
+        ],
+        vehicleServices: [{ id: 1 }],
+      };
+  
+      const updateDto = {
+        description: 'updated desc',
+        vehicleParts: [
+          { id: 10, quantity: 6 },
+          { id: 12, quantity: 2 },
+        ],
+        vehicleServicesIds: [2, 3],
+      };
+  
+      repo.findOne.mockResolvedValue(budget);
+      vehicleServiceService.findByIds.mockResolvedValue([
+        { id: 2 },
+        { id: 3 },
+      ]);
+  
+      const addAndRemoveMock = jest.fn();
 
-    it('should throw if one of vehicle services does not exist', async () => {
-      repo.findOne.mockResolvedValue({ id: 1, vehicleParts: [] });
-      vehicleServiceService.findByIds.mockResolvedValue([{ id: 1 }]);
+      const createQueryBuilderMock = {
+        relation: jest.fn().mockReturnThis(),
+        of: jest.fn().mockReturnThis(),
+        addAndRemove: addAndRemoveMock,
+      };
+      
+      manager.createQueryBuilder = jest.fn().mockReturnValue(createQueryBuilderMock);
+  
+      repo.save.mockResolvedValue({ ...budget, description: updateDto.description });
+  
+      budgetVehiclePartService.remove.mockResolvedValue(undefined);
+      budgetVehiclePartService.updateMany.mockResolvedValue(undefined);
+      budgetVehiclePartService.create.mockResolvedValue(undefined);
+  
+      service.findById = jest.fn().mockResolvedValue({
+        id: 1,
+        description: updateDto.description,
+        vehicleParts: [
+          { id: 100, vehiclePartId: 10, quantity: 6 },
+          { id: 102, vehiclePartId: 12, quantity: 2 },
+        ],
+      });
+  
+      const result = await service.update(1, updateDto);
 
-      await expect(service.update(1, { description: 'desc', vehicleParts: [], vehicleServicesIds: [1, 2] })).rejects.toThrow(NotFoundException);
+      expect(repo.findOne).toHaveBeenCalledWith({
+        where: { id: 1 },
+        relations: ['vehicleParts'],
+      });
+  
+      expect(vehicleServiceService.findByIds).toHaveBeenCalledWith(updateDto.vehicleServicesIds);
+  
+      expect(addAndRemoveMock).toHaveBeenCalledWith(
+        expect.arrayContaining([{ id: 2 }, { id: 3 }]),
+        budget.vehicleServices,
+      );
+  
+      expect(repo.save).toHaveBeenCalled();
+      expect(repo.save.mock.calls[0][0].description).toBe(updateDto.description);
+  
+      expect(budgetVehiclePartService.remove).toHaveBeenCalledWith([{ id: 101 }], manager);
+  
+      expect(budgetVehiclePartService.updateMany).toHaveBeenCalledWith(
+        [{ id: 100, vehiclePartId: 10, quantity: 6 }],
+        manager,
+      );
+  
+      expect(budgetVehiclePartService.create).toHaveBeenCalledWith(
+        { budgetId: 1, vehicleParts: [{ id: 12, quantity: 2 }] },
+        manager,
+      );
+
+      expect(service.findById).toHaveBeenCalledWith(1, ['vehicleParts']);
+  
+      expect(result.description).toBe(updateDto.description);
+    });
+  
+    it('should update budget without vehicleServicesIds (skip vehicle services update)', async () => {
+      const budget = {
+        id: 1,
+        vehicleParts: [],
+        vehicleServices: [],
+      };
+  
+      const updateDto = {
+        description: 'desc',
+        vehicleParts: [],
+        vehicleServicesIds: [1,2]
+      };
+  
+      repo.findOne.mockResolvedValue(budget);
+  
+      repo.save.mockResolvedValue({ ...budget, description: updateDto.description });
+  
+      service.findById = jest.fn().mockResolvedValue({ id: 1, description: updateDto.description, vehicleParts: [] });
+  
+      const result = await service.update(1, updateDto);
+  
+      expect(repo.save).toHaveBeenCalled();
+      expect(service.findById).toHaveBeenCalledWith(1, ['vehicleParts']);
+      expect(result.description).toBe(updateDto.description);
     });
   });
+  
 
   describe('remove', () => {
     it('should soft remove a budget', async () => {

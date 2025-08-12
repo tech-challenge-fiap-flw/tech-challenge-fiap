@@ -521,4 +521,103 @@ describe('ServiceOrderService', () => {
       await expect(service.finishRepair(mockMechanic, 1)).rejects.toThrow(BadRequestException);
     });
   });
+
+  describe('delivered', () => {
+    it('deve confirmar entrega e atualizar status para ENTREGUE', async () => {
+      const order = {
+        idServiceOrder: 1,
+        currentStatus: ServiceOrderStatus.EM_EXECUCAO,
+        customer: mockUser,
+        vehicle: { id: 10 },
+      };
+      mockRepository.findOne.mockResolvedValue(order);
+      mockRepository.save.mockImplementation(async (o) => o);
+      mockHistoryService.logStatusChange.mockResolvedValue(undefined);
+  
+      const result = await service.delivered(mockUser, 1);
+  
+      expect(mockRepository.findOne).toHaveBeenCalledWith({
+        where: { idServiceOrder: 1, active: true },
+        relations: ['budget', 'customer', 'mechanic', 'vehicle'],
+      });
+      expect(result.currentStatus).toBe(ServiceOrderStatus.ENTREGUE);
+      expect(mockHistoryService.logStatusChange).toHaveBeenCalledWith(
+        order.idServiceOrder,
+        mockUser.id,
+        ServiceOrderStatus.EM_EXECUCAO,
+        ServiceOrderStatus.ENTREGUE,
+      );
+    });
+  
+    it('deve lançar ForbiddenException se o cliente não for dono da OS', async () => {
+      const order = {
+        idServiceOrder: 1,
+        currentStatus: ServiceOrderStatus.EM_EXECUCAO,
+        customer: { id: 999 },
+        vehicle: { id: 10 },
+      };
+      mockRepository.findOne.mockResolvedValue(order);
+  
+      await expect(service.delivered(mockUser, 1)).rejects.toThrow(ForbiddenException);
+    });
+  
+    it('deve lançar NotFoundException se não existir veículo na OS', async () => {
+      const order = {
+        idServiceOrder: 1,
+        currentStatus: ServiceOrderStatus.EM_EXECUCAO,
+        customer: mockUser,
+        vehicle: null,
+      };
+      mockRepository.findOne.mockResolvedValue(order);
+  
+      await expect(service.delivered(mockUser, 1)).rejects.toThrow(NotFoundException);
+    });
+  });
+  
+
+  describe('getExecutionTimeById', () => {
+    it('deve retornar tempo de execução correto em ms', async () => {
+      const history = [
+        { newStatus: ServiceOrderStatus.RECEBIDA, changedAt: new Date('2025-01-01T10:00:00Z') },
+        { newStatus: ServiceOrderStatus.FINALIZADA, changedAt: new Date('2025-01-01T12:00:00Z') },
+      ];
+      mockHistoryService.getHistoryByServiceOrderId.mockResolvedValue(history);
+  
+      const result = await service.getExecutionTimeById(1);
+  
+      expect(result).toEqual({ executionTimeMs: 7200000 });
+    });
+  
+    it('deve retornar mensagem se não encontrar histórico', async () => {
+      mockHistoryService.getHistoryByServiceOrderId.mockResolvedValue([]);
+  
+      const result = await service.getExecutionTimeById(1);
+  
+      expect(result).toEqual({ message: 'Histórico da OS não encontrado.' });
+    });
+  
+    it('deve retornar mensagem se RECEBIDA ou FINALIZADA não encontrados', async () => {
+      const history = [
+        { newStatus: ServiceOrderStatus.RECEBIDA, changedAt: new Date('2025-01-01T10:00:00Z') },
+      ];
+      mockHistoryService.getHistoryByServiceOrderId.mockResolvedValue(history);
+  
+      const result = await service.getExecutionTimeById(1);
+  
+      expect(result).toEqual({ message: 'Status RECEBIDA ou FINALIZADA não encontrados para esta OS.' });
+    });
+  
+    it('deve retornar mensagem se FINALIZADA ocorrer antes de RECEBIDA', async () => {
+      const history = [
+        { newStatus: ServiceOrderStatus.RECEBIDA, changedAt: new Date('2025-01-01T12:00:00Z') },
+        { newStatus: ServiceOrderStatus.FINALIZADA, changedAt: new Date('2025-01-01T10:00:00Z') },
+      ];
+      mockHistoryService.getHistoryByServiceOrderId.mockResolvedValue(history);
+  
+      const result = await service.getExecutionTimeById(1);
+  
+      expect(result).toEqual({ message: 'Status FINALIZADA ocorreu antes de RECEBIDA (dados inconsistentes).' });
+    });
+  });
+  
 });

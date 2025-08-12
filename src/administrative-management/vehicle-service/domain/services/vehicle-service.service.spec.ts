@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { VehicleServiceService } from '../services/vehicle-service.service';
 import { VehicleService } from '../entities/vehicle-service.entity';
-import { DataSource, Repository, EntityManager } from 'typeorm';
+import { DataSource, Repository, EntityManager, In } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 
@@ -137,4 +137,32 @@ describe('VehicleServiceService', () => {
       expect(mockRepository.softRemove).toHaveBeenCalledWith(mockVehicleService);
     });
   });
+
+  describe('findByIds', () => {
+    it('should return empty array if ids is null or empty', async () => {
+      const resultNull = await service.findByIds(null);
+      const resultEmpty = await service.findByIds([]);
+  
+      expect(resultNull).toEqual([]);
+      expect(resultEmpty).toEqual([]);
+      expect(mockRepository.find).not.toHaveBeenCalled();
+    });
+  
+    it('should call repository.find with correct ids and return results', async () => {
+      const ids = [1, 2, 3];
+      const mockResults: VehicleService[] = [
+        mockVehicleService,
+        { ...mockVehicleService, id: 2, name: 'Balanceamento', price: 50, description: 'Balanceamento de rodas', deletedAt: null },
+        { ...mockVehicleService, id: 3, name: 'Alinhamento', price: 70, description: 'Alinhamento de rodas', deletedAt: null },
+      ];
+  
+      mockRepository.find.mockResolvedValue(mockResults);
+  
+      const result = await service.findByIds(ids);
+  
+      expect(mockRepository.find).toHaveBeenCalledWith({ where: { id: In(ids) } });
+      expect(result).toEqual(mockResults);
+    });
+  });
+
 });
