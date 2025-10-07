@@ -1,28 +1,24 @@
-FROM node:22-alpine AS builder
+# --- Build Stage ---
+FROM node:22.3-alpine AS builder
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install --legacy-peer-deps
+RUN npm ci --legacy-peer-deps
 
 COPY . .
 RUN npm run build
 
-# ------------------------------
-
-FROM node:22-alpine
+# --- Production Stage ---
+FROM node:22.3-alpine
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install --only=production --legacy-peer-deps
+RUN npm ci --only=production --legacy-peer-deps
 
 COPY --from=builder /app/dist ./dist
-COPY .env .env
-COPY wait-for.sh /wait-for.sh
 
-RUN apk add --no-cache dos2unix && \
-    dos2unix /wait-for.sh && \
-    chmod +x /wait-for.sh
+EXPOSE 3000
 
-CMD ["/wait-for.sh", "mysql", "node", "dist/main.js"]
+CMD ["node", "dist/main.js"]
