@@ -8,36 +8,38 @@ resource "kubernetes_namespace" "tech_challenge" {
 # ConfigMap
 resource "kubernetes_config_map" "app_config" {
   metadata {
-    name      = "app-config"
+    name = "app-config"
     namespace = kubernetes_namespace.tech_challenge.metadata[0].name
   }
 
   data = {
-    DB_HOST     = "mysql-service"
-    DB_PORT     = "3306"
+    DB_HOST = "mysql-service"
+    DB_PORT = "3306"
     DB_USERNAME = "root"
     DB_DATABASE = var.mysql_database
-    MONGO_URI   = var.mongo_uri
+    MONGO_URI = var.mongo_uri
   }
 }
 
 # Secret
 resource "kubernetes_secret" "app_secrets" {
   metadata {
-    name      = "app-secrets"
+    name = "app-secrets"
     namespace = kubernetes_namespace.tech_challenge.metadata[0].name
   }
 
-  string_data = {
-    DB_PASSWORD = var.mysql_root_password
-    JWT_SECRET  = var.jwt_secret
+  data = {
+    DB_PASSWORD = base64encode(var.mysql_root_password)
+    JWT_SECRET = base64encode(var.jwt_secret)
   }
+
+  type = "Opaque"
 }
 
 # App Deployment
 resource "kubernetes_deployment" "app" {
   metadata {
-    name      = "app-deployment"
+    name = "app-deployment"
     namespace = kubernetes_namespace.tech_challenge.metadata[0].name
     labels = { app = "tech-challenge-fiap" }
   }
@@ -56,16 +58,22 @@ resource "kubernetes_deployment" "app" {
 
       spec {
         container {
-          name  = "app"
+          name = "app"
           image = var.app_image
+          image_pull_policy = "Never"
           port {
             container_port = 3000
           }
 
+          # ConfigMap
           env_from {
             config_map_ref {
               name = kubernetes_config_map.app_config.metadata[0].name
             }
+          }
+
+          # Secret
+          env_from {
             secret_ref {
               name = kubernetes_secret.app_secrets.metadata[0].name
             }
@@ -79,14 +87,14 @@ resource "kubernetes_deployment" "app" {
 # App Service
 resource "kubernetes_service" "app" {
   metadata {
-    name      = "app-service"
+    name = "app-service"
     namespace = kubernetes_namespace.tech_challenge.metadata[0].name
   }
 
   spec {
     selector = { app = "tech-challenge-fiap" }
     port {
-      port        = 3000
+      port = 3000
       target_port = 3000
     }
     type = "ClusterIP"
@@ -96,7 +104,7 @@ resource "kubernetes_service" "app" {
 # MySQL PersistentVolumeClaim
 resource "kubernetes_persistent_volume_claim" "mysql_pvc" {
   metadata {
-    name      = "mysql-pvc"
+    name = "mysql-pvc"
     namespace = kubernetes_namespace.tech_challenge.metadata[0].name
   }
 
@@ -111,9 +119,9 @@ resource "kubernetes_persistent_volume_claim" "mysql_pvc" {
 # MySQL Deployment
 resource "kubernetes_deployment" "mysql" {
   metadata {
-    name      = "mysql-deployment"
+    name = "mysql-deployment"
     namespace = kubernetes_namespace.tech_challenge.metadata[0].name
-    labels    = { app = "mysql" }
+    labels = { app = "mysql" }
   }
 
   spec {
@@ -130,7 +138,7 @@ resource "kubernetes_deployment" "mysql" {
 
       spec {
         container {
-          name  = "mysql"
+          name = "mysql"
           image = "mysql:8.0"
           port {
             container_port = 3306
@@ -146,12 +154,12 @@ resource "kubernetes_deployment" "mysql" {
             }
           }
           env {
-            name  = "MYSQL_DATABASE"
+            name = "MYSQL_DATABASE"
             value = var.mysql_database
           }
 
           volume_mount {
-            name       = "mysql-pvc"
+            name = "mysql-pvc"
             mount_path = "/var/lib/mysql"
           }
         }
@@ -170,14 +178,14 @@ resource "kubernetes_deployment" "mysql" {
 # MySQL Service
 resource "kubernetes_service" "mysql" {
   metadata {
-    name      = "mysql-service"
+    name = "mysql-service"
     namespace = kubernetes_namespace.tech_challenge.metadata[0].name
   }
 
   spec {
     selector = { app = "mysql" }
     port {
-      port        = 3306
+      port = 3306
       target_port = 3306
     }
     type = "ClusterIP"
@@ -187,7 +195,7 @@ resource "kubernetes_service" "mysql" {
 # MongoDB PersistentVolumeClaim
 resource "kubernetes_persistent_volume_claim" "mongo_pvc" {
   metadata {
-    name      = "mongo-pvc"
+    name = "mongo-pvc"
     namespace = kubernetes_namespace.tech_challenge.metadata[0].name
   }
 
@@ -202,9 +210,9 @@ resource "kubernetes_persistent_volume_claim" "mongo_pvc" {
 # MongoDB Deployment
 resource "kubernetes_deployment" "mongo" {
   metadata {
-    name      = "mongo-deployment"
+    name = "mongo-deployment"
     namespace = kubernetes_namespace.tech_challenge.metadata[0].name
-    labels    = { app = "mongodb" }
+    labels = { app = "mongodb" }
   }
 
   spec {
@@ -228,7 +236,7 @@ resource "kubernetes_deployment" "mongo" {
           }
 
           volume_mount {
-            name       = "mongo-pvc"
+            name = "mongo-pvc"
             mount_path = "/data/db"
           }
         }
@@ -247,14 +255,14 @@ resource "kubernetes_deployment" "mongo" {
 # MongoDB Service
 resource "kubernetes_service" "mongo" {
   metadata {
-    name      = "mongo-service"
+    name = "mongo-service"
     namespace = kubernetes_namespace.tech_challenge.metadata[0].name
   }
 
   spec {
     selector = { app = "mongodb" }
     port {
-      port        = 27017
+      port = 27017
       target_port = 27017
     }
     type = "ClusterIP"
