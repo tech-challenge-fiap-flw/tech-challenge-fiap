@@ -1,8 +1,9 @@
-export class AppError extends Error {
+export default class ConflictRequest extends Error {
   public readonly statusCode: number;
-  constructor(message: string, statusCode = 400) {
+
+  constructor(message: string) {
     super(message);
-    this.statusCode = statusCode;
+    this.statusCode = 409;
     Object.setPrototypeOf(this, new.target.prototype);
     Error.captureStackTrace(this);
   }

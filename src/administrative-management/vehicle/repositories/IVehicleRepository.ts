@@ -2,9 +2,10 @@ import { Vehicle } from '../domain/Vehicle';
 
 export interface IVehicleRepository {
   create(vehicle: Vehicle): Promise<Vehicle>;
-  findAll(): Promise<Vehicle[]>;
-  findById(id: string): Promise<Vehicle | null>;
-  findByPlate(plate: string): Promise<Vehicle | null>;
+  findAll(includeDeleted?: boolean): Promise<Vehicle[]>;
+  findById(id: number, includeDeleted?: boolean): Promise<Vehicle | null>;
+  findByIdPlate(idPlate: string, includeDeleted?: boolean): Promise<Vehicle | null>;
   update(vehicle: Vehicle): Promise<Vehicle>;
-  delete(id: string): Promise<void>;
+  softDelete(id: number): Promise<void>;
+  nextId(): number;
 }

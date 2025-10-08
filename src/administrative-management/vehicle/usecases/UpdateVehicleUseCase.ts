@@ -1,21 +1,30 @@
 import { IVehicleRepository } from '../repositories/IVehicleRepository';
-import { AppError } from '../../../errors/AppError';
-import { Vehicle } from '../domain/Vehicle';
+import { UpdateVehicleDTO } from '../dtos/UpdateVehicleDTO';
+import { AuthUser } from '../../../auth-and-access/auth/types/AuthUser';
+import ConflictRequest from '../../../errors/ConflictRequest';
+import NotFoundRequest from '../../../errors/NotfoundRequest';
+import ForbiddenRequest from '../../../errors/ForbiddenRequest';
 
 export class UpdateVehicleUseCase {
-  constructor(private vehicleRepo: IVehicleRepository) {}
+  constructor(private repo: IVehicleRepository) {}
 
-  async execute(id: string, data: Partial<Omit<Vehicle, 'id' | 'created_at'>>) {
-    const existing = await this.vehicleRepo.findById(id);
-    if (!existing) throw new AppError('Vehicle not found', 404);
+  async execute(id: number, user: AuthUser, data: UpdateVehicleDTO) {
+    const v = await this.repo.findById(id);
 
-    // evitar colisão de placa com outro veículo
-    if (data.plate) {
-      const byPlate = await this.vehicleRepo.findByPlate(data.plate);
-      if (byPlate && byPlate.id !== id) throw new AppError('Plate already in use', 409);
+    if (!v) throw new NotFoundRequest(`Vehicle with id ${id} not found`);
+
+    if (!user.roles.includes('admin') && v.ownerId !== user.id) {
+      throw new ForbiddenRequest('Forbidden');
     }
 
-    existing.update(data);
-    return this.vehicleRepo.update(existing);
+    if (data.idPlate && data.idPlate !== v.idPlate) {
+      const plateOwner = await this.repo.findByIdPlate(data.idPlate, false);
+      if (plateOwner && plateOwner.id !== id) {
+        throw new ConflictRequest('idPlate already in use');
+      }
+    }
+
+    v.update(data as any);
+    return this.repo.update(v);
   }
 }

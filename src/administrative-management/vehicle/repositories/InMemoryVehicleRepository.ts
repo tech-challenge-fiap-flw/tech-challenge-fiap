@@ -3,25 +3,35 @@ import { Vehicle } from '../domain/Vehicle';
 
 export class InMemoryVehicleRepository implements IVehicleRepository {
   private items: Vehicle[] = [];
+  private seq = 1;
+
+  nextId(): number { return this.seq++; }
 
   async create(vehicle: Vehicle): Promise<Vehicle> {
     this.items.push(vehicle);
     return vehicle;
   }
 
-  async findAll(): Promise<Vehicle[]> {
-    return [...this.items];
+  async findAll(includeDeleted = false): Promise<Vehicle[]> {
+    const list = includeDeleted ? this.items : this.items.filter(v => !v.deletedAt);
+    return [...list];
   }
 
-  async findById(id: string): Promise<Vehicle | null> {
+  async findById(id: number, includeDeleted = false): Promise<Vehicle | null> {
     const v = this.items.find(i => i.id === id);
-    return v ?? null;
+    if (!v) return null;
+    if (!includeDeleted && v.deletedAt) return null;
+    return v;
   }
 
-  async findByPlate(plate: string): Promise<Vehicle | null> {
-    const v = this.items.find(i => i.plate === plate);
-    return v ?? null;
+
+  async findByIdPlate(idPlate: string, includeDeleted = false): Promise<Vehicle | null> {
+    const v = this.items.find(i => i.idPlate === idPlate);
+    if (!v) return null;
+    if (!includeDeleted && v.deletedAt) return null;
+    return v;
   }
+
 
   async update(vehicle: Vehicle): Promise<Vehicle> {
     const idx = this.items.findIndex(i => i.id === vehicle.id);
@@ -30,7 +40,9 @@ export class InMemoryVehicleRepository implements IVehicleRepository {
     return vehicle;
   }
 
-  async delete(id: string): Promise<void> {
-    this.items = this.items.filter(i => i.id !== id);
+
+  async softDelete(id: number): Promise<void> {
+    const v = this.items.find(i => i.id === id);
+    if (v) v.deletedAt = new Date();
   }
 }
