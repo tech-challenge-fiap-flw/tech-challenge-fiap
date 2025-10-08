@@ -78,3 +78,17 @@ model Diagnosis {
   @@index([responsibleMechanicId])
   @@index([deletedAt])
 }
+
+model VehiclePart {
+  id           Int       @id @default(autoincrement())
+  type         String
+  name         String
+  description  String
+  quantity     Int
+  price        Float
+  deletedAt    DateTime?
+  creationDate DateTime  @default(now())
+
+  @@index([name])
+  @@index([deletedAt])
+}
