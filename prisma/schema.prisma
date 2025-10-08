@@ -27,6 +27,8 @@ model User {
   vehicles      Vehicle[]      @relation("UserVehicles")
   
   diagnosesAsMechanic Diagnosis[] @relation("ResponsibleMechanicDiagnoses")
+  budgets        Budget[]
+  serviceOrders  ServiceOrder[] @relation("CustomerOrders")
 }
 
 model RefreshToken {
@@ -77,6 +79,8 @@ model Diagnosis {
   @@index([vehicleId])
   @@index([responsibleMechanicId])
   @@index([deletedAt])
+
+  budgets      Budget[]
 }
 
 model VehiclePart {
@@ -91,6 +95,8 @@ model VehiclePart {
 
   @@index([name])
   @@index([deletedAt])
+
+  budgetParts  BudgetVehiclePart[]
 }
 
 model VehicleService {
@@ -102,4 +108,67 @@ model VehicleService {
 
   @@index([deletedAt])
   @@index([name])
+
+  budgets     BudgetVehicleService[]
+}
+
+model Budget {
+  id           Int       @id @default(autoincrement())
+  description  String
+  deletedAt    DateTime?
+  creationDate DateTime  @default(now())
+  ownerId      Int
+  diagnosisId  Int
+  total        Float     @default(0)
+
+  owner     User      @relation(fields: [ownerId], references: [id])
+  diagnosis Diagnosis @relation(fields: [diagnosisId], references: [id])
+
+  vehicleParts    BudgetVehiclePart[]
+  vehicleServices BudgetVehicleService[]
+
+  serviceOrder   ServiceOrder?  @relation("OrderBudget")
+}
+
+model BudgetVehiclePart {
+  id            Int         @id @default(autoincrement())
+  budgetId      Int
+  vehiclePartId Int
+  quantity      Int
+
+  budget      Budget      @relation(fields: [budgetId], references: [id])
+  vehiclePart VehiclePart @relation(fields: [vehiclePartId], references: [id])
+
+  @@unique([budgetId, vehiclePartId])
+}
+
+model BudgetVehicleService {
+  id               Int             @id @default(autoincrement())
+  budgetId         Int
+  vehicleServiceId Int
+
+  budget        Budget        @relation(fields: [budgetId], references: [id])
+  vehicleService VehicleService @relation(fields: [vehicleServiceId], references: [id])
+
+  @@unique([budgetId, vehicleServiceId])
+}
+
+enum ServiceOrderStatus {
+  RECEBIDA
+  AGUARDANDO_INICIO
+  RECUSADA
+  EM_ANDAMENTO
+  CONCLUIDA
+}
+
+model ServiceOrder {
+  idServiceOrder Int               @id @default(autoincrement())
+  active         Boolean           @default(true)
+  currentStatus  ServiceOrderStatus
+
+  budgetId       Int? @unique
+  budget       Budget?   @relation("OrderBudget", fields: [budgetId], references: [id])
+
+  customerId     Int
+  customer User    @relation("CustomerOrders", fields: [customerId], references: [id])
 }

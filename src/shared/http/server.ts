@@ -8,6 +8,7 @@ import vehicleRouter from '../../modules/vehicles/interface/http/routes/vehicle.
 import diagnosisRouter from '../../modules/diagnoses/interface/http/routes/diagnosis.routes';
 import vehiclePartRouter from '../../modules/vehicle-parts/interface/http/routes/vehicle-part.routes';
 import vehicleServiceRouter from '../../modules/vehicle-services/interface/http/routes/vehicle-service.routes';
+import budgetsRouter from '../../modules/budgets/interface/http/routes/budget.routes';
 
 export function createServer() {
   const app = express();
@@ -21,6 +22,7 @@ export function createServer() {
   app.use('/diagnoses', diagnosisRouter);
   app.use('/vehicle-parts', vehiclePartRouter);
   app.use('/vehicle-services', vehicleServiceRouter);
+  app.use('/budgets', budgetsRouter);
 
   app.use((_req, res) => res.status(404).json({ message: 'Not Found' }));
 
