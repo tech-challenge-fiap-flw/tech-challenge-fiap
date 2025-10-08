@@ -8,11 +8,13 @@ export class UpdateUserUseCase {
 
   async execute(id: number, data: Input): Promise<User> {
     const existing = await this.repo.findById(id);
+
     if (!existing) {
       const err: any = new Error(`User with id ${id} not found`);
       err.status = 404;
       throw err;
     }
+
     return this.repo.update(id, data);
   }
 }

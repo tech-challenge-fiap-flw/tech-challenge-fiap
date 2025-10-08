@@ -1,7 +1,5 @@
 import { Router } from 'express';
 
-export const asyncHandler = (fn: any) => (req: any, res: any, next: any) => Promise.resolve(fn(req, res)).catch(next);
-
 export function createModuleRouter(authWall: any) {
   const pub = Router();
   const priv = Router();

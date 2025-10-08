@@ -4,6 +4,7 @@ import morgan from 'morgan';
 import { json } from 'express';
 import authRouter from '../../modules/auth/interface/http/routes/auth.routes';
 import usersRouter from '../../modules/users/interface/http/routes/user.routes';
+import vehicleRouter from '../../modules/vehicles/interface/http/routes/vehicle.routes';
 
 export function createServer() {
   const app = express();
@@ -13,6 +14,7 @@ export function createServer() {
 
   app.use('/auth', authRouter);
   app.use('/users', usersRouter);
+  app.use('/vehicles', vehicleRouter);
 
   app.use((_req, res) => res.status(404).json({ message: 'Not Found' }));
 

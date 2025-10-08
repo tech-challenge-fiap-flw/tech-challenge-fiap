@@ -15,7 +15,12 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
   try {
     const payload = tokens.verifyAccessToken<any>(token);
     (req as any).userId = Number(payload.sub);
-    (req as any).userType = payload.type;
+
+    const role = payload.type;
+    const roles = [ role ];
+
+    (req as any).userRoles = roles;
+
     return next();
   } catch {
     return res.status(401).json({ message: 'Invalid token' });

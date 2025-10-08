@@ -24,6 +24,7 @@ model User {
   zipCode      String?
 
   refreshTokens RefreshToken[]
+  vehicles      Vehicle[]  @relation("UserVehicles")
 }
 
 model RefreshToken {
@@ -37,4 +38,23 @@ model RefreshToken {
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model Vehicle {
+  id              Int       @id @default(autoincrement())
+  idPlate         String
+  type            String
+  model           String
+  brand           String
+  manufactureYear Int
+  modelYear       Int
+  color           String
+  ownerId         Int
+  deletedAt       DateTime?
+
+  owner           User      @relation("UserVehicles", fields: [ownerId], references: [id], onDelete: Restrict)
+
+  @@unique([idPlate])          // placa única
+  @@index([ownerId])
+  @@index([deletedAt])
 }
