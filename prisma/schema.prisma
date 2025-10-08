@@ -8,34 +8,36 @@ datasource db {
 }
 
 model User {
-  id           Int      @id @default(autoincrement())
-  name         String
-  email        String   @unique
-  password     String
-  type         String
-  active       Boolean  @default(true)
-  creationDate DateTime @default(now())
-  cpf          String
-  cnpj         String?
-  phone        String
-  address      String?
-  city         String?
-  state        String?
-  zipCode      String?
+  id              Int            @id @default(autoincrement())
+  name            String
+  email           String         @unique
+  password        String
+  type            String
+  active          Boolean        @default(true)
+  creationDate    DateTime       @default(now())
+  cpf             String
+  cnpj            String?
+  phone           String
+  address         String?
+  city            String?
+  state           String?
+  zipCode         String?
 
   refreshTokens RefreshToken[]
-  vehicles      Vehicle[]  @relation("UserVehicles")
+  vehicles      Vehicle[]      @relation("UserVehicles")
+  
+  diagnosesAsMechanic Diagnosis[] @relation("ResponsibleMechanicDiagnoses")
 }
 
 model RefreshToken {
-  id         Int       @id @default(autoincrement())
-  token      String    @unique
-  userId     Int
-  expiresAt  DateTime
-  revokedAt  DateTime?
-  createdAt  DateTime  @default(now())
+  id          Int       @id @default(autoincrement())
+  token       String    @unique
+  userId      Int
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
 
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
@@ -53,8 +55,26 @@ model Vehicle {
   deletedAt       DateTime?
 
   owner           User      @relation("UserVehicles", fields: [ownerId], references: [id], onDelete: Restrict)
+  
+  diagnoses       Diagnosis[]
 
-  @@unique([idPlate])          // placa única
+  @@unique([idPlate])
   @@index([ownerId])
+  @@index([deletedAt])
+}
+
+model Diagnosis {
+  id                    Int       @id @default(autoincrement())
+  description           String
+  creationDate          DateTime  @default(now())
+  vehicleId             Int
+  responsibleMechanicId Int?
+  deletedAt             DateTime?
+
+  vehicle               Vehicle   @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  responsibleMechanic   User?     @relation("ResponsibleMechanicDiagnoses", fields: [responsibleMechanicId], references: [id], onDelete: SetNull) 
+
+  @@index([vehicleId])
+  @@index([responsibleMechanicId])
   @@index([deletedAt])
 }
