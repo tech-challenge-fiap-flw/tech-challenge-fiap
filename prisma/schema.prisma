@@ -92,3 +92,14 @@ model VehiclePart {
   @@index([name])
   @@index([deletedAt])
 }
+
+model VehicleService {
+  id        Int       @id @default(autoincrement())
+  name      String
+  price     Float     @default(0)
+  description String?
+  deletedAt DateTime?
+
+  @@index([deletedAt])
+  @@index([name])
+}
