@@ -2,11 +2,12 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { VehiclePartMySqlRepository } from '../infra/VehiclePartMySqlRepository';
 import { VehiclePartEntity } from '../domain/VehiclePart';
 import { getPagination, toPage } from '../../../shared/http/pagination';
+import { authMiddleware } from '../../auth/AuthMiddleware';
 
 const repo = new VehiclePartMySqlRepository();
 export const vehiclePartRouter = Router();
 
-vehiclePartRouter.post('/', async (req: Request, res: Response, next: NextFunction) => {
+vehiclePartRouter.post('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const entity = VehiclePartEntity.create(req.body);
     const created = await repo.create(entity);
@@ -14,7 +15,7 @@ vehiclePartRouter.post('/', async (req: Request, res: Response, next: NextFuncti
   } catch (err) { next(err); }
 });
 
-vehiclePartRouter.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
+vehiclePartRouter.get('/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
     const found = await repo.findById(id);
@@ -23,7 +24,7 @@ vehiclePartRouter.get('/:id', async (req: Request, res: Response, next: NextFunc
   } catch (err) { next(err); }
 });
 
-vehiclePartRouter.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
+vehiclePartRouter.put('/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
     const updated = await repo.update(id, req.body);
@@ -31,7 +32,7 @@ vehiclePartRouter.put('/:id', async (req: Request, res: Response, next: NextFunc
   } catch (err) { next(err); }
 });
 
-vehiclePartRouter.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+vehiclePartRouter.delete('/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
     await repo.softDelete(id);
@@ -39,7 +40,7 @@ vehiclePartRouter.delete('/:id', async (req: Request, res: Response, next: NextF
   } catch (err) { next(err); }
 });
 
-vehiclePartRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
+vehiclePartRouter.get('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { page, limit, offset } = getPagination(req);
     const [items, total] = await Promise.all([

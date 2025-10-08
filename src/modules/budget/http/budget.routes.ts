@@ -19,7 +19,7 @@ budgetRouter.post('/', authMiddleware, requireRole('admin'), async (req: Request
   } catch (err) { next(err); }
 });
 
-budgetRouter.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
+budgetRouter.get('/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
     const found = await budgetRepo.findById(id);

@@ -2,11 +2,12 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { DiagnosisMySqlRepository } from '../infra/DiagnosisMySqlRepository';
 import { DiagnosisEntity } from '../domain/Diagnosis';
 import { getPagination, toPage } from '../../../shared/http/pagination';
+import { authMiddleware } from '../../auth/AuthMiddleware';
 
 const repo = new DiagnosisMySqlRepository();
 export const diagnosisRouter = Router();
 
-diagnosisRouter.post('/', async (req: Request, res: Response, next: NextFunction) => {
+diagnosisRouter.post('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const entity = DiagnosisEntity.create(req.body);
     const created = await repo.create(entity);
@@ -14,7 +15,7 @@ diagnosisRouter.post('/', async (req: Request, res: Response, next: NextFunction
   } catch (err) { next(err); }
 });
 
-diagnosisRouter.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
+diagnosisRouter.get('/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
     const found = await repo.findById(id);
@@ -23,7 +24,7 @@ diagnosisRouter.get('/:id', async (req: Request, res: Response, next: NextFuncti
   } catch (err) { next(err); }
 });
 
-diagnosisRouter.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
+diagnosisRouter.put('/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
     const updated = await repo.update(id, req.body);
@@ -31,7 +32,7 @@ diagnosisRouter.put('/:id', async (req: Request, res: Response, next: NextFuncti
   } catch (err) { next(err); }
 });
 
-diagnosisRouter.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+diagnosisRouter.delete('/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
     await repo.softDelete(id);
@@ -39,7 +40,7 @@ diagnosisRouter.delete('/:id', async (req: Request, res: Response, next: NextFun
   } catch (err) { next(err); }
 });
 
-diagnosisRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
+diagnosisRouter.get('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { page, limit, offset } = getPagination(req);
     const [items, total] = await Promise.all([
