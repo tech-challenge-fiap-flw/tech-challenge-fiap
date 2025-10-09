@@ -1,11 +1,9 @@
-# Namespace
 resource "kubernetes_namespace" "tech_challenge" {
   metadata {
     name = var.namespace
   }
 }
 
-# ConfigMap
 resource "kubernetes_config_map" "app_config" {
   metadata {
     name = "app-config"
@@ -21,7 +19,6 @@ resource "kubernetes_config_map" "app_config" {
   }
 }
 
-# Secret
 resource "kubernetes_secret" "app_secrets" {
   metadata {
     name = "app-secrets"
@@ -36,7 +33,6 @@ resource "kubernetes_secret" "app_secrets" {
   type = "Opaque"
 }
 
-# App Deployment
 resource "kubernetes_deployment" "app" {
   metadata {
     name = "app-deployment"
@@ -65,14 +61,12 @@ resource "kubernetes_deployment" "app" {
             container_port = 3000
           }
 
-          # ConfigMap
           env_from {
             config_map_ref {
               name = kubernetes_config_map.app_config.metadata[0].name
             }
           }
 
-          # Secret
           env_from {
             secret_ref {
               name = kubernetes_secret.app_secrets.metadata[0].name
@@ -84,7 +78,6 @@ resource "kubernetes_deployment" "app" {
   }
 }
 
-# App Service
 resource "kubernetes_service" "app" {
   metadata {
     name = "app-service"
@@ -101,7 +94,6 @@ resource "kubernetes_service" "app" {
   }
 }
 
-# MySQL PersistentVolumeClaim
 resource "kubernetes_persistent_volume_claim" "mysql_pvc" {
   metadata {
     name = "mysql-pvc"
@@ -116,7 +108,6 @@ resource "kubernetes_persistent_volume_claim" "mysql_pvc" {
   }
 }
 
-# MySQL Deployment
 resource "kubernetes_deployment" "mysql" {
   metadata {
     name = "mysql-deployment"
@@ -175,7 +166,6 @@ resource "kubernetes_deployment" "mysql" {
   }
 }
 
-# MySQL Service
 resource "kubernetes_service" "mysql" {
   metadata {
     name = "mysql-service"
@@ -192,7 +182,6 @@ resource "kubernetes_service" "mysql" {
   }
 }
 
-# MongoDB PersistentVolumeClaim
 resource "kubernetes_persistent_volume_claim" "mongo_pvc" {
   metadata {
     name = "mongo-pvc"
@@ -207,7 +196,6 @@ resource "kubernetes_persistent_volume_claim" "mongo_pvc" {
   }
 }
 
-# MongoDB Deployment
 resource "kubernetes_deployment" "mongo" {
   metadata {
     name = "mongo-deployment"
@@ -252,7 +240,6 @@ resource "kubernetes_deployment" "mongo" {
   }
 }
 
-# MongoDB Service
 resource "kubernetes_service" "mongo" {
   metadata {
     name = "mongo-service"
