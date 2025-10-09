@@ -1,11 +1,16 @@
 import { IController, HttpRequest, HttpResponse } from '../../../../shared/http/Controller';
-import { VehicleService } from '../../application/VehicleService';
+import { IVehicleService } from '../../application/VehicleService';
 
 export class DeleteVehicleController implements IController {
-  constructor(private readonly service: VehicleService) {}
+  constructor(private readonly service: IVehicleService) {}
+
   async handle(req: HttpRequest): Promise<HttpResponse> {
     const id = Number(req.params.id);
+
     await this.service.deleteVehicle(id);
-    return { status: 204 };
+
+    return {
+      status: 204
+    };
   }
 }

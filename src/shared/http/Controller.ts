@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { HttpError } from './HttpError';
+import { BadRequestServerException, NotFoundServerException } from '../application/ServerException';
 
 export interface HttpRequest<TBody = any, TParams = any, TQuery = any> {
   body: TBody;
@@ -37,11 +38,24 @@ export function adaptExpress(controller: IController) {
 
       return res.status(httpResponse.status).json(httpResponse.body);
     } catch (err: any) {
+      console.error(err);
+
       if (err instanceof HttpError) {
-        return res.status(err.status).json({ error: err.message, details: err.details });
+        return res.status(err.status).json({
+          error: err.message,
+          details: err.details
+        });
       }
 
-      next(err);
+      if (err instanceof BadRequestServerException) {
+        return res.status(400).json({ error: err.message });
+      }
+
+      if (err instanceof NotFoundServerException) {
+        return res.status(404).json({ error: err.message });
+      }
+
+      return res.status(500).json({ error: 'Internal server error' });
     }
   };
 }

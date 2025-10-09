@@ -19,10 +19,7 @@ export class UpdateCurrentUserController implements IController {
       throw badRequest('Validation failed', parsed.error.format());
     }
 
-    const result = await this.service.updateUser(
-      current.sub,
-      parsed.data
-    );
+    const result = await this.service.updateUser(current.sub, parsed.data);
 
     return {
       status: 200,

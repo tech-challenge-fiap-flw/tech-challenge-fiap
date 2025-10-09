@@ -11,8 +11,8 @@ import { GetUserProfileController } from './controllers/GetUserProfileController
 import { GetUserByIdController } from './controllers/GetUserByIdController';
 import { ListUsersController } from './controllers/ListUsersController';
 
-const repo = new UserMySqlRepository();
-const service = new UserService(repo);
+const repository = new UserMySqlRepository();
+const service = new UserService(repository);
 
 export const userRouter = Router();
 

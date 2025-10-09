@@ -19,10 +19,6 @@ export class GetUserByIdController implements IController {
 
     const user = await this.service.findById(id);
 
-    if (!user) {
-      throw notFound('User not found');
-    }
-
     return {
       status: 200,
       body: user

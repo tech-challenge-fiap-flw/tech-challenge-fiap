@@ -28,7 +28,7 @@ export class UserMySqlRepository implements IUserRepository {
 
     const result = await mysql.insertOne(sql, params);
 
-    return UserEntity.restore({ ...data, id: result.insertId });
+    return UserEntity.restore({ id: result.insertId, ...data });
   }
 
   async findById(id: UserId): Promise<UserEntity | null> {
@@ -51,31 +51,16 @@ export class UserMySqlRepository implements IUserRepository {
     return UserEntity.restore(rows[0]);
   }
 
-  async update(id: UserId, partial: Partial<IUserProps>): Promise<UserEntity> {
+  async update(id: UserId, partial: Partial<IUserProps>): Promise<UserEntity | null> {
     const keys = Object.keys(partial) as (keyof IUserProps)[];
-
-    if (keys.length === 0) {
-      const found = await this.findById(id);
-      
-      if (!found) {
-        throw Object.assign(new Error('User not found'), { status: 404 });
-      }
-      
-      return found;
-    }
 
     const setClause = keys.map((k) => `${k} = ?`).join(', ');
     const params = keys.map((k) => (partial as any)[k]);
     params.push(id);
 
-    await mysql.update(`UPDATE users SET ${setClause} WHERE id = ?`, params);    
-    const updated = await this.findById(id);
-    
-    if (!updated) {
-      throw Object.assign(new Error('User not found'), { status: 404 });
-    }
-    
-    return updated;
+    await mysql.update(`UPDATE users SET ${setClause} WHERE id = ?`, params);
+
+    return await this.findById(id);
   }
 
   async softDelete(id: UserId): Promise<void> {

@@ -1,10 +1,10 @@
 import { IController, HttpRequest, HttpResponse } from '../../../../shared/http/Controller';
 import { badRequest } from '../../../../shared/http/HttpError';
-import { VehicleService } from '../../application/VehicleService';
 import { createVehicleSchema } from './schemas';
+import { IVehicleService } from '../../application/VehicleService';
 
 export class CreateVehicleController implements IController {
-  constructor(private readonly service: VehicleService) {}
+  constructor(private readonly service: IVehicleService) {}
 
   async handle(req: HttpRequest): Promise<HttpResponse> {
     const parsed = createVehicleSchema.safeParse(req.body);
