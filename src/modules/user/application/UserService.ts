@@ -53,6 +53,21 @@ export class UserService {
     await this.repo.softDelete(id);
   }
 
+  async findById(id: number): Promise<UserOutput | null> {
+    const user = await this.repo.findById(id);
+    if (!user) return null;
+    const { password, ...rest } = user.toJSON();
+    return rest as UserOutput;
+  }
+
+  async list(offset: number, limit: number): Promise<UserOutput[]> {
+    const items = await this.repo.list(offset, limit);
+    return items.map(i => {
+      const { password, ...rest } = i.toJSON();
+      return rest as UserOutput;
+    });
+  }
+
   private async hashPassword(password: string): Promise<string> {
     const salt = await bcrypt.genSalt();
     return bcrypt.hash(password, salt);
