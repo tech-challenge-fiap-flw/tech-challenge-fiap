@@ -14,11 +14,11 @@ export interface HttpResponse<T = any> {
   body?: T;
 }
 
-export interface Controller<TReq = any, TRes = any> {
+export interface IController<TReq = any, TRes = any> {
   handle(request: HttpRequest<TReq>): Promise<HttpResponse<TRes>>;
 }
 
-export function adaptExpress(controller: Controller) {
+export function adaptExpress(controller: IController) {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const httpRequest: HttpRequest = {

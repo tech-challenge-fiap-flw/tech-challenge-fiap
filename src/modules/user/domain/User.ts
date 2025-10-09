@@ -1,6 +1,6 @@
 export type UserId = number;
 
-export interface UserProps {
+export interface IUserProps {
   id?: UserId;
   name: string;
   email: string;
@@ -18,13 +18,13 @@ export interface UserProps {
 }
 
 export class UserEntity {
-  private props: UserProps;
+  private props: IUserProps;
 
-  private constructor(props: UserProps) {
+  private constructor(props: IUserProps) {
     this.props = props;
   }
 
-  static create(props: Omit<UserProps, 'id' | 'creationDate' | 'active'>): UserEntity {
+  static create(props: Omit<IUserProps, 'id' | 'creationDate' | 'active'>): UserEntity {
     return new UserEntity({
       ...props,
       id: undefined,
@@ -33,11 +33,11 @@ export class UserEntity {
     });
   }
 
-  static restore(props: UserProps): UserEntity {
+  static restore(props: IUserProps): UserEntity {
     return new UserEntity(props);
   }
 
-  toJSON(): UserProps {
+  toJSON(): IUserProps {
     return { ...this.props };
   }
 }

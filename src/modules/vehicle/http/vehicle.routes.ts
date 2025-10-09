@@ -3,13 +3,11 @@ import { authMiddleware } from '../../auth/AuthMiddleware';
 import { adaptExpress } from '../../../shared/http/Controller';
 import { VehicleMySqlRepository } from '../infra/VehicleMySqlRepository';
 import { VehicleService } from '../application/VehicleService';
-import { 
-  CreateVehicleController,
-  GetVehicleController,
-  UpdateVehicleController,
-  DeleteVehicleController,
-  ListVehiclesController,
-} from './VehicleController';
+import { CreateVehicleController } from './controllers/CreateVehicleController';
+import { GetVehicleController } from './controllers/GetVehicleController';
+import { UpdateVehicleController } from './controllers/UpdateVehicleController';
+import { DeleteVehicleController } from './controllers/DeleteVehicleController';
+import { ListVehiclesController } from './controllers/ListVehiclesController';
 
 const repo = new VehicleMySqlRepository();
 const service = new VehicleService(repo);

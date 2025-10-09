@@ -4,14 +4,12 @@ import { authMiddleware } from '../../auth/AuthMiddleware';
 import { requireRole } from '../../auth/RoleMiddleware';
 import { UserService } from '../application/UserService';
 import { adaptExpress } from '../../../shared/http/Controller';
-import { 
-  CreateUserController,
-  UpdateCurrentUserController,
-  DeleteCurrentUserController,
-  GetUserProfileController,
-  GetUserByIdController,
-  ListUsersController,
-} from './UserController';
+import { CreateUserController } from './controllers/CreateUserController';
+import { UpdateCurrentUserController } from './controllers/UpdateCurrentUserController';
+import { DeleteCurrentUserController } from './controllers/DeleteCurrentUserController';
+import { GetUserProfileController } from './controllers/GetUserProfileController';
+import { GetUserByIdController } from './controllers/GetUserByIdController';
+import { ListUsersController } from './controllers/ListUsersController';
 
 const repo = new UserMySqlRepository();
 const service = new UserService(repo);
@@ -21,6 +19,6 @@ export const userRouter = Router();
 userRouter.post('/', adaptExpress(new CreateUserController(service)));
 userRouter.put('/', authMiddleware, adaptExpress(new UpdateCurrentUserController(service)));
 userRouter.delete('/', authMiddleware, adaptExpress(new DeleteCurrentUserController(service)));
-userRouter.get('/me', authMiddleware, adaptExpress(new GetUserProfileController(repo)));
-userRouter.get('/:id', authMiddleware, adaptExpress(new GetUserByIdController(repo)));
-userRouter.get('/', authMiddleware, requireRole('admin'), adaptExpress(new ListUsersController(repo)));
+userRouter.get('/me', authMiddleware, adaptExpress(new GetUserProfileController(service)));
+userRouter.get('/:id', authMiddleware, adaptExpress(new GetUserByIdController(service)));
+userRouter.get('/', authMiddleware, requireRole('admin'), adaptExpress(new ListUsersController(service)));

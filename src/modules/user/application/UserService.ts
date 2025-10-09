@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import { UserEntity } from '../domain/User';
-import { UserRepository } from '../domain/UserRepository';
+import { IUserRepository } from '../domain/IUserRepository';
 
 export type CreateUserInput = {
   name: string;
@@ -18,8 +18,18 @@ export type CreateUserInput = {
 
 export type UserOutput = Omit<ReturnType<UserEntity['toJSON']>, 'password'>;
 
-export class UserService {
-  constructor(private readonly repo: UserRepository) {}
+export interface IUserService {
+  createUser(input: CreateUserInput): Promise<UserOutput>;
+  updateUser(id: number, partial: Partial<CreateUserInput>): Promise<UserOutput>;
+  deleteUser(id: number): Promise<void>;
+  findById(id: number): Promise<UserOutput | null>;
+  findByEmail(email: string): Promise<UserEntity | null>;
+  list(offset: number, limit: number): Promise<UserOutput[]>;
+  countAll(): Promise<number>;
+}
+
+export class UserService implements IUserService {
+  constructor(private readonly repo: IUserRepository) {}
 
   async createUser(input: CreateUserInput): Promise<UserOutput> {
     const exists = await this.repo.findByEmail(input.email);
@@ -55,17 +65,32 @@ export class UserService {
 
   async findById(id: number): Promise<UserOutput | null> {
     const user = await this.repo.findById(id);
-    if (!user) return null;
+
+    if (!user) {
+      return null;
+    }
+
     const { password, ...rest } = user.toJSON();
+
     return rest as UserOutput;
+  }
+
+  async findByEmail(email: string): Promise<UserEntity | null> {
+    return this.repo.findByEmail(email);
   }
 
   async list(offset: number, limit: number): Promise<UserOutput[]> {
     const items = await this.repo.list(offset, limit);
+
     return items.map(i => {
       const { password, ...rest } = i.toJSON();
+
       return rest as UserOutput;
     });
+  }
+
+  async countAll(): Promise<number> {
+    return this.repo.countAll();
   }
 
   private async hashPassword(password: string): Promise<string> {

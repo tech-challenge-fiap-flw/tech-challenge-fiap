@@ -1,17 +1,12 @@
-import { z } from 'zod';
-import { Controller, HttpRequest, HttpResponse } from '../../shared/http/Controller';
-import { badRequest, unauthorized } from '../../shared/http/HttpError';
+import { IController, HttpRequest, HttpResponse } from '../../../shared/http/Controller';
+import { badRequest, unauthorized } from '../../../shared/http/HttpError';
+import { loginSchema } from './schemas';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import { UserMySqlRepository } from '../user/infra/UserMySqlRepository';
+import { IUserService } from 'src/modules/user/application/UserService';
 
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
-});
-
-export class LoginController implements Controller {
-  constructor(private readonly repo: UserMySqlRepository) {}
+export class LoginController implements IController {
+  constructor(private readonly service: IUserService) {}
 
   async handle(req: HttpRequest): Promise<HttpResponse> {
     const parsed = loginSchema.safeParse(req.body);
@@ -21,7 +16,7 @@ export class LoginController implements Controller {
     }
 
     const { email, password } = parsed.data;
-    const user = await this.repo.findByEmail(email);
+    const user = await this.service.findByEmail(email);
 
     if (!user) {
       throw unauthorized('Invalid credentials');
@@ -35,7 +30,6 @@ export class LoginController implements Controller {
     }
 
     const secret = process.env.JWT_SECRET || 'dev-secret';
-
     const token = jwt.sign(
       { sub: data.id, email: data.email, type: data.type },
       secret,

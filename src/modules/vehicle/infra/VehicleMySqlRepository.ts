@@ -22,6 +22,8 @@ export class VehicleMySqlRepository implements VehicleRepository {
       data.deletedAt ?? null,
     ];
 
+    console.log('>> CHEGOU AQUI: ', params)
+
     const results = await query<ResultSetHeader>(sql, params);
     const id = results.at(0)?.insertId as VehicleId;
     

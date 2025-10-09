@@ -1,4 +1,4 @@
-import mysql, { Pool } from 'mysql2/promise';
+import mysql, { Pool, ResultSetHeader } from 'mysql2/promise';
 
 type DbConfig = {
   host: string;
@@ -38,4 +38,14 @@ export function getPool(): Pool {
 export async function query<T = any>(sql: string, params: any[] = []): Promise<T[]> {
   const [rows] = await getPool().execute(sql, params);
   return rows as T[];
+}
+
+export async function insertOne(sql: string, params: any[] = []): Promise<ResultSetHeader> {
+  const [result] = await getPool().execute(sql, params);
+  return result as ResultSetHeader;
+}
+
+export async function update(sql: string, params: any[] = []): Promise<ResultSetHeader> {
+  const [result] = await getPool().execute(sql, params);
+  return result as ResultSetHeader;
 }
