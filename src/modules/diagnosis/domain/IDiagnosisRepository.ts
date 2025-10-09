@@ -1,9 +1,9 @@
-import { DiagnosisEntity, DiagnosisId, DiagnosisProps } from './Diagnosis';
+import { DiagnosisEntity, DiagnosisId, IDiagnosisProps } from './Diagnosis';
 
-export interface DiagnosisRepository {
+export interface IDiagnosisRepository {
   create(entity: DiagnosisEntity): Promise<DiagnosisEntity>;
   findById(id: DiagnosisId): Promise<DiagnosisEntity | null>;
-  update(id: DiagnosisId, partial: Partial<DiagnosisProps>): Promise<DiagnosisEntity>;
+  update(id: DiagnosisId, partial: Partial<IDiagnosisProps>): Promise<DiagnosisEntity>;
   softDelete(id: DiagnosisId): Promise<void>;
   list(offset: number, limit: number): Promise<DiagnosisEntity[]>;
   countAll(): Promise<number>;

@@ -1,9 +1,10 @@
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
-import { query } from '../../../infra/db/mysql';
-import { DiagnosisEntity, DiagnosisId, DiagnosisProps } from '../domain/Diagnosis';
-import { DiagnosisRepository } from '../domain/DiagnosisRepository';
+import * as mysql from '../../../infra/db/mysql';
+import { DiagnosisEntity, DiagnosisId, IDiagnosisProps } from '../domain/Diagnosis';
+import { IDiagnosisRepository } from '../domain/IDiagnosisRepository';
 
-export class DiagnosisMySqlRepository implements DiagnosisRepository {
+export class DiagnosisMySqlRepository implements IDiagnosisRepository {
+
   async create(entity: DiagnosisEntity): Promise<DiagnosisEntity> {
     const data = entity.toJSON();
 
@@ -14,18 +15,17 @@ export class DiagnosisMySqlRepository implements DiagnosisRepository {
       data.description,
       data.creationDate,
       data.vehicleId,
-      data.responsibleMechanicId ?? null,
+      data.mechanicId ?? null,
       data.deletedAt ?? null
     ];
 
-    const results = await query<ResultSetHeader>(sql, params);
-    const id = results.at(0)?.insertId as DiagnosisId;
+    const result = await mysql.insertOne(sql, params);
 
-    return DiagnosisEntity.restore({ ...data, id });
+    return DiagnosisEntity.restore({ id: result.insertId, ...data });
   }
 
   async findById(id: DiagnosisId): Promise<DiagnosisEntity | null> {
-    const rows = await query<DiagnosisProps & RowDataPacket[]>(`SELECT * FROM diagnosis WHERE id = ?`, [id]);
+    const rows = await mysql.query<IDiagnosisProps>(`SELECT * FROM diagnosis WHERE id = ?`, [id]);
 
     if (rows.length === 0) {
       return null;
@@ -34,8 +34,8 @@ export class DiagnosisMySqlRepository implements DiagnosisRepository {
     return DiagnosisEntity.restore(rows[0]);
   }
 
-  async update(id: DiagnosisId, partial: Partial<DiagnosisProps>): Promise<DiagnosisEntity> {
-    const keys = Object.keys(partial) as (keyof DiagnosisProps)[];
+  async update(id: DiagnosisId, partial: Partial<IDiagnosisProps>): Promise<DiagnosisEntity> {
+    const keys = Object.keys(partial) as (keyof IDiagnosisProps)[];
 
     if (keys.length === 0) {
       const found = await this.findById(id);
@@ -51,7 +51,7 @@ export class DiagnosisMySqlRepository implements DiagnosisRepository {
     const params = keys.map((k) => (partial as any)[k]);
     params.push(id);
 
-    await query<ResultSetHeader>(`UPDATE diagnosis SET ${setClause} WHERE id = ?`, params);
+    await mysql.query<ResultSetHeader>(`UPDATE diagnosis SET ${setClause} WHERE id = ?`, params);
 
     const updated = await this.findById(id);
 
@@ -63,21 +63,24 @@ export class DiagnosisMySqlRepository implements DiagnosisRepository {
   }
 
   async softDelete(id: DiagnosisId): Promise<void> {
-    await query<ResultSetHeader>(`UPDATE diagnosis SET deletedAt = NOW() WHERE id = ?`, [id]);
+    await mysql.query<ResultSetHeader>(`UPDATE diagnosis SET deletedAt = NOW() WHERE id = ?`, [id]);
   }
 
   async list(offset: number, limit: number): Promise<DiagnosisEntity[]> {
-    const rows = await query<DiagnosisProps & RowDataPacket[]>(
-      `SELECT * FROM diagnosis WHERE deletedAt IS NULL ORDER BY id LIMIT ? OFFSET ?`, 
-      [limit, offset]
-    );
+    const sql = `
+      SELECT * FROM diagnosis 
+      WHERE deletedAt IS NULL
+      ORDER BY id 
+      LIMIT ${limit} OFFSET ${offset}
+    `;
 
-    return rows.map((r) => DiagnosisEntity.restore(r));
+    const rows = await mysql.query<IDiagnosisProps>(sql);
+
+    return rows.map((row) => DiagnosisEntity.restore(row));
   }
 
   async countAll(): Promise<number> {
-    const rows = await query<{ c: number }>(`SELECT COUNT(*) AS c FROM diagnosis WHERE deletedAt IS NULL`);
-
-    return Number(rows.at(0)?.c ?? 0);
+    const rows = await mysql.query<{ count: number }>(`SELECT COUNT(*) AS count FROM diagnosis WHERE deletedAt IS NULL`);
+    return Number(rows.at(0)?.count ?? 0);
   }
 }

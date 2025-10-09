@@ -1,11 +1,16 @@
-import { IController, HttpRequest, HttpResponse } from '../../../../shared/http/Controller';
-import { DiagnosisMySqlRepository } from '../../infra/DiagnosisMySqlRepository';
+import { IController, HttpRequest, HttpResponse } from '../../../../shared/http/Controller'
+import { IDiagnosisService } from '../../application/DiagnosisService'
 
 export class DeleteDiagnosisController implements IController {
-  constructor(private readonly repo: DiagnosisMySqlRepository) {}
+  constructor(private readonly service: IDiagnosisService) {}
+
   async handle(req: HttpRequest): Promise<HttpResponse> {
-    const id = Number(req.params.id);
-    await this.repo.softDelete(id);
-    return { status: 204 };
+    const id = Number(req.params.id)
+
+    await this.service.deleteDiagnosis(id)
+
+    return {
+      status: 204
+    }
   }
 }
