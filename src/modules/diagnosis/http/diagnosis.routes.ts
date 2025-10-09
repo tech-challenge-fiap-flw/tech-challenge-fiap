@@ -5,48 +5,71 @@ import { getPagination, toPage } from '../../../shared/http/pagination';
 import { authMiddleware } from '../../auth/AuthMiddleware';
 
 const repo = new DiagnosisMySqlRepository();
-export const diagnosisRouter = Router();
 
-diagnosisRouter.post('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+const createDiagnosisHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const entity = DiagnosisEntity.create(req.body);
     const created = await repo.create(entity);
     res.status(201).json(created.toJSON());
-  } catch (err) { next(err); }
-});
+  } catch (err) {
+    next(err);
+  }
+};
 
-diagnosisRouter.get('/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+const getDiagnosisByIdHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
     const found = await repo.findById(id);
-    if (!found) return res.status(404).json({ error: 'Diagnosis not found' });
-    res.json(found.toJSON());
-  } catch (err) { next(err); }
-});
 
-diagnosisRouter.put('/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+    if (!found) {
+      return res.status(404).json({ error: 'Diagnosis not found' });
+    }
+
+    res.json(found.toJSON());
+  } catch (err) {
+    next(err);
+  }
+};
+
+const updateDiagnosisHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
     const updated = await repo.update(id, req.body);
     res.json(updated.toJSON());
-  } catch (err) { next(err); }
-});
+  } catch (err) {
+    next(err);
+  }
+};
 
-diagnosisRouter.delete('/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+const deleteDiagnosisHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
     await repo.softDelete(id);
     res.status(204).send();
-  } catch (err) { next(err); }
-});
+  } catch (err) {
+    next(err);
+  }
+};
 
-diagnosisRouter.get('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+const listDiagnosesHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { page, limit, offset } = getPagination(req);
+    
     const [items, total] = await Promise.all([
       repo.list(offset, limit),
       repo.countAll(),
     ]);
+    
     res.json(toPage(items.map(i => i.toJSON()), page, limit, total));
-  } catch (err) { next(err); }
-});
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const diagnosisRouter = Router();
+
+diagnosisRouter.post('/', authMiddleware, createDiagnosisHandler);
+diagnosisRouter.get('/:id', authMiddleware, getDiagnosisByIdHandler);
+diagnosisRouter.put('/:id', authMiddleware, updateDiagnosisHandler);
+diagnosisRouter.delete('/:id', authMiddleware, deleteDiagnosisHandler);
+diagnosisRouter.get('/', authMiddleware, listDiagnosesHandler);

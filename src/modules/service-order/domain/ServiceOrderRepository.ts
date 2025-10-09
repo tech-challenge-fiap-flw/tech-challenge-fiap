@@ -1,4 +1,4 @@
-import { ServiceOrderEntity, ServiceOrderId, ServiceOrderProps, ServiceOrderStatus } from './ServiceOrder';
+import { ServiceOrderEntity, ServiceOrderId, ServiceOrderStatus } from './ServiceOrder';
 
 export interface ServiceOrderRepository {
   create(entity: ServiceOrderEntity): Promise<ServiceOrderEntity>;

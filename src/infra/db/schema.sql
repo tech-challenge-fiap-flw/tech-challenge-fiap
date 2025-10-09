@@ -1,5 +1,3 @@
--- Minimal DDL to support repositories. Adjust types and constraints as needed.
-
 CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
@@ -108,9 +106,8 @@ CREATE TABLE IF NOT EXISTS service_orders (
   FOREIGN KEY (vehicleId) REFERENCES vehicles(id)
 );
 
--- Indexes
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-CREATE INDEX IF NOT EXISTS idx_vehicles_owner ON vehicles(ownerId);
-CREATE INDEX IF NOT EXISTS idx_diagnosis_vehicle ON diagnosis(vehicleId);
-CREATE INDEX IF NOT EXISTS idx_budgets_owner ON budgets(ownerId);
-CREATE INDEX IF NOT EXISTS idx_service_orders_customer ON service_orders(customerId);
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_vehicles_owner ON vehicles(ownerId);
+CREATE INDEX idx_diagnosis_vehicle ON diagnosis(vehicleId);
+CREATE INDEX idx_budgets_owner ON budgets(ownerId);
+CREATE INDEX idx_service_orders_customer ON service_orders(customerId);

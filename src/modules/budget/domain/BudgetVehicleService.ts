@@ -4,7 +4,7 @@ export interface BudgetVehicleServiceProps {
   id?: BudgetVehicleServiceId;
   budgetId: number;
   vehicleServiceId: number;
-  price: number; // snapshot price
+  price: number;
 }
 
 export class BudgetVehicleServiceEntity {

@@ -1,6 +1,6 @@
 import { BudgetEntity, BudgetId, BudgetProps } from './Budget';
-import { BudgetVehiclePartEntity, BudgetVehiclePartId, BudgetVehiclePartProps } from './BudgetVehiclePart';
-import { BudgetVehicleServiceEntity, BudgetVehicleServiceId, BudgetVehicleServiceProps } from './BudgetVehicleService';
+import { BudgetVehiclePartEntity, BudgetVehiclePartId } from './BudgetVehiclePart';
+import { BudgetVehicleServiceEntity, BudgetVehicleServiceId } from './BudgetVehicleService';
 
 export interface BudgetRepository {
   create(entity: BudgetEntity): Promise<BudgetEntity>;

@@ -6,7 +6,11 @@ export class VehicleService {
 
   async createVehicle(input: Omit<VehicleProps, 'id' | 'deletedAt'>) {
     const exists = await this.repo.findByIdPlate(input.idPlate);
-    if (exists) throw Object.assign(new Error('Plate already exists'), { status: 400 });
+
+    if (exists) {
+      throw Object.assign(new Error('Plate already exists'), { status: 400 });
+    }
+
     const entity = VehicleEntity.create(input);
     const created = await this.repo.create(entity);
     return created.toJSON();

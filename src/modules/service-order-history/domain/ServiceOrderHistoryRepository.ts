@@ -1,4 +1,4 @@
-import { ServiceOrderHistoryEntity, ServiceOrderHistoryProps } from './ServiceOrderHistory';
+import { ServiceOrderHistoryEntity } from './ServiceOrderHistory';
 
 export interface ServiceOrderHistoryRepository {
   create(entry: ServiceOrderHistoryEntity): Promise<ServiceOrderHistoryEntity>;

@@ -23,15 +23,18 @@ export class UserService {
 
   async createUser(input: CreateUserInput): Promise<UserOutput> {
     const exists = await this.repo.findByEmail(input.email);
+
     if (exists) {
       const error: any = new Error('Email already exists');
       error.status = 400;
       throw error;
     }
+
     const hashedPassword = await this.hashPassword(input.password);
     const entity = UserEntity.create({ ...input, password: hashedPassword });
     const created = await this.repo.create(entity);
     const { password, ...rest } = created.toJSON();
+
     return rest as UserOutput;
   }
 
@@ -39,8 +42,10 @@ export class UserService {
     if (partial.password) {
       partial.password = await this.hashPassword(partial.password);
     }
+
     const updated = await this.repo.update(id, partial as any);
     const { password, ...rest } = updated.toJSON();
+
     return rest as UserOutput;
   }
 

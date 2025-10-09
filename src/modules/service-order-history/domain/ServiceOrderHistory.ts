@@ -1,5 +1,5 @@
 export interface ServiceOrderHistoryProps {
-  id?: string; // Mongo _id as string
+  id?: string;
   idServiceOrder: number;
   userId: number;
   oldStatus?: string | null;

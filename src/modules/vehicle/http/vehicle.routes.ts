@@ -7,27 +7,31 @@ import { authMiddleware } from '../../auth/AuthMiddleware';
 const repo = new VehicleMySqlRepository();
 const service = new VehicleService(repo);
 
-export const vehicleRouter = Router();
-
-vehicleRouter.post('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+const createVehicleHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const result = await service.createVehicle(req.body);
     res.status(201).json(result);
   } catch (err) {
     next(err);
   }
-});
+};
 
-vehicleRouter.get('/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+const getVehicleByIdHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
     const found = await repo.findById(id);
-    if (!found) return res.status(404).json({ error: 'Vehicle not found' });
+    
+    if (!found) {
+      return res.status(404).json({ error: 'Vehicle not found' });
+    }
+    
     res.json(found.toJSON());
-  } catch (err) { next(err); }
-});
+  } catch (err) {
+    next(err);
+  }
+};
 
-vehicleRouter.put('/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+const updateVehicleHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
     const result = await service.updateVehicle(id, req.body);
@@ -35,9 +39,9 @@ vehicleRouter.put('/:id', authMiddleware, async (req: Request, res: Response, ne
   } catch (err) {
     next(err);
   }
-});
+};
 
-vehicleRouter.delete('/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+const deleteVehicleHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = Number(req.params.id);
     await service.deleteVehicle(id);
@@ -45,15 +49,27 @@ vehicleRouter.delete('/:id', authMiddleware, async (req: Request, res: Response,
   } catch (err) {
     next(err);
   }
-});
+};
 
-vehicleRouter.get('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+const listVehiclesHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { page, limit, offset } = getPagination(req);
+    
     const [items, total] = await Promise.all([
       repo.list(offset, limit),
       repo.countAll(),
     ]);
+    
     res.json(toPage(items.map(i => i.toJSON()), page, limit, total));
-  } catch (err) { next(err); }
-});
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const vehicleRouter = Router();
+
+vehicleRouter.post('/', authMiddleware, createVehicleHandler);
+vehicleRouter.get('/:id', authMiddleware, getVehicleByIdHandler);
+vehicleRouter.put('/:id', authMiddleware, updateVehicleHandler);
+vehicleRouter.delete('/:id', authMiddleware, deleteVehicleHandler);
+vehicleRouter.get('/', authMiddleware, listVehiclesHandler);

@@ -19,6 +19,7 @@ export function getPool(): Pool {
       password: process.env.DB_PASSWORD || '',
       database: process.env.DB_DATABASE || 'tech_challenge',
     };
+
     pool = mysql.createPool({
       host: config.host,
       port: config.port,
@@ -30,6 +31,7 @@ export function getPool(): Pool {
       queueLimit: 0,
     });
   }
+
   return pool;
 }
 

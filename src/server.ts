@@ -14,16 +14,9 @@ dotenv.config();
 
 const app = express();
 
-// Middlewares
 app.use(helmet());
 app.use(express.json());
 
-// Health check
-app.get('/health', (_req: Request, res: Response) => {
-  res.status(200).json({ status: 'ok' });
-});
-
-// Routes
 app.use('/auth', authRouter);
 app.use('/users', userRouter);
 app.use('/vehicles', vehicleRouter);
@@ -33,7 +26,6 @@ app.use('/diagnosis', diagnosisRouter);
 app.use('/budgets', budgetRouter);
 app.use('/service-orders', serviceOrderRouter);
 
-// Global error handler
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   const status = err?.status ?? 500;
   const message = err?.message ?? 'Internal Server Error';
@@ -42,7 +34,6 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;
 app.listen(port, () => {
-  // eslint-disable-next-line no-console
   console.log(`Server running on http://localhost:${port}`);
 });
 
