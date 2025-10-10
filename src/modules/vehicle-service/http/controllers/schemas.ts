@@ -1,10 +1,10 @@
+import { describe } from 'node:test';
 import { z } from 'zod';
 
 export const createVehicleServiceSchema = z.object({
   name: z.string().min(1),
-  code: z.string().min(1),
-  description: z.string().optional().nullable(),
   price: z.number().positive(),
+  description: z.string().nullable(),
 });
 
 export const updateVehicleServiceSchema = createVehicleServiceSchema.partial();

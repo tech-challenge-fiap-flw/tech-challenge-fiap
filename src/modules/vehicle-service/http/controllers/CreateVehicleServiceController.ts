@@ -1,11 +1,10 @@
 import { IController, HttpRequest, HttpResponse } from '../../../../shared/http/Controller';
 import { badRequest } from '../../../../shared/http/HttpError';
-import { VehicleServiceMySqlRepository } from '../../infra/VehicleServiceMySqlRepository';
-import { VehicleServiceEntity } from '../../domain/VehicleService';
+import { IVehicleServiceService } from '../../application/VehicleServiceService';
 import { createVehicleServiceSchema } from './schemas';
 
 export class CreateVehicleServiceController implements IController {
-  constructor(private readonly repo: VehicleServiceMySqlRepository) {}
+  constructor(private readonly service: IVehicleServiceService) {}
 
   async handle(req: HttpRequest): Promise<HttpResponse> {
     const parsed = createVehicleServiceSchema.safeParse(req.body);
@@ -14,9 +13,8 @@ export class CreateVehicleServiceController implements IController {
       throw badRequest('Validation failed', parsed.error.format());
     }
 
-    const entity = VehicleServiceEntity.create(parsed.data as any);
-    const created = await this.repo.create(entity);
+    const created = await this.service.createVehicleService(parsed.data);
 
-    return { status: 201, body: created.toJSON() };
+    return { status: 201, body: created };
   }
 }
