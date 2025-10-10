@@ -1,10 +1,10 @@
 import { IController, HttpRequest, HttpResponse } from '../../../../shared/http/Controller';
 import { badRequest } from '../../../../shared/http/HttpError';
-import { VehiclePartMySqlRepository } from '../../infra/VehiclePartMySqlRepository';
+import { IVehiclePartService } from '../../application/VehiclePartService';
 import { updateVehiclePartSchema } from './schemas';
 
 export class UpdateVehiclePartController implements IController {
-  constructor(private readonly repo: VehiclePartMySqlRepository) {}
+  constructor(private readonly service: IVehiclePartService) {}
 
   async handle(req: HttpRequest): Promise<HttpResponse> {
     const id = Number(req.params.id);
@@ -14,11 +14,11 @@ export class UpdateVehiclePartController implements IController {
       throw badRequest('Validation failed', parsed.error.format());
     }
 
-    const updated = await this.repo.update(id, parsed.data as any);
+    const updated = await this.service.updateVehiclePart(id, parsed.data as any);
 
     return {
       status: 200,
-      body: updated.toJSON()
+      body: updated
     };
   }
 }

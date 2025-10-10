@@ -1,11 +1,13 @@
 import { z } from 'zod';
 
 export const createVehiclePartSchema = z.object({
+  type: z.string().min(1),
   name: z.string().min(1),
-  code: z.string().min(1),
-  description: z.string().optional().nullable(),
-  price: z.number().positive(),
+  description: z.string().min(10),
+  quantity: z.number(),
+  price: z.number(),
 });
+
 
 export const updateVehiclePartSchema = createVehiclePartSchema.partial();
 

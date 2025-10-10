@@ -51,13 +51,13 @@ export class VehicleService implements IVehicleService {
   }
 
   async findById(id: number): Promise<VehicleOutput> {
-    const found = await this.repo.findById(id);
+    const vehicle = await this.repo.findById(id);
 
-    if (!found) {
+    if (!vehicle) {
       throw new NotFoundServerException('Vehicle not found');
     }
 
-    return found.toJSON();
+    return vehicle.toJSON();
   }
 
   async list(offset: number, limit: number): Promise<VehicleOutput[]> {
