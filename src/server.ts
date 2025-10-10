@@ -9,6 +9,7 @@ import { vehicleServiceRouter } from './modules/vehicle-service/http/vehicle-ser
 import { diagnosisRouter } from './modules/diagnosis/http/diagnosis.routes';
 import { budgetRouter } from './modules/budget/http/budget.routes';
 import { serviceOrderRouter } from './modules/service-order/http/service-order.routes';
+import { budgetVehicleServiceRouter } from './modules/budget-vehicle-service/http/budget-vehicle-service.routes';
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ app.use('/vehicle-services', vehicleServiceRouter);
 app.use('/diagnosis', diagnosisRouter);
 app.use('/budgets', budgetRouter);
 app.use('/service-orders', serviceOrderRouter);
+app.use('/budget-vehicle-services', budgetVehicleServiceRouter);
 
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   const status = err?.status ?? 500;

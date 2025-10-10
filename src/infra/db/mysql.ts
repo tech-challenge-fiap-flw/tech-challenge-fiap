@@ -49,3 +49,9 @@ export async function update(sql: string, params: any[] = []): Promise<ResultSet
   const [result] = await getPool().execute(sql, params);
   return result as ResultSetHeader;
 }
+
+export async function deleteByField(table: string, field: string, value: any): Promise<ResultSetHeader> {
+  const sql = `DELETE FROM \`${table}\` WHERE \`${field}\` = ?`;
+  const [result] = await getPool().execute(sql, [value]);
+  return result as ResultSetHeader;
+}
