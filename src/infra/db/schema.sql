@@ -76,7 +76,6 @@ CREATE TABLE IF NOT EXISTS budget_vehicle_parts (
   budgetId INT NOT NULL,
   vehiclePartId INT NOT NULL,
   quantity INT NOT NULL,
-  price DECIMAL(10,2) NOT NULL,
   FOREIGN KEY (budgetId) REFERENCES budgets(id),
   FOREIGN KEY (vehiclePartId) REFERENCES vehicle_parts(id)
 );
