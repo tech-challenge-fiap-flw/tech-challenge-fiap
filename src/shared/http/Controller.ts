@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { HttpError } from './HttpError';
-import { BadRequestServerException, NotFoundServerException } from '../application/ServerException';
+import { BadRequestServerException, ForbiddenServerException, NotFoundServerException } from '../application/ServerException';
 
 export interface HttpRequest<TBody = any, TParams = any, TQuery = any> {
   body: TBody;
@@ -53,6 +53,10 @@ export function adaptExpress(controller: IController) {
 
       if (err instanceof NotFoundServerException) {
         return res.status(404).json({ error: err.message });
+      }
+
+      if (err instanceof ForbiddenServerException) {
+        return res.status(403).json({ error: err.message });
       }
 
       return res.status(500).json({ error: 'Internal server error' });

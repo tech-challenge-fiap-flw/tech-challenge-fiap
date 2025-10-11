@@ -37,6 +37,12 @@ export class ServiceOrderMySqlRepository implements ServiceOrderRepository {
     return ServiceOrderEntity.restore(rows[0]);
   }
 
+  async findActiveByBudgetId(budgetId: number): Promise<ServiceOrderEntity | null> {
+    const rows = await query<ServiceOrderProps & RowDataPacket[]>(`SELECT * FROM service_orders WHERE budgetId = ? AND active = 1 LIMIT 1`, [budgetId]);
+    if (rows.length === 0) return null;
+    return ServiceOrderEntity.restore(rows[0]);
+  }
+
   async updateStatus(id: ServiceOrderId, newStatus: ServiceOrderStatus): Promise<ServiceOrderEntity> {
     await query<ResultSetHeader>(`UPDATE service_orders SET currentStatus = ? WHERE id = ?`, [newStatus, id]);
     

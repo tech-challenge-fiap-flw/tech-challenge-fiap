@@ -15,3 +15,9 @@ export class BadRequestServerException extends BaseServerException {
     super(message);
   }
 }
+
+export class ForbiddenServerException extends BaseServerException {
+  constructor(message: string = 'Forbidden') {
+    super(message);
+  }
+}

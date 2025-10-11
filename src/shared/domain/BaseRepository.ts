@@ -1,0 +1,12 @@
+import * as mysql from '../../infra/db/mysql';
+
+export interface IBaseRepository {
+  transaction<T>(fn: () => Promise<T>): Promise<T>;
+}
+
+export class BaseRepository implements IBaseRepository {
+  async transaction<T>(fn: () => Promise<T>): Promise<T> {
+    return await mysql.transaction(fn);
+  }
+}
+

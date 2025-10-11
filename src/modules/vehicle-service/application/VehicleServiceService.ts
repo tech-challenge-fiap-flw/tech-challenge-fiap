@@ -10,6 +10,7 @@ export interface IVehicleServiceService {
   updateVehicleService(id: number, partial: Partial<CreateVehicleServiceInput>): Promise<VehicleServiceOutput>;
   deleteVehicleService(id: number): Promise<void>;
   findById(id: number): Promise<VehicleServiceOutput>;
+  findByIds(ids: number[]): Promise<VehicleServiceOutput[]>;
   list(offset: number, limit: number): Promise<VehicleServiceOutput[]>;
   countAll(): Promise<number>;
 }
@@ -46,6 +47,20 @@ export class VehicleServiceService implements IVehicleServiceService {
     }
 
     return vehicleService.toJSON();
+  }
+
+  async findByIds(ids: number[]): Promise<VehicleServiceOutput[]> {
+    const results: VehicleServiceOutput[] = [];
+
+    for (const id of ids) {
+      const item = await this.repo.findById(id);
+
+      if (item) {
+        results.push(item.toJSON());
+      }
+    }
+
+    return results;
   }
 
   async list(offset: number, limit: number): Promise<VehicleServiceOutput[]> {

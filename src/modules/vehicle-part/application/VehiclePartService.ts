@@ -10,6 +10,7 @@ export interface IVehiclePartService {
   updateVehiclePart(id: number, partial: Partial<CreateVehiclePartInput>): Promise<VehiclePartOutput>;
   deleteVehiclePart(id: number): Promise<void>;
   findById(id: number): Promise<VehiclePartOutput>;
+  findByIds(ids: number[]): Promise<VehiclePartOutput[]>;
   list(offset: number, limit: number): Promise<VehiclePartOutput[]>;
   countAll(): Promise<number>;
 }
@@ -46,6 +47,15 @@ export class VehiclePartService implements IVehiclePartService {
     }
 
     return vehiclePart.toJSON();
+  }
+
+  async findByIds(ids: number[]): Promise<VehiclePartOutput[]> {
+    const results: VehiclePartOutput[] = [];
+    for (const id of ids) {
+      const item = await this.repo.findById(id as any);
+      if (item) results.push(item.toJSON());
+    }
+    return results;
   }
 
   async list(offset: number, limit: number): Promise<VehiclePartOutput[]> {

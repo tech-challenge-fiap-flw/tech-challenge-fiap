@@ -1,21 +1,35 @@
 export type BudgetId = number;
 
 export interface BudgetProps {
-  id?: BudgetId;
+  id: BudgetId;
   description: string;
   ownerId: number;
   diagnosisId: number;
   total: number;
-  creationDate?: Date | null;
+  creationDate: Date;
   deletedAt?: Date | null;
 }
 
 export class BudgetEntity {
-  private props: BudgetProps;
-  private constructor(props: BudgetProps) { this.props = props; }
-  static create(input: Omit<BudgetProps, 'id' | 'total' | 'creationDate' | 'deletedAt'>) {
-    return new BudgetEntity({ ...input, total: 0, creationDate: new Date(), deletedAt: null });
+  private constructor(private readonly props: BudgetProps) {}
+
+  static create(input: Omit<BudgetProps, 'id' | 'creationDate' | 'deletedAt' | 'total'> & { total?: number }) {
+    return new BudgetEntity({
+      id: 0,
+      description: input.description,
+      ownerId: input.ownerId,
+      diagnosisId: input.diagnosisId,
+      total: input.total ?? 0,
+      creationDate: new Date(),
+      deletedAt: null,
+    });
   }
-  static restore(props: BudgetProps) { return new BudgetEntity(props); }
-  toJSON(): BudgetProps { return { ...this.props }; }
+
+  static restore(props: BudgetProps) {
+    return new BudgetEntity(props);
+  }
+
+  toJSON() {
+    return { ...this.props };
+  }
 }

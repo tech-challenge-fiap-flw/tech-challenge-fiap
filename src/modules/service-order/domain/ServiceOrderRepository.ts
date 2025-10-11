@@ -3,6 +3,7 @@ import { ServiceOrderEntity, ServiceOrderId, ServiceOrderStatus } from './Servic
 export interface ServiceOrderRepository {
   create(entity: ServiceOrderEntity): Promise<ServiceOrderEntity>;
   findById(id: ServiceOrderId): Promise<ServiceOrderEntity | null>;
+  findActiveByBudgetId(budgetId: number): Promise<ServiceOrderEntity | null>;
   updateStatus(id: ServiceOrderId, newStatus: ServiceOrderStatus): Promise<ServiceOrderEntity>;
   assignMechanic(id: ServiceOrderId, mechanicId: number): Promise<ServiceOrderEntity>;
   softDelete(id: ServiceOrderId): Promise<void>;

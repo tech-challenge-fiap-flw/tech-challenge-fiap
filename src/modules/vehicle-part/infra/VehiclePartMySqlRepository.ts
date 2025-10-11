@@ -2,8 +2,9 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import * as mysql from '../../../infra/db/mysql';
 import { VehiclePartEntity, VehiclePartId, VehiclePartProps } from '../domain/VehiclePart';
 import { VehiclePartRepository } from '../domain/VehiclePartRepository';
+import { BaseRepository } from '../../../shared/domain/BaseRepository';
 
-export class VehiclePartMySqlRepository implements VehiclePartRepository {
+export class VehiclePartMySqlRepository extends BaseRepository implements VehiclePartRepository {
 
   async create(part: VehiclePartEntity): Promise<VehiclePartEntity> {
     const data = part.toJSON();
