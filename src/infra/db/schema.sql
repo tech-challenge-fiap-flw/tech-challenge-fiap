@@ -89,12 +89,11 @@ CREATE TABLE IF NOT EXISTS budget_vehicle_services (
   FOREIGN KEY (vehicleServiceId) REFERENCES vehicle_services(id)
 );
 
-
 CREATE TABLE IF NOT EXISTS service_orders (
   id INT AUTO_INCREMENT PRIMARY KEY,
   description TEXT NOT NULL,
   creationDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  currentStatus ENUM('Recebida','Em Diagnóstico','Aguardando Aprovação','Recusada','Aguardando Início','Em Execução','Finalizada','Entregue') NOT NULL DEFAULT 'Recebida',
+  currentStatus ENUM('Recebida','Em diagnóstico','Aguardando aprovação','Recusada','Aguardando início','Em execução','Finalizada','Entregue') NOT NULL DEFAULT 'Recebida',
   budgetId INT NULL,
   customerId INT NOT NULL,
   mechanicId INT NULL,

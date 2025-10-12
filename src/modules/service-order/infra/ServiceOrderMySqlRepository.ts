@@ -2,6 +2,7 @@ import * as mysql from '../../../infra/db/mysql';
 import { IServiceOrderProps, ServiceOrderEntity, ServiceOrderId } from '../domain/ServiceOrder';
 import { IServiceOrderRepository } from '../domain/IServiceOrderRepository';
 import { BaseRepository } from '../../../shared/domain/BaseRepository';
+import { ResultSetHeader } from 'mysql2';
 
 export class ServiceOrderMySqlRepository extends BaseRepository implements IServiceOrderRepository {
   async create(entity: ServiceOrderEntity): Promise<ServiceOrderEntity> {
@@ -56,5 +57,9 @@ export class ServiceOrderMySqlRepository extends BaseRepository implements IServ
     await mysql.update(`UPDATE service_orders SET ${setClause} WHERE id = ?`, params);
 
     return await this.findById(id);
+  }
+
+  async softDelete(id: ServiceOrderId): Promise<void> {
+    await mysql.query<ResultSetHeader>(`UPDATE service_orders SET active = 0 WHERE id = ?`, [id]);
   }
 }

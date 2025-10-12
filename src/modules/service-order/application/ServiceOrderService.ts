@@ -3,7 +3,7 @@ import { IServiceOrderRepository } from '../domain/IServiceOrderRepository';
 import { AuthPayload } from '../../../modules/auth/AuthMiddleware';
 import { IDiagnosisService } from '../../../modules/diagnosis/application/DiagnosisService';
 import { IBudgetService, VehiclePartQuantity } from '../../../modules/budget/application/BudgetService';
-import { BadRequestServerException, NotFoundServerException } from '../../../shared/application/ServerException';
+import { BadRequestServerException, ForbiddenServerException, NotFoundServerException } from '../../../shared/application/ServerException';
 import { ServiceOrderStatus } from '../../../shared/ServiceOrderStatus';
 import { IBudgetVehiclePartService } from '../../../modules/budget-vehicle-part/application/BudgetVehiclePartService';
 import { IVehiclePartService } from '../../../modules/vehicle-part/application/VehiclePartService';
@@ -24,9 +24,17 @@ export type AcceptServiceOrderInput = {
   accept: boolean;
 };
 
+export type AssignBudgetServiceOrderInput = Omit<CreateServiceOrderInput, 'vehicleId'>;
+
 export interface IServiceOrderService {
   create(user: AuthPayload, input: CreateServiceOrderInput): Promise<CreateServiceOrderOutput>;
+  findById(id: number): Promise<CreateServiceOrderOutput>;
+  delete(id: number): Promise<void>;
   accept(mechanic: AuthPayload, id: number, input: AcceptServiceOrderInput): Promise<CreateServiceOrderOutput>;
+  assignBudget(mechanic: AuthPayload, id: number, input: AssignBudgetServiceOrderInput): Promise<CreateServiceOrderOutput>;
+  startRepair(mechanic: AuthPayload, id: number): Promise<CreateServiceOrderOutput>;
+  finishRepair(mechanic: AuthPayload, id: number): Promise<CreateServiceOrderOutput>;
+  delivered(mechanic: AuthPayload, id: number): Promise<CreateServiceOrderOutput>;
 }
 
 export class ServiceOrderService implements IServiceOrderService {
@@ -85,6 +93,12 @@ export class ServiceOrderService implements IServiceOrderService {
     });
   }
 
+  async delete(id: number): Promise<void> {
+    console.log('Deletando OS com id:', id);
+    await this.findById(id);
+    await this.repo.softDelete(id);
+  }
+
   async accept(mechanic: AuthPayload, id: number, input: AcceptServiceOrderInput): Promise<CreateServiceOrderOutput> {
     return this.repo.transaction(async () => {
       const order = await this.findById(id);
@@ -122,6 +136,125 @@ export class ServiceOrderService implements IServiceOrderService {
       }
 
       return order;
+    });
+  }
+
+  async assignBudget(mechanic: AuthPayload, id: number, input: AssignBudgetServiceOrderInput): Promise<CreateServiceOrderOutput> {
+    return this.repo.transaction(async () => {
+      const order = await this.findById(id);
+
+      if (!order.mechanicId || order.mechanicId !== mechanic.sub) {
+        throw new ForbiddenServerException('Você não está autorizado a atribuir um orçamento a esta OS.');
+      }
+
+      if (order.budgetId) {
+        throw new BadRequestServerException('Essa OS já possui um orçamento atribuído.');
+      }
+
+      const oldStatus = order.currentStatus;
+
+      const diagnosis = await this.diagnosisService.create({
+        description: input.description,
+        vehicleId: order.vehicleId,
+        mechanicId: mechanic.sub,
+      });
+
+      const budget = await this.budgetService.create({
+        description: 'Orçamento para diagnóstico automático',
+        vehicleParts: input.vehicleParts as VehiclePartQuantity[],
+        diagnosisId: Number(diagnosis.id),
+        ownerId: order.customerId,
+        vehicleServicesIds: input.vehicleServicesIds,
+      });
+
+      const updatedOrder = await this.repo.update(id, {
+        budgetId: budget.id,
+        currentStatus: ServiceOrderStatus.AGUARDANDO_APROVACAO,
+      });
+
+      if (!updatedOrder) {
+        throw new NotFoundServerException('Algo deu errado ao atribuir o orçamento.');
+      }
+      
+      return updatedOrder.toJSON();
+    });
+  }
+
+  async startRepair(mechanic: AuthPayload, id: number): Promise<CreateServiceOrderOutput> {
+    return this.repo.transaction(async () => {
+      const order = await this.findById(id);
+
+      if (!order.mechanicId || order.mechanicId !== mechanic.sub) {
+        throw new ForbiddenServerException('Você não está autorizado a iniciar o reparo desta OS.');
+      }
+
+      if (order.currentStatus !== ServiceOrderStatus.AGUARDANDO_INICIO) {
+        throw new BadRequestServerException('A OS precisa estar com status "Aguardando início" para começar o reparo.');
+      }
+
+      const oldStatus = order.currentStatus;
+
+      const updatedOrder = await this.repo.update(id, {
+        currentStatus: ServiceOrderStatus.EM_EXECUCAO,
+      });
+
+      if (!updatedOrder) {
+        throw new NotFoundServerException('Algo deu errado ao iniciar o reparo.');
+      }
+
+      return updatedOrder.toJSON();
+    });
+  }
+
+  async finishRepair(mechanic: AuthPayload, id: number): Promise<CreateServiceOrderOutput> {
+    return this.repo.transaction(async () => {
+      const order = await this.findById(id);
+
+      if (!order.mechanicId || order.mechanicId !== mechanic.sub) {
+        throw new ForbiddenServerException('Você não está autorizado a finalizar o reparo desta OS.');
+      }
+
+      if (order.currentStatus !== ServiceOrderStatus.EM_EXECUCAO) {
+        throw new BadRequestServerException('A OS precisa estar com status "Em execução" para ser finalizada.');
+      }
+
+      const oldStatus = order.currentStatus;
+
+      const updatedOrder = await this.repo.update(id, {
+        currentStatus: ServiceOrderStatus.FINALIZADA,
+      });
+
+      if (!updatedOrder) {
+        throw new NotFoundServerException('Algo deu errado ao finalizar o reparo.');
+      }
+
+      return updatedOrder.toJSON();
+    });
+  }
+
+  async delivered(mechanic: AuthPayload, id: number): Promise<CreateServiceOrderOutput> {
+    return this.repo.transaction(async () => {
+      const order = await this.findById(id);
+
+      if (!order.mechanicId || order.mechanicId !== mechanic.sub) {
+        throw new ForbiddenServerException('Você não está autorizado a confirmar a entrega desta OS.');
+      }
+
+      if (!order.vehicleId) {
+        throw new NotFoundServerException('Veículo não encontrado para esta OS.');
+      }
+
+      const oldStatus = order.currentStatus;
+      
+      const updatedOrder = await this.repo.update(id, {
+        currentStatus: ServiceOrderStatus.ENTREGUE,
+      });
+
+      if (!updatedOrder) {
+        throw new NotFoundServerException('Algo deu errado ao confirmar a entrega.');
+      }
+
+      return updatedOrder.toJSON();
     });
   }
 }

@@ -20,19 +20,19 @@ export class AssignBudgetServiceOrderController implements IController {
   async handle(req: HttpRequest): Promise<HttpResponse> {
     const parsed = schema.safeParse(req.body);
 
-    // if (!parsed.success) {
-    //   throw badRequest('Validation failed', parsed.error.format());
-    // }
+    if (!parsed.success) {
+      throw badRequest('Validation failed', parsed.error.format());
+    }
 
-    // if (!req.user) {
-    //   throw badRequest('Unauthorized');
-    // }
+    if (!req.user) {
+      throw badRequest('Unauthorized');
+    }
 
-    // const created = await this.service.accept(req.user, Number(req.params.id), parsed.data);
+    const updated = await this.service.assignBudget(req.user, Number(req.params.id), parsed.data);
 
-    // return {
-    //   status: 201,
-    //   body: created
-    // };
+    return {
+      status: 200,
+      body: updated
+    };
   }
 }

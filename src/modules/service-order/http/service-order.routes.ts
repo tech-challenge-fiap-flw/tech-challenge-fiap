@@ -22,6 +22,11 @@ import { BudgetVehicleServiceMySqlRepository } from '../../../modules/budget-veh
 import { BudgetVehicleServiceService } from '../../../modules/budget-vehicle-service/application/BudgetVehicleServiceService';
 import { AcceptServiceOrderController } from './controllers/AcceptServiceOrderController';
 import { AssignBudgetServiceOrderController } from './controllers/AssignBudgetServiceOrderController';
+import { StartRepairServiceOrderController } from './controllers/StartRepairServiceOrderController';
+import { FinishRepairServiceOrderController } from './controllers/FinishRepairServiceOrderController';
+import { DeliveredServiceOrderController } from './controllers/DeliveredServiceOrderController';
+import { DeleteServiceOrderController } from './controllers/DeleteServiceOrderController';
+import { GetServiceOrderController } from './controllers/GetServiceOrderController';
 
 const userRepository = new UserMySqlRepository();
 const userService = new UserService(userRepository);
@@ -61,5 +66,10 @@ const service = new ServiceOrderService(repository, diagnosisService, budgetServ
 export const serviceOrderRouter = Router();
 
 serviceOrderRouter.post('/', authMiddleware, adaptExpress(new CreateServiceOrderController(service)));
+serviceOrderRouter.delete('/:id', authMiddleware, adaptExpress(new DeleteServiceOrderController(service)));
+serviceOrderRouter.get('/:id', authMiddleware, adaptExpress(new GetServiceOrderController(service)));
 serviceOrderRouter.post('/:id/accept', authMiddleware, adaptExpress(new AcceptServiceOrderController(service)));
 serviceOrderRouter.post('/:id/budget', authMiddleware, adaptExpress(new AssignBudgetServiceOrderController(service)));
+serviceOrderRouter.post('/:id/start', authMiddleware, adaptExpress(new StartRepairServiceOrderController(service)));
+serviceOrderRouter.post('/:id/finish', authMiddleware, adaptExpress(new FinishRepairServiceOrderController(service)));
+serviceOrderRouter.post('/:id/delivered', authMiddleware, adaptExpress(new DeliveredServiceOrderController(service)));
