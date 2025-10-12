@@ -1,6 +1,7 @@
+import { IBaseRepository } from 'src/shared/domain/BaseRepository';
 import { DiagnosisEntity, DiagnosisId, IDiagnosisProps } from './Diagnosis';
 
-export interface IDiagnosisRepository {
+export interface IDiagnosisRepository extends IBaseRepository {
   create(entity: DiagnosisEntity): Promise<DiagnosisEntity>;
   findById(id: DiagnosisId): Promise<DiagnosisEntity | null>;
   update(id: DiagnosisId, partial: Partial<IDiagnosisProps>): Promise<DiagnosisEntity>;

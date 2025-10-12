@@ -13,7 +13,7 @@ export class CreateDiagnosisController implements IController {
       throw badRequest('Validation failed', parsed.error.format());
     }
 
-    const created = await this.service.createDiagnosis(parsed.data);
+    const created = await this.service.create(parsed.data);
 
     return {
       status: 201,

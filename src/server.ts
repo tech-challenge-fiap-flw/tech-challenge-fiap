@@ -7,10 +7,10 @@ import { authRouter } from './modules/auth/auth.routes';
 import { vehiclePartRouter } from './modules/vehicle-part/http/vehicle-part.routes';
 import { vehicleServiceRouter } from './modules/vehicle-service/http/vehicle-service.routes';
 import { diagnosisRouter } from './modules/diagnosis/http/diagnosis.routes';
-import { serviceOrderRouter } from './modules/service-order/http/service-order.routes';
 import { budgetVehicleServiceRouter } from './modules/budget-vehicle-service/http/budget-vehicle-service.routes';
 import { budgetVehiclePartRouter } from './modules/budget-vehicle-part/http/budget-vehicle-part.routes';
 import { budgetRouter } from './modules/budget/http/budget.routes';
+import { serviceOrderRouter } from './modules/service-order/http/service-order.routes';
 
 dotenv.config();
 

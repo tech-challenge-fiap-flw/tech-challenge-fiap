@@ -1,12 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { HttpError } from './HttpError';
 import { BadRequestServerException, ForbiddenServerException, NotFoundServerException } from '../application/ServerException';
+import { AuthPayload } from '../../modules/auth/AuthMiddleware';
 
 export interface HttpRequest<TBody = any, TParams = any, TQuery = any> {
   body: TBody;
   params: TParams;
   query: TQuery;
-  user?: any;
+  user?: AuthPayload;
   raw: Request;
 }
 

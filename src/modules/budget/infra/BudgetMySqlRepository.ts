@@ -13,6 +13,7 @@ export class BudgetMySqlRepository extends BaseRepository implements IBudgetRepo
         (description, ownerId, diagnosisId, total, creationDate, deletedAt) 
       VALUES (?, ?, ?, ?, ?, ?)
     `;
+
     const params = [
       data.description,
       data.ownerId,

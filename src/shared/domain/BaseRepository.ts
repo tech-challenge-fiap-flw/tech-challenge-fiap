@@ -1,7 +1,9 @@
 import * as mysql from '../../infra/db/mysql';
 
+export type TransactionFunction = <T>(fn: () => Promise<T>) => Promise<T>;
+
 export interface IBaseRepository {
-  transaction<T>(fn: () => Promise<T>): Promise<T>;
+  transaction: TransactionFunction;
 }
 
 export class BaseRepository implements IBaseRepository {

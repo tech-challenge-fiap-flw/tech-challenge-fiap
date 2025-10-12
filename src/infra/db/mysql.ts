@@ -82,7 +82,15 @@ export async function deleteByField(table: string, field: string, value: any): P
   return result as ResultSetHeader;
 }
 
+export function isTransactionActive(): boolean {
+    return !!connectionStorage.getStore();
+}
+
 export async function transaction<T>(fn: () => Promise<T>): Promise<T> {
+  if (isTransactionActive()) {
+    return fn();
+  }
+
   const pool = getPool();
   const conn = await pool.getConnection();
 

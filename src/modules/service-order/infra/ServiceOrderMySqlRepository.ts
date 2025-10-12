@@ -1,88 +1,60 @@
-import { RowDataPacket, ResultSetHeader } from 'mysql2';
-import { query } from '../../../infra/db/mysql';
-import { ServiceOrderEntity, ServiceOrderId, ServiceOrderProps, ServiceOrderStatus } from '../domain/ServiceOrder';
-import { ServiceOrderRepository } from '../domain/ServiceOrderRepository';
+import * as mysql from '../../../infra/db/mysql';
+import { IServiceOrderProps, ServiceOrderEntity, ServiceOrderId } from '../domain/ServiceOrder';
+import { IServiceOrderRepository } from '../domain/IServiceOrderRepository';
+import { BaseRepository } from '../../../shared/domain/BaseRepository';
 
-export class ServiceOrderMySqlRepository implements ServiceOrderRepository {
+export class ServiceOrderMySqlRepository extends BaseRepository implements IServiceOrderRepository {
   async create(entity: ServiceOrderEntity): Promise<ServiceOrderEntity> {
     const data = entity.toJSON();
 
-    const sql = `INSERT INTO service_orders (description, creationDate, currentStatus, budgetId, customerId, mechanicId, vehicleId, active)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+    const sql = `
+      INSERT INTO service_orders (
+        description,
+        budgetId,
+        customerId,
+        mechanicId,
+        vehicleId,
+        creationDate,
+        currentStatus,
+        active
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `;
 
     const params = [
       data.description,
-      data.creationDate,
-      data.currentStatus,
       data.budgetId ?? null,
       data.customerId,
       data.mechanicId ?? null,
       data.vehicleId,
+      data.creationDate,
+      data.currentStatus,
       data.active
     ];
 
-    const results = await query<ResultSetHeader>(sql, params);
-    const id = results.at(0)?.insertId as ServiceOrderId;
+    const response = await mysql.insertOne(sql, params);
 
-    return ServiceOrderEntity.restore({ ...data, id });
+    return ServiceOrderEntity.restore({ ...data, id: response.insertId });
   }
 
   async findById(id: ServiceOrderId): Promise<ServiceOrderEntity | null> {
-    const rows = await query<ServiceOrderProps & RowDataPacket[]>(`SELECT * FROM service_orders WHERE id = ?`, [id]);
-    
+    const rows = await mysql.query<IServiceOrderProps>(`SELECT * FROM service_orders WHERE id = ?`, [id]);
+
     if (rows.length === 0) {
       return null;
     }
-
+    
     return ServiceOrderEntity.restore(rows[0]);
   }
 
-  async findActiveByBudgetId(budgetId: number): Promise<ServiceOrderEntity | null> {
-    const rows = await query<ServiceOrderProps & RowDataPacket[]>(`SELECT * FROM service_orders WHERE budgetId = ? AND active = 1 LIMIT 1`, [budgetId]);
-    if (rows.length === 0) return null;
-    return ServiceOrderEntity.restore(rows[0]);
-  }
+  async update(id: ServiceOrderId, partial: Partial<IServiceOrderProps>): Promise<ServiceOrderEntity | null> {
+    const keys = Object.keys(partial) as (keyof IServiceOrderProps)[];
 
-  async updateStatus(id: ServiceOrderId, newStatus: ServiceOrderStatus): Promise<ServiceOrderEntity> {
-    await query<ResultSetHeader>(`UPDATE service_orders SET currentStatus = ? WHERE id = ?`, [newStatus, id]);
-    
-    const updated = await this.findById(id);
+    const setClause = keys.map((k) => `${k} = ?`).join(', ');
+    const params = keys.map((k) => (partial as any)[k]);
+    params.push(id);
 
-    if (!updated) {
-      throw Object.assign(new Error('Service order not found'), { status: 404 });
-    }
-    
-    return updated;
-  }
+    await mysql.update(`UPDATE service_orders SET ${setClause} WHERE id = ?`, params);
 
-  async assignMechanic(id: ServiceOrderId, mechanicId: number): Promise<ServiceOrderEntity> {
-    await query<ResultSetHeader>(`UPDATE service_orders SET mechanicId = ? WHERE id = ?`, [mechanicId, id]);
-    
-    const updated = await this.findById(id);
-
-    if (!updated) {
-      throw Object.assign(new Error('Service order not found'), { status: 404 });
-    }
-    
-    return updated;
-  }
-
-  async softDelete(id: ServiceOrderId): Promise<void> {
-    await query<ResultSetHeader>(`UPDATE service_orders SET active = 0 WHERE id = ?`, [id]);
-  }
-
-  async list(offset: number, limit: number): Promise<ServiceOrderEntity[]> {
-    const rows = await query<ServiceOrderProps & RowDataPacket[]>(
-      `SELECT * FROM service_orders WHERE active = 1 ORDER BY id LIMIT ? OFFSET ?`, 
-      [limit, offset]
-    );
-
-    return rows.map((r) => ServiceOrderEntity.restore(r));
-  }
-
-  async countAll(): Promise<number> {
-    const rows = await query<{ c: number }>(`SELECT COUNT(*) AS c FROM service_orders WHERE active = 1`);
-
-    return Number(rows.at(0)?.c ?? 0);
+    return await this.findById(id);
   }
 }

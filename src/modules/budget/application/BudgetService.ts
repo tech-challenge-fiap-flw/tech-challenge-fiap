@@ -4,12 +4,11 @@ import { IBudgetVehiclePartService } from '../../budget-vehicle-part/application
 import { IBudgetVehicleServiceService } from '../../budget-vehicle-service/application/BudgetVehicleServiceService';
 import { IVehiclePartService } from '../../vehicle-part/application/VehiclePartService';
 import { IVehicleServiceService } from '../../vehicle-service/application/VehicleServiceService';
-import { ServiceOrderService } from '../../service-order/application/ServiceOrderService';
 import { ForbiddenServerException, NotFoundServerException } from '../../../shared/application/ServerException';
 import { IUserService } from '../../../modules/user/application/UserService';
 import { IDiagnosisService } from '../../../modules/diagnosis/application/DiagnosisService';
 
-type VehiclePartQuantity = {
+export type VehiclePartQuantity = {
   vehiclePartId: number;
   quantity: number;
 };
@@ -83,7 +82,7 @@ export class BudgetService implements IBudgetService {
       }
 
       return budgetJson;
-    })
+    });
   }
 
   private async updateVehiclePart(vehicleParts: VehiclePartQuantity[]): Promise<number> {

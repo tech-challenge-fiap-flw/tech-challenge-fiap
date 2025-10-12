@@ -2,8 +2,9 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import * as mysql from '../../../infra/db/mysql';
 import { DiagnosisEntity, DiagnosisId, IDiagnosisProps } from '../domain/Diagnosis';
 import { IDiagnosisRepository } from '../domain/IDiagnosisRepository';
+import { BaseRepository } from '../../../shared/domain/BaseRepository';
 
-export class DiagnosisMySqlRepository implements IDiagnosisRepository {
+export class DiagnosisMySqlRepository extends BaseRepository implements IDiagnosisRepository {
 
   async create(entity: DiagnosisEntity): Promise<DiagnosisEntity> {
     const data = entity.toJSON();
