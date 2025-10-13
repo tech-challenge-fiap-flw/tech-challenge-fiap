@@ -28,7 +28,7 @@ export class UserMySqlRepository implements IUserRepository {
 
     const result = await mysql.insertOne(sql, params);
 
-    return UserEntity.restore({ id: result.insertId, ...data });
+    return UserEntity.restore({ ...data, id: result.insertId });
   }
 
   async findById(id: UserId): Promise<UserEntity | null> {
