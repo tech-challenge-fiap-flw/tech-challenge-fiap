@@ -16,6 +16,4 @@ export const budgetVehicleServiceRouter = Router();
 budgetVehicleServiceRouter.post('/', adaptExpress(new CreateBudgetVehicleServiceController(service)));
 budgetVehicleServiceRouter.put('/:id', authMiddleware, adaptExpress(new UpdateBudgetVehicleServiceController(service)));
 budgetVehicleServiceRouter.delete('/:id', authMiddleware, adaptExpress(new DeleteBudgetVehicleServiceController(service)));
-// budgetVehicleServiceRouter.get('/me', authMiddleware, adaptExpress(new GetUserProfileController(service)));
 budgetVehicleServiceRouter.get('/:id', authMiddleware, adaptExpress(new GetBudgetVehicleServiceController(service)));
-// userRouter.get('/', authMiddleware, requireRole('admin'), adaptExpress(new ListUsersController(service)));

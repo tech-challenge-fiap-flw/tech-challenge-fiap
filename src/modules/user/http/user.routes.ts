@@ -3,6 +3,7 @@ import { UserMySqlRepository } from '../infra/UserMySqlRepository';
 import { authMiddleware } from '../../auth/AuthMiddleware';
 import { requireRole } from '../../auth/RoleMiddleware';
 import { UserService } from '../application/UserService';
+import { BcryptPasswordHasher } from '../infra/BcryptPasswordHasher';
 import { adaptExpress } from '../../../shared/http/Controller';
 import { CreateUserController } from './controllers/CreateUserController';
 import { UpdateCurrentUserController } from './controllers/UpdateCurrentUserController';
@@ -12,7 +13,8 @@ import { GetUserByIdController } from './controllers/GetUserByIdController';
 import { ListUsersController } from './controllers/ListUsersController';
 
 const repository = new UserMySqlRepository();
-const service = new UserService(repository);
+const passwordHasher = new BcryptPasswordHasher();
+const service = new UserService(repository, passwordHasher);
 
 export const userRouter = Router();
 

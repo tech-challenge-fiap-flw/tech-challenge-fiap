@@ -1,7 +1,7 @@
-import bcrypt from 'bcrypt';
 import { UserEntity } from '../domain/User';
 import { IUserRepository } from '../domain/IUserRepository';
 import { BadRequestServerException, NotFoundServerException } from '../../../shared/application/ServerException';
+import { IPasswordHasher } from './IPasswordHasher';
 
 export type CreateUserInput = {
   name: string;
@@ -30,7 +30,10 @@ export interface IUserService {
 }
 
 export class UserService implements IUserService {
-  constructor(private readonly repo: IUserRepository) {}
+  constructor(
+    private readonly repo: IUserRepository,
+    private readonly passwordHasher: IPasswordHasher,
+  ) {}
 
   async createUser(input: CreateUserInput): Promise<UserOutput> {
     const exists = await this.repo.findByEmail(input.email);
@@ -39,14 +42,14 @@ export class UserService implements IUserService {
       throw new BadRequestServerException('Email already exists');
     }
 
-    const hashedPassword = await this.hashPassword(input.password);
+    const hashedPassword = await this.passwordHasher.hash(input.password);
+
     const entity = UserEntity.create({ ...input, password: hashedPassword });
     const created = await this.repo.create(entity);
     const { password, ...rest } = created.toJSON();
 
-    return rest as UserOutput;
+    return rest;
   }
-
   async updateUser(id: number, partial: Partial<CreateUserInput>): Promise<UserOutput> {
     const user = await this.repo.findById(id);
 
@@ -55,7 +58,7 @@ export class UserService implements IUserService {
     }
 
     if (partial.password) {
-      partial.password = await this.hashPassword(partial.password);
+      partial.password = await this.passwordHasher.hash(partial.password);
     }
 
     const updated = await this.repo.update(id, partial as any);
@@ -107,10 +110,5 @@ export class UserService implements IUserService {
 
   async countAll(): Promise<number> {
     return this.repo.countAll();
-  }
-
-  private async hashPassword(password: string): Promise<string> {
-    const salt = await bcrypt.genSalt();
-    return bcrypt.hash(password, salt);
   }
 }

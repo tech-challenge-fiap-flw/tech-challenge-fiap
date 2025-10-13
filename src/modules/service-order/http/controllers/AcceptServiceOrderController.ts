@@ -1,17 +1,13 @@
 import { IController, HttpRequest, HttpResponse } from '../../../../shared/http/Controller';
 import { badRequest } from '../../../../shared/http/HttpError';
 import { IServiceOrderService } from '../../application/ServiceOrderService';
-import { z } from 'zod';
-
-const schema = z.object({
-  accept: z.boolean()
-});
+import { acceptSchema } from './scremas';
 
 export class AcceptServiceOrderController implements IController {
   constructor(private readonly service: IServiceOrderService) {}
 
   async handle(req: HttpRequest): Promise<HttpResponse> {
-    const parsed = schema.safeParse(req.body);
+    const parsed = acceptSchema.safeParse(req.body);
 
     if (!parsed.success) {
       throw badRequest('Validation failed', parsed.error.format());
