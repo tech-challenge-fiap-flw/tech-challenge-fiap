@@ -57,3 +57,26 @@ Para facilitar a validação do projeto, criamos um arquivo separado com **5 flu
 - **Docker & Docker Compose**
 - **Swagger** para documentação
 - **JWT** para autenticação
+
+---
+
+## ✅ Testes Automatizados
+O projeto utiliza **Jest** com **TypeScript (ts-jest)** para testes unitários. Os testes atuais cobrem a lógica de domínio e serviços do módulo de usuários, incluindo criação, atualização, remoção lógica, busca, listagem e contagem.
+
+### Scripts Disponíveis
+
+```bash
+npm test            # Executa a suíte uma vez
+npm run test:watch  # Executa em modo watch
+npm run test:coverage # Gera relatório de cobertura em ./coverage
+```
+
+### Estrutura de Testes
+Os arquivos de teste ficam ao lado do código em pastas `__tests__` ou com sufixo `.spec.ts`.
+
+### Adicionando Novos Testes
+1. Crie um arquivo `*.spec.ts` dentro do módulo alvo.
+2. Use mocks para repositórios e serviços externos (exemplo em `src/modules/user/__tests__/mocks.ts`).
+3. Evite acessar infraestrutura real (DB, redes) em testes unitários.
+
+---
