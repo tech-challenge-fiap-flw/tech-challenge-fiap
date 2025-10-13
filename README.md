@@ -1,7 +1,7 @@
 # 🛠️ Sistema de Ordem de Serviço e Controle de Estoque - Oficina Mecânica
 
 ## 📋 Descrição do Projeto
-Este projeto é uma aplicação **backend** desenvolvida em **NestJS** para gerenciar **ordens de serviço** e **controle de estoque** em uma oficina mecânica.  
+Este projeto é uma aplicação **backend** desenvolvida em **Node.js** para gerenciar **ordens de serviço** e **controle de estoque** em uma oficina mecânica.  
 O sistema permite o registro de veículos, criação e gerenciamento de ordens de serviço (OS), atribuição de mecânicos, controle de orçamento, atualização de status e histórico de alterações.
 
 ### ⚙️ Principais Funcionalidades
@@ -16,7 +16,7 @@ O sistema permite o registro de veículos, criação e gerenciamento de ordens d
 ---
 
 ## 🧩 Arquitetura Geral
-A aplicação foi desenvolvida em **Node.js (NestJS)** com banco de dados **MySQL** e **MongoDB**.  
+A aplicação foi desenvolvida em **Node.js** com banco de dados **MySQL** e **MongoDB**.  
 Todo o ambiente é conteinerizado e pode ser executado localmente via **Docker Desktop com Kubernetes ativado**.
 
 Infraestrutura e deploy são totalmente automatizados com:
@@ -189,3 +189,6 @@ http://localhost:3000/api
 ## 🧪 Cenários de Teste
 Há um documento separado com 5 fluxos de testes completos, cobrindo cenários felizes e de erro.
 🔗 [Acessar os fluxos de teste](./TEST_FLOWS.md)
+
+## ✏️ Arquitetura Infraestrutura
+![Alt text](arquitetura-infra.png)
