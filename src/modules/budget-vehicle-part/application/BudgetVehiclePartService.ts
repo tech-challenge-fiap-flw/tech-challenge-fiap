@@ -29,9 +29,7 @@ export interface IBudgetVehiclePartService {
 }
 
 export class BudgetVehiclePartService implements IBudgetVehiclePartService {
-  constructor(
-    private readonly repo: IBudgetVehiclePartRepository
-  ) {}
+  constructor(private readonly repo: IBudgetVehiclePartRepository) {}
 
   async createMany(input: CreateBudgetVehiclePartInput): Promise<BudgetVehiclePartOutput[]> {
     const entities = input.parts.map(part => 

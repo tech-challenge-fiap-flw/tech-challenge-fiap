@@ -24,9 +24,7 @@ export interface IBudgetVehicleServiceService {
 }
 
 export class BudgetVehicleServiceService implements IBudgetVehicleServiceService {
-  constructor(
-    private readonly repo: IBudgetVehicleServiceMySqlRepository
-  ) {}
+  constructor(private readonly repo: IBudgetVehicleServiceMySqlRepository) {}
 
   async create(
     input: CreateBudgetVehicleServiceInput
