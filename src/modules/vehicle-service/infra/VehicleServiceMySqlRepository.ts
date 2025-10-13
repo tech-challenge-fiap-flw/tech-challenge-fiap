@@ -63,7 +63,8 @@ export class VehicleServiceMySqlRepository implements VehicleServiceRepository {
   }
 
   async countAll(): Promise<number> {
-    const rows = await mysql.query<{ count: number }>(`SELECT COUNT(*) AS count FROM vehicle_parts WHERE deletedAt IS NULL`);
+    // FIX: tabela incorreta (vehicle_parts) -> vehicle_services
+    const rows = await mysql.query<{ count: number }>(`SELECT COUNT(*) AS count FROM vehicle_services WHERE deletedAt IS NULL`);
     return Number(rows.at(0)?.count ?? 0);
   }
 }
