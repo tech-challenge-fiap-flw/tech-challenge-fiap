@@ -19,7 +19,6 @@ import { DiagnosisService } from '../../../modules/diagnosis/application/Diagnos
 import { VehicleMySqlRepository } from '../../../modules/vehicle/infra/VehicleMySqlRepository';
 import { VehicleService } from '../../../modules/vehicle/application/VehicleService';
 import { DiagnosisMySqlRepository } from '../../../modules/diagnosis/infra/DiagnosisMySqlRepository';
-import { ServiceOrderMySqlRepository } from '../../service-order/infra/ServiceOrderMySqlRepository';
 import { ServiceOrderHistoryMongoRepository } from '../../service-order-history/infra/ServiceOrderHistoryMongoRepository';
 import { ServiceOrderHistoryService } from '../../service-order-history/application/ServiceOrderHistoryService';
 import { FindBudgetController } from './controllers/FindBudgetController';
