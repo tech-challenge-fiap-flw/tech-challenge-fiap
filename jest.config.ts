@@ -14,6 +14,7 @@ const config: Config = {
     '!**/*.spec.ts',
     '!**/node_modules/**',
     '!**/dist/**',
+    '!**/*mocks.ts',
   ],
 
   coverageDirectory: 'coverage',
