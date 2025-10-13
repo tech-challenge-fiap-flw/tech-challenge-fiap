@@ -7,10 +7,13 @@ import { BadRequestServerException, ForbiddenServerException, NotFoundServerExce
 import { ServiceOrderStatus } from '../../../shared/ServiceOrderStatus';
 import { IBudgetVehiclePartService } from '../../../modules/budget-vehicle-part/application/BudgetVehiclePartService';
 import { IVehiclePartService } from '../../../modules/vehicle-part/application/VehiclePartService';
+import { IServiceOrderHistoryService } from '../../../modules/service-order-history/application/ServiceOrderHistoryService';
 
 export type CreateServiceOrderInput = {
   description: string;
   vehicleId: number;
+  budgetId?: number;
+  currentStatus?: ServiceOrderStatus;
   vehicleParts?: Array<{
     vehiclePartId: number;
     quantity: number;
@@ -35,6 +38,9 @@ export interface IServiceOrderService {
   startRepair(mechanic: AuthPayload, id: number): Promise<CreateServiceOrderOutput>;
   finishRepair(mechanic: AuthPayload, id: number): Promise<CreateServiceOrderOutput>;
   delivered(mechanic: AuthPayload, id: number): Promise<CreateServiceOrderOutput>;
+  findActiveByBudgetId(budgetId: number): Promise<CreateServiceOrderOutput | null>;
+  update(id: number, partial: Partial<CreateServiceOrderInput>): Promise<CreateServiceOrderOutput | null>;
+  decideBudget(customer: AuthPayload, id: number, input: AcceptServiceOrderInput): Promise<CreateServiceOrderOutput>;
 }
 
 export class ServiceOrderService implements IServiceOrderService {
@@ -44,6 +50,7 @@ export class ServiceOrderService implements IServiceOrderService {
     private readonly budgetService: IBudgetService,
     private readonly budgetVehiclePartService: IBudgetVehiclePartService,
     private readonly vehiclePartService: IVehiclePartService,
+    private readonly historyService: IServiceOrderHistoryService
   ) {}
 
   async findById(id: number): Promise<CreateServiceOrderOutput> {
@@ -51,6 +58,26 @@ export class ServiceOrderService implements IServiceOrderService {
 
     if (!serviceOrder) {
       throw new NotFoundServerException('Service Order not found');
+    }
+
+    return serviceOrder.toJSON();
+  }
+
+  async update(id: number, partial: Partial<CreateServiceOrderInput>): Promise<CreateServiceOrderOutput | null> {
+    const serviceOrder = await this.repo.update(id, partial);
+
+    if (!serviceOrder) {
+      throw new NotFoundServerException('Service Order not found for update');
+    }
+
+    return serviceOrder.toJSON();
+  }
+
+  async findActiveByBudgetId(budgetId: number): Promise<CreateServiceOrderOutput | null> {
+    const serviceOrder = await this.repo.findActiveByBudgetId(budgetId);
+
+    if (!serviceOrder) {
+      throw new NotFoundServerException('Active Service Order not found for the given budget ID');
     }
 
     return serviceOrder.toJSON();
@@ -78,6 +105,9 @@ export class ServiceOrderService implements IServiceOrderService {
         });
 
         budgetId = budget.id;
+      } else if (input.budgetId) {
+        await this.budgetService.findById(input.budgetId);
+        budgetId = input.budgetId;
       }
 
       const serviceOrderEntity = ServiceOrderEntity.create({
@@ -87,9 +117,16 @@ export class ServiceOrderService implements IServiceOrderService {
         vehicleId: input.vehicleId,
       });
 
-      const serviceOrderCreated = await this.repo.create(serviceOrderEntity);
+      const serviceOrderCreatedJson = (await this.repo.create(serviceOrderEntity)).toJSON();
 
-      return serviceOrderCreated.toJSON();
+      await this.historyService.logStatusChange({
+        idServiceOrder: serviceOrderCreatedJson.id,
+        userId: user.sub,
+        oldStatus: null,
+        newStatus: ServiceOrderStatus.RECEBIDA,
+      });
+
+      return serviceOrderCreatedJson;
     });
   }
 
@@ -135,7 +172,62 @@ export class ServiceOrderService implements IServiceOrderService {
         });
       }
 
+      await this.historyService.logStatusChange({
+        idServiceOrder: order.id,
+        userId: mechanic.sub,
+        oldStatus: oldStatus,
+        newStatus: order.currentStatus,
+      });
+
       return order;
+    });
+  }
+
+  async decideBudget(customer: AuthPayload, id: number, input: AcceptServiceOrderInput): Promise<CreateServiceOrderOutput> {
+    return this.repo.transaction(async () => {
+      const budget = await this.budgetService.findById(id);
+
+      if (budget.ownerId !== customer.sub) {
+        throw new ForbiddenServerException('Você não está autorizado a decidir esse orçamento.');
+      }
+
+      const serviceOrderJson = await this.findActiveByBudgetId(id);
+
+      if (!serviceOrderJson) {
+        throw new NotFoundServerException('Service Order related not found');
+      }
+
+      if (serviceOrderJson.customerId !== customer.sub) {
+        throw new ForbiddenServerException('Você não está autorizado a modificar essa OS.');
+      }
+
+      const oldStatus = serviceOrderJson.currentStatus;
+      const newStatus = input.accept ? ServiceOrderStatus.AGUARDANDO_INICIO : ServiceOrderStatus.RECUSADA;
+
+      const updatedOrder = await this.update(serviceOrderJson.id, { currentStatus: newStatus });
+
+      if (!updatedOrder) {
+        throw new NotFoundServerException('Erro ao atualizar status da OS');
+      }
+
+      if (!input.accept && serviceOrderJson.budgetId) {
+        const parts = await this.budgetVehiclePartService.listByBudget(serviceOrderJson.budgetId);
+
+        for (const part of parts) {
+          const vehiclePart = await this.vehiclePartService.findById(part.vehiclePartId);
+          const newQuantity = vehiclePart.quantity + part.quantity;
+          await this.vehiclePartService.updateVehiclePart(part.vehiclePartId, { quantity: newQuantity });
+        }
+      }
+
+      await this.historyService.logStatusChange({
+        idServiceOrder: updatedOrder.id,
+        userId: customer.sub,
+        oldStatus: oldStatus,
+        newStatus: newStatus,
+      });
+
+      return updatedOrder;
     });
   }
 
@@ -175,8 +267,17 @@ export class ServiceOrderService implements IServiceOrderService {
       if (!updatedOrder) {
         throw new NotFoundServerException('Algo deu errado ao atribuir o orçamento.');
       }
-      
-      return updatedOrder.toJSON();
+
+      const updatedOrderJson = updatedOrder.toJSON();
+
+      await this.historyService.logStatusChange({
+        idServiceOrder: updatedOrderJson.id,
+        userId: mechanic.sub,
+        oldStatus: oldStatus,
+        newStatus: updatedOrderJson.currentStatus,
+      });
+
+      return updatedOrderJson;
     });
   }
 
@@ -202,7 +303,16 @@ export class ServiceOrderService implements IServiceOrderService {
         throw new NotFoundServerException('Algo deu errado ao iniciar o reparo.');
       }
 
-      return updatedOrder.toJSON();
+      const updatedOrderJson = updatedOrder.toJSON();
+
+      await this.historyService.logStatusChange({
+        idServiceOrder: updatedOrderJson.id,
+        userId: mechanic.sub,
+        oldStatus: oldStatus,
+        newStatus: updatedOrderJson.currentStatus,
+      });
+
+      return updatedOrderJson;
     });
   }
 
@@ -228,7 +338,16 @@ export class ServiceOrderService implements IServiceOrderService {
         throw new NotFoundServerException('Algo deu errado ao finalizar o reparo.');
       }
 
-      return updatedOrder.toJSON();
+      const updatedOrderJson = updatedOrder.toJSON();
+
+      await this.historyService.logStatusChange({
+        idServiceOrder: updatedOrderJson.id,
+        userId: mechanic.sub,
+        oldStatus: oldStatus,
+        newStatus: updatedOrderJson.currentStatus,
+      });
+
+      return updatedOrderJson;
     });
   }
 
@@ -254,7 +373,16 @@ export class ServiceOrderService implements IServiceOrderService {
         throw new NotFoundServerException('Algo deu errado ao confirmar a entrega.');
       }
 
-      return updatedOrder.toJSON();
+      const updatedOrderJson = updatedOrder.toJSON();
+
+      await this.historyService.logStatusChange({
+        idServiceOrder: updatedOrderJson.id,
+        userId: mechanic.sub,
+        oldStatus: oldStatus,
+        newStatus: updatedOrderJson.currentStatus,
+      });
+
+      return updatedOrderJson;
     });
   }
 }

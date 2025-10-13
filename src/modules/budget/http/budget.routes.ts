@@ -14,15 +14,21 @@ import { VehicleServiceService } from '../../vehicle-service/application/Vehicle
 import { CreateBudgetController } from './controllers/CreateBudgetController';
 import { UserMySqlRepository } from '../../../modules/user/infra/UserMySqlRepository';
 import { UserService } from '../../../modules/user/application/UserService';
+import { BcryptPasswordHasher } from '../../user/infra/BcryptPasswordHasher';
 import { DiagnosisService } from '../../../modules/diagnosis/application/DiagnosisService';
 import { VehicleMySqlRepository } from '../../../modules/vehicle/infra/VehicleMySqlRepository';
 import { VehicleService } from '../../../modules/vehicle/application/VehicleService';
 import { DiagnosisMySqlRepository } from '../../../modules/diagnosis/infra/DiagnosisMySqlRepository';
+import { ServiceOrderMySqlRepository } from '../../service-order/infra/ServiceOrderMySqlRepository';
+import { ServiceOrderHistoryMongoRepository } from '../../service-order-history/infra/ServiceOrderHistoryMongoRepository';
+import { ServiceOrderHistoryService } from '../../service-order-history/application/ServiceOrderHistoryService';
+import { FindBudgetController } from './controllers/FindBudgetController';
 
 const budgetRepo = new BudgetMySqlRepository();
 
 const userRepository = new UserMySqlRepository();
-const userService = new UserService(userRepository);
+const userPasswordHasher = new BcryptPasswordHasher();
+const userService = new UserService(userRepository, userPasswordHasher);
 
 const vehiclePartRepo = new VehiclePartMySqlRepository();
 const vehiclePartService = new VehiclePartService(vehiclePartRepo);
@@ -42,6 +48,9 @@ const budgetVehicleServiceService = new BudgetVehicleServiceService(budgetVehicl
 const diagnosisRepo = new DiagnosisMySqlRepository();
 const diagnosisService = new DiagnosisService(diagnosisRepo, vehicleService, userService);
 
+const serviceOrderHistoryRepo = new ServiceOrderHistoryMongoRepository();
+const serviceOrderHistoryService = new ServiceOrderHistoryService(serviceOrderHistoryRepo);
+
 const budgetService = new BudgetService(
   budgetRepo,
   userService,
@@ -49,9 +58,11 @@ const budgetService = new BudgetService(
   vehiclePartService,
   budgetVehiclePartService,
   vehicleServiceService,
-  budgetVehicleServiceService
+  budgetVehicleServiceService,
+  serviceOrderHistoryService
 );
 
 export const budgetRouter = Router();
 
 budgetRouter.post('/', authMiddleware, adaptExpress(new CreateBudgetController(budgetService)));
+budgetRouter.get('/:id', authMiddleware, adaptExpress(new FindBudgetController(budgetService)));

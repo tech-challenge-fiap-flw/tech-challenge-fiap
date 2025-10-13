@@ -6,4 +6,5 @@ export interface IServiceOrderRepository extends IBaseRepository {
   softDelete(id: ServiceOrderId): Promise<void>;
   findById(id: ServiceOrderId): Promise<ServiceOrderEntity | null>;
   update(id: ServiceOrderId, partial: Partial<IServiceOrderProps>): Promise<ServiceOrderEntity | null>;
+  findActiveByBudgetId(budgetId: number): Promise<ServiceOrderEntity | null>;
 }

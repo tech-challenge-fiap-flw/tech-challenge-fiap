@@ -12,9 +12,11 @@ import { VehicleMySqlRepository } from '../../../modules/vehicle/infra/VehicleMy
 import { VehicleService } from '../../../modules/vehicle/application/VehicleService';
 import { UserMySqlRepository } from '../../../modules/user/infra/UserMySqlRepository';
 import { UserService } from '../../../modules/user/application/UserService';
+import { BcryptPasswordHasher } from '../../../modules/user/infra/BcryptPasswordHasher';
 
 const userRepository = new UserMySqlRepository();
-const userService = new UserService(userRepository);
+const userPasswordHasher = new BcryptPasswordHasher();
+const userService = new UserService(userRepository, userPasswordHasher);
 
 const repositoryVehicle = new VehicleMySqlRepository();
 const serviceVehicle = new VehicleService(repositoryVehicle, userService);

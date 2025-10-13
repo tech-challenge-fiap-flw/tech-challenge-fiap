@@ -5,7 +5,6 @@ import { VehicleServiceRepository } from '../domain/VehicleServiceRepository';
 
 export class VehicleServiceMySqlRepository implements VehicleServiceRepository {
 
-  // TESTADO
   async create(entity: VehicleServiceEntity): Promise<VehicleServiceEntity> {
     const data = entity.toJSON();
     

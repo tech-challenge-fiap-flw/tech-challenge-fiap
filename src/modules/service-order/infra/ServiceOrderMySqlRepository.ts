@@ -62,4 +62,17 @@ export class ServiceOrderMySqlRepository extends BaseRepository implements IServ
   async softDelete(id: ServiceOrderId): Promise<void> {
     await mysql.query<ResultSetHeader>(`UPDATE service_orders SET active = 0 WHERE id = ?`, [id]);
   }
+
+  async findActiveByBudgetId(budgetId: number): Promise<ServiceOrderEntity | null> {
+    const rows = await mysql.query<IServiceOrderProps>(
+      `SELECT * FROM service_orders WHERE budgetId = ? AND active = 1 LIMIT 1`,
+      [budgetId]
+    );
+
+    if (!rows.length) {
+      return null;
+    }
+
+    return ServiceOrderEntity.restore(rows[0]);
+  }
 }

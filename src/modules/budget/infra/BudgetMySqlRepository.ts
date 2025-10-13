@@ -1,7 +1,6 @@
 import * as mysql from '../../../infra/db/mysql';
 import { IBudgetRepository } from '../domain/IBudgetRepository';
 import { BudgetEntity, BudgetId, BudgetProps } from '../domain/Budget';
-import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { BaseRepository } from '../../../shared/domain/BaseRepository';
 
 export class BudgetMySqlRepository extends BaseRepository implements IBudgetRepository {
@@ -26,5 +25,11 @@ export class BudgetMySqlRepository extends BaseRepository implements IBudgetRepo
     const result = await mysql.insertOne(sql, params);
 
     return BudgetEntity.restore({ ...data, id: result.insertId });
+  }
+
+  async findById(id: BudgetId): Promise<BudgetEntity | null> {
+    const rows = await mysql.query<BudgetProps>(`SELECT * FROM budgets WHERE id = ?`, [id]);
+    if (!rows.length) return null;
+    return BudgetEntity.restore(rows[0]);
   }
 }

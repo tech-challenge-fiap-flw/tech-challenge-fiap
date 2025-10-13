@@ -10,9 +10,11 @@ import { DeleteVehicleController } from './controllers/DeleteVehicleController';
 import { ListVehiclesController } from './controllers/ListVehiclesController';
 import { UserMySqlRepository } from '../../../modules/user/infra/UserMySqlRepository';
 import { UserService } from '../../../modules/user/application/UserService';
+import { BcryptPasswordHasher } from '../../../modules/user/infra/BcryptPasswordHasher';
 
 const userRepository = new UserMySqlRepository();
-const userService = new UserService(userRepository);
+const userPasswordHasher = new BcryptPasswordHasher();
+const userService = new UserService(userRepository, userPasswordHasher);
 
 const repository = new VehicleMySqlRepository();
 const service = new VehicleService(repository, userService);

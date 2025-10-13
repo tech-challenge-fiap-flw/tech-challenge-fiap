@@ -12,3 +12,7 @@ export const createSchema = z.object({
   ),
   vehicleServicesIds: z.array(z.number().int()).optional()
 })
+
+export const decideBudgetSchema = z.object({
+  accept: z.boolean()
+});

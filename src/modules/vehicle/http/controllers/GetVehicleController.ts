@@ -1,5 +1,4 @@
 import { IController, HttpRequest, HttpResponse } from '../../../../shared/http/Controller';
-import { notFound } from '../../../../shared/http/HttpError';
 import { IVehicleService } from '../../application/VehicleService';
 
 export class GetVehicleController implements IController {

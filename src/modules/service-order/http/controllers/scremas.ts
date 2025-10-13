@@ -23,6 +23,7 @@ const VehiclePartItemSchema = z.object({
 export const createSchema = z.object({
   description: z.string().min(1, { message: 'Descrição não pode ser vazia.' }),
   vehicleId: z.number().int(),
+  budgetId: z.number().int().optional(),
   vehicleParts: z
     .array(VehiclePartItemSchema)
     .optional()

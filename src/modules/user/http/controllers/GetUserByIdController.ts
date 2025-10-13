@@ -1,5 +1,5 @@
 import { IController, HttpRequest, HttpResponse } from '../../../../shared/http/Controller';
-import { forbidden, notFound } from '../../../../shared/http/HttpError';
+import { forbidden } from '../../../../shared/http/HttpError';
 import { IUserService } from '../../application/UserService';
 
 export class GetUserByIdController implements IController {

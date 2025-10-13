@@ -8,7 +8,6 @@ export const createVehiclePartSchema = z.object({
   price: z.number(),
 });
 
-
 export const updateVehiclePartSchema = createVehiclePartSchema.partial();
 
 export type CreateVehiclePartInput = z.infer<typeof createVehiclePartSchema>;

@@ -7,6 +7,7 @@ import { IVehicleServiceService } from '../../vehicle-service/application/Vehicl
 import { ForbiddenServerException, NotFoundServerException } from '../../../shared/application/ServerException';
 import { IUserService } from '../../../modules/user/application/UserService';
 import { IDiagnosisService } from '../../../modules/diagnosis/application/DiagnosisService';
+import { IServiceOrderHistoryService } from '../../../modules/service-order-history/application/ServiceOrderHistoryService';
 
 export type VehiclePartQuantity = {
   vehiclePartId: number;
@@ -26,6 +27,7 @@ export type BudgetOutput = ReturnType<BudgetEntity['toJSON']> & { vehicleParts?:
 
 export interface IBudgetService {
   create(input: CreateBudgetInput): Promise<BudgetOutput>;
+  findById(budgetId: number): Promise<BudgetOutput>;
 }
 
 export class BudgetService implements IBudgetService {
@@ -36,7 +38,8 @@ export class BudgetService implements IBudgetService {
     private readonly vehiclePartService: IVehiclePartService,
     private readonly budgetVehiclePartService: IBudgetVehiclePartService,
     private readonly vehicleServiceService: IVehicleServiceService,
-    private readonly budgetVehicleServiceService: IBudgetVehicleServiceService
+    private readonly budgetVehicleServiceService: IBudgetVehicleServiceService,
+    private readonly historyService: IServiceOrderHistoryService,
   ) {}
 
   async create(input: CreateBudgetInput): Promise<BudgetOutput> {
@@ -83,6 +86,16 @@ export class BudgetService implements IBudgetService {
 
       return budgetJson;
     });
+  }
+
+  async findById(budgetId: number): Promise<BudgetOutput> {
+    const budget = await this.repo.findById(budgetId);
+
+    if (!budget) {
+      throw new NotFoundServerException('Budget not found');
+    }
+
+    return budget.toJSON();
   }
 
   private async updateVehiclePart(vehicleParts: VehiclePartQuantity[]): Promise<number> {

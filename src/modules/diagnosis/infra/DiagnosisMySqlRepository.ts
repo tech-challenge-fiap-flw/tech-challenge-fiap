@@ -1,4 +1,4 @@
-import { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { ResultSetHeader } from 'mysql2';
 import * as mysql from '../../../infra/db/mysql';
 import { DiagnosisEntity, DiagnosisId, IDiagnosisProps } from '../domain/Diagnosis';
 import { IDiagnosisRepository } from '../domain/IDiagnosisRepository';

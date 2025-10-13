@@ -1,4 +1,4 @@
-import { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { ResultSetHeader } from 'mysql2';
 import * as mysql from '../../../infra/db/mysql';
 import { VehicleEntity, VehicleId, IVehicleProps } from '../domain/Vehicle';
 import { IVehicleRepository } from '../domain/IVehicleRepository';
