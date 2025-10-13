@@ -22,7 +22,7 @@ export class DiagnosisMySqlRepository extends BaseRepository implements IDiagnos
 
     const result = await mysql.insertOne(sql, params);
 
-    return DiagnosisEntity.restore({ id: result.insertId, ...data });
+  return DiagnosisEntity.restore({ ...data, id: result.insertId });
   }
 
   async findById(id: DiagnosisId): Promise<DiagnosisEntity | null> {
