@@ -3,6 +3,7 @@ import { IServiceOrderProps, ServiceOrderEntity, ServiceOrderId } from '../domai
 import { IServiceOrderRepository } from '../domain/IServiceOrderRepository';
 import { BaseRepository } from '../../../shared/domain/BaseRepository';
 import { ResultSetHeader } from 'mysql2';
+import { ServiceOrderStatus } from '../../../shared/ServiceOrderStatus';
 
 export class ServiceOrderMySqlRepository extends BaseRepository implements IServiceOrderRepository {
   async create(entity: ServiceOrderEntity): Promise<ServiceOrderEntity> {
@@ -74,5 +75,13 @@ export class ServiceOrderMySqlRepository extends BaseRepository implements IServ
     }
 
     return ServiceOrderEntity.restore(rows[0]);
+  }
+
+  async listFinishedOrDelivered(): Promise<ServiceOrderEntity[]> {
+    const rows = await mysql.query<IServiceOrderProps>(
+      `SELECT * FROM service_orders WHERE currentStatus IN ('${ServiceOrderStatus.FINALIZADA}','${ServiceOrderStatus.ENTREGUE}') AND active = 1`
+    );
+
+    return rows.map(r => ServiceOrderEntity.restore(r));
   }
 }

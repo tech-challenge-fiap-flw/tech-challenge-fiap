@@ -34,7 +34,17 @@ function makeDeps() {
       updateVehiclePart: jest.fn()
     },
     historyService: {
-      logStatusChange: jest.fn()
+      logStatusChange: jest.fn(),
+      listByServiceOrder: jest.fn()
+    },
+  };
+}
+
+function makeOrderWithToJSON(id: number) {
+  return {
+    id,
+    toJSON() {
+      return { id: this.id };
     },
   };
 }
@@ -459,5 +469,69 @@ describe('ServiceOrderService', () => {
         vehicleServicesIds: []
       })
     ).rejects.toBeInstanceOf(ForbiddenServerException);
+  });
+
+  it('getExecutionTimeById lança BadRequestServerException quando sem histórico', async () => {
+    const d = makeDeps();
+    d.historyService.listByServiceOrder.mockResolvedValue([]);
+    const service = new ServiceOrderService(d.repo as any, d.diagnosisService as any, d.budgetService as any, d.budgetVehiclePartService as any, d.vehiclePartService as any, d.historyService as any);
+    await expect(service.getExecutionTimeById(1)).rejects.toBeInstanceOf(BadRequestServerException);
+  });
+
+  it('getExecutionTimeById calcula diferença entre RECEBIDA e FINALIZADA', async () => {
+    const d = makeDeps();
+    const base = Date.now();
+    d.historyService.listByServiceOrder.mockResolvedValue([
+      { newStatus: ServiceOrderStatus.RECEBIDA, changedAt: new Date(base).toISOString() },
+      { newStatus: ServiceOrderStatus.FINALIZADA, changedAt: new Date(base + 5000).toISOString() }
+    ]);
+    const service = new ServiceOrderService(d.repo as any, d.diagnosisService as any, d.budgetService as any, d.budgetVehiclePartService as any, d.vehiclePartService as any, d.historyService as any);
+    const res = await service.getExecutionTimeById(1);
+    expect('executionTimeMs' in res && res.executionTimeMs).toBe(5000);
+  });
+
+  it('getAverageExecutionTime lança BadRequestServerException quando nenhuma OS elegível', async () => {
+    const d = makeDeps();
+    ;(d.repo as any).listFinishedOrDelivered = jest.fn().mockResolvedValue([]);
+    const service = new ServiceOrderService(d.repo as any, d.diagnosisService as any, d.budgetService as any, d.budgetVehiclePartService as any, d.vehiclePartService as any, d.historyService as any);
+    await expect(service.getAverageExecutionTime()).rejects.toBeInstanceOf(BadRequestServerException);
+  });
+
+  it('getAverageExecutionTime calcula média', async () => {
+    const d = makeDeps();
+
+    (d.repo as any).listFinishedOrDelivered = jest.fn().mockResolvedValue([
+      { id: 1, toJSON() { return { id: 1 }; } },
+      { id: 2, toJSON() { return { id: 2 }; } },
+      { id: 3, toJSON() { return { id: 3 }; } },
+    ]);
+
+    d.historyService.listByServiceOrder
+      .mockResolvedValueOnce([
+        { newStatus: ServiceOrderStatus.RECEBIDA,   changedAt: new Date(1000).toISOString() },
+        { newStatus: ServiceOrderStatus.FINALIZADA, changedAt: new Date(5000).toISOString() },
+      ])
+      .mockResolvedValueOnce([
+        { newStatus: ServiceOrderStatus.RECEBIDA,   changedAt: new Date(3000).toISOString() },
+        { newStatus: ServiceOrderStatus.FINALIZADA, changedAt: new Date(9000).toISOString() },
+      ])
+      .mockResolvedValueOnce([
+        { newStatus: ServiceOrderStatus.RECEBIDA,   changedAt: new Date(2000).toISOString() },
+        { newStatus: ServiceOrderStatus.FINALIZADA, changedAt: new Date(8000).toISOString() },
+      ]);
+
+    const service = new ServiceOrderService(
+      d.repo as any,
+      d.diagnosisService as any,
+      d.budgetService as any,
+      d.budgetVehiclePartService as any,
+      d.vehiclePartService as any,
+      d.historyService as any
+    );
+
+    const res = await service.getAverageExecutionTime();
+
+    const expectedAvg = (4000 + 6000 + 6000) / 3; // 5333.333...
+    expect(res.averageExecutionTimeMs).toBeCloseTo(expectedAvg, 5);
   });
 });

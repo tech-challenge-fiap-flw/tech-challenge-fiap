@@ -31,6 +31,8 @@ import { GetServiceOrderController } from './controllers/GetServiceOrderControll
 import { ServiceOrderHistoryMongoRepository } from '../../../modules/service-order-history/infra/ServiceOrderHistoryMongoRepository';
 import { ServiceOrderHistoryService } from '../../../modules/service-order-history/application/ServiceOrderHistoryService';
 import { AcceptBudgetServiceOrderController } from './controllers/AcceptBudgetServiceOrderController';
+import { ExecutionTimeServiceOrderController } from './controllers/ExecutionTimeServiceOrderController';
+import { AverageExecutionTimeServiceOrderController } from './controllers/AverageExecutionTimeServiceOrderController';
 
 const userRepository = new UserMySqlRepository();
 const userPasswordHasher = new BcryptPasswordHasher();
@@ -90,3 +92,5 @@ serviceOrderRouter.post('/:id/start', authMiddleware, adaptExpress(new StartRepa
 serviceOrderRouter.post('/:id/finish', authMiddleware, adaptExpress(new FinishRepairServiceOrderController(service)));
 serviceOrderRouter.post('/:id/delivered', authMiddleware, adaptExpress(new DeliveredServiceOrderController(service)));
 serviceOrderRouter.post('/:id/accept-budget', authMiddleware, adaptExpress(new AcceptBudgetServiceOrderController(service)));
+serviceOrderRouter.get('/:id/execution-time', authMiddleware, adaptExpress(new ExecutionTimeServiceOrderController(service)));
+serviceOrderRouter.get('/execution-time/average', authMiddleware, adaptExpress(new AverageExecutionTimeServiceOrderController(service)));

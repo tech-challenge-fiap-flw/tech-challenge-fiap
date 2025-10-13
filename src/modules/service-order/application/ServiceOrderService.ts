@@ -41,6 +41,8 @@ export interface IServiceOrderService {
   findActiveByBudgetId(budgetId: number): Promise<CreateServiceOrderOutput | null>;
   update(id: number, partial: Partial<CreateServiceOrderInput>): Promise<CreateServiceOrderOutput | null>;
   decideBudget(customer: AuthPayload, id: number, input: AcceptServiceOrderInput): Promise<CreateServiceOrderOutput>;
+  getExecutionTimeById(id: number): Promise<{ executionTimeMs: number }>;
+  getAverageExecutionTime(): Promise<{ averageExecutionTimeMs: number }>;
 }
 
 export class ServiceOrderService implements IServiceOrderService {
@@ -384,5 +386,54 @@ export class ServiceOrderService implements IServiceOrderService {
 
       return updatedOrderJson;
     });
+  }
+
+  async getExecutionTimeById(id: number): Promise<{ executionTimeMs: number }> {
+    const history = await this.historyService.listByServiceOrder(id);
+
+    if (!history || history.length === 0) {
+      throw new BadRequestServerException('Histórico da OS não encontrado.');
+    }
+
+    const received = history.find(h => h.newStatus === ServiceOrderStatus.RECEBIDA);
+    const finished = history.find(h => h.newStatus === ServiceOrderStatus.FINALIZADA);
+
+    if (!received || !finished) {
+      throw new BadRequestServerException('Status RECEBIDA ou FINALIZADA não encontrados para esta OS.');
+    }
+
+    const receivedTime = new Date(received.changedAt).getTime();
+    const finishedTime = new Date(finished.changedAt).getTime();
+
+    if (finishedTime < receivedTime) {
+      throw new BadRequestServerException('Status FINALIZADA ocorreu antes de RECEBIDA (dados inconsistentes).');
+    }
+
+    return { executionTimeMs: finishedTime - receivedTime };
+  }
+
+  async getAverageExecutionTime(): Promise<{ averageExecutionTimeMs: number }> {
+    const serviceOrders = await this.repo.listFinishedOrDelivered();
+
+    if (!serviceOrders || !serviceOrders.length) {
+      throw new BadRequestServerException('Nenhuma OS ativa encontrada.');
+    }
+
+    const times: number[] = [];
+
+    for (const order of serviceOrders) {
+      const orderJson = order.toJSON();
+      const timeResult = await this.getExecutionTimeById(orderJson.id);
+
+      times.push(timeResult.executionTimeMs);
+    }
+
+    if (times.length === 0) {
+      throw new BadRequestServerException('Nenhuma OS possui status RECEBIDA e FINALIZADA para cálculo.');
+    }
+
+    const sum = times.reduce((acc, cur) => acc + cur, 0);
+
+    return { averageExecutionTimeMs: sum / times.length };
   }
 }
