@@ -23,6 +23,13 @@ app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({ status: 'ok' });
 });
 
+// Teste de carga de CPU
+app.get('/cpu-load', (req, res) => {
+  const start = Date.now();
+  while (Date.now() - start < 15000) {}
+  res.send({ status: 'done' });
+});
+
 // Routes
 app.use('/auth', authRouter);
 app.use('/users', userRouter);

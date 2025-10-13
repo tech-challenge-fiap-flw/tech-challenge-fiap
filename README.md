@@ -1,59 +1,191 @@
 # 🛠️ Sistema de Ordem de Serviço e Controle de Estoque - Oficina Mecânica
 
 ## 📋 Descrição do Projeto
-Este projeto é uma aplicação **backend** desenvolvida em **Nest.js** para gerenciar **ordens de serviço** e **controle de estoque** em uma oficina mecânica.  
+Este projeto é uma aplicação **backend** desenvolvida em **NestJS** para gerenciar **ordens de serviço** e **controle de estoque** em uma oficina mecânica.  
 O sistema permite o registro de veículos, criação e gerenciamento de ordens de serviço (OS), atribuição de mecânicos, controle de orçamento, atualização de status e histórico de alterações.
 
-### Principais Funcionalidades
+### ⚙️ Principais Funcionalidades
 - **Cadastro e gerenciamento de veículos**
-- **Criação de ordens de serviço** com ou sem orçamento inicial
+- **Criação de ordens de serviço (OS)** com ou sem orçamento inicial
 - **Atribuição de mecânicos** às ordens
-- **Controle de estoque** de peças
-- **Registro de histórico de alterações** (MongoDB) para cada OS
+- **Controle de estoque** de peças e materiais
+- **Registro de histórico de alterações** de status (MongoDB)
 - **Autenticação e autorização** com controle de permissões via *roles* (`admin`, `mechanic`)
+- **Documentação automática da API** via Swagger
 
 ---
 
-## 🚀 Como Rodar o Projeto
-### Pré-requisitos
-- [Docker](https://www.docker.com/)
-- [Docker Compose](https://docs.docker.com/compose/)
+## 🧩 Arquitetura Geral
+A aplicação foi desenvolvida em **Node.js (NestJS)** com banco de dados **MySQL** e **MongoDB**.  
+Todo o ambiente é conteinerizado e pode ser executado localmente via **Docker Desktop com Kubernetes ativado**.
 
-### Passos para execução
+Infraestrutura e deploy são totalmente automatizados com:
+- **Docker** e **Docker Compose**
+- **Kubernetes**
+- **Terraform**
+- **GitHub Actions (CI/CD)**
+
+---
+
+## 🚀 Execução Local (Docker Compose)
+
+### 🧱 Pré-requisitos
+- [Docker Desktop](https://www.docker.com/products/docker-desktop) com **Kubernetes ativado**
+- [Node.js](https://nodejs.org/) (para executar testes ou build local)
+- [Git](https://git-scm.com/)
+
+### 🧰 Passos
 1. **Clone o repositório**
    ```bash
    git clone https://github.com/lufepedrosa/tech-challenge-fiap
+   cd tech-challenge-fiap
    ```
 
-2. **Copie o arquivo .env.example para .env e configure as variáveis**
-   ```bash
-   cp .env.local
-   ```
-
-3. **Suba os containers com Docker Compose**
+2. **Suba os containers**
    ```bash
    docker compose up --build
    ```
 
-4. **Acesse a aplicação**
+3. **Acesse a aplicação**
    ```bash
    API: http://localhost:3000
    Documentação Swagger: http://localhost:3000/api
+   ```   
+
+## ☸️ Deploy em Kubernetes (Docker Desktop)  
+
+### 📦 Estrutura Kubernetes
+Os manifests YAML estão na pasta `k8s/`:
+- `app-deployment.yaml`
+- `app-service.yaml`
+- `hpa.yaml`
+- `configmap.yaml`
+- `mysql-deployment.yaml / mysql-service.yaml`
+- `mongo-deployment.yaml / mongo-service.yaml`
+
+### 🧭 Passos para Deploy Manual
+1. **Verifique se o Kubernetes está ativo no Docker Desktop**
+   ```bash
+   kubectl config current-context
    ```
 
----   
+2. **Criar a imagem `lastest`**   
+   ```bash
+   docker build -t app:latest .
+   ```  
 
-## 🧪 Cenários de Teste
-Para facilitar a validação do projeto, criamos um arquivo separado com **5 fluxos completos de teste**, cobrindo cenários felizes e cenários de erro.
+3. **Aplique os manifests**
+   ```bash
+   kubectl apply -f k8s/
+   ```   
 
-🔗 [Acessar os fluxos de teste](./TEST_FLOWS.md)
+4. **Verifique os pods e serviços**
+   ```bash
+   kubectl get pods
+   ``` 
 
----
+4. **Acesse a aplicação**   
+- Como o `Service` é do tipo `ClusterIP`, acesse via `port-forward`:
+   ```bash
+   kubectl port-forward svc/app-service 3000:3000
+   ``` 
+   Caso queira testar, basta acessar http://localhost:3000/health
+
+## 📈 Escalabilidade Automática (HPA)
+A aplicação utiliza o **Horizontal Pod Autoscaler (HPA)** configurado no arquivo `k8s/hpa.yaml`.
+- Mínimo de pods: 2
+- Máximo de pods: 5
+- Métrica: utilização média de CPU de 50%
+
+📌 Para testar localmente:
+```bash
+kubectl get hpa
+kubectl get pods
+```
+Simule carga e observe o aumento de réplicas automaticamente.   
+
+## 🏗️ Provisionamento da Infraestrutura com Terraform 
+Toda a infraestrutura Kubernetes pode ser criada automaticamente com Terraform, conforme definido na pasta `infra/terraform`.
+
+### 📋 O que é criado automaticamente
+- Namespace do projeto `(tech-challenge-fiap)`
+- Secrets e ConfigMaps
+- Deployments e Services para:
+- Aplicação principal
+- MySQL
+- MongoDB
+- PVCs para persistência
+- Configuração de réplicas e variáveis de ambiente
+
+### ⚙️ Passos para provisionar
+1. **Entre na pasta do Terraform**
+   ```bash
+   cd infra/terraform
+   ```
+
+2. **Inicialize o Terraform**
+   ```bash
+   terraform init
+   ```   
+
+3. **Valide e visualize o plano**
+   ```bash
+   terraform plan
+   ```   
+   
+4. **Aplique a infraestrutura**
+   ```bash
+   terraform apply -auto-approve
+   ``` 
+   
+5. **Verifique os recursos criados**
+   ```bash
+   kubectl get all -n tech-challenge-fiap
+   ```    
+
+## 🔄 CI/CD (GitHub Actions)
+A pipeline automatiza as etapas de **build, testes, análise de qualidade e deploy no Kubernetes.**
+
+### ⚙️ Workflow: `.github/workflows/ci-cd.yml`
+Etapas:
+1. Checkout do código
+2. Instalação e testes do Node.js
+3. Build da aplicação
+4. Build da imagem Docker
+5. Análise estática com SonarQube
+6. Deploy no cluster Kubernetes
+   - Aplicação
+   - MongoDB e MySQL
+   - Configurações e HPA
+
+A pipeline é executada automaticamente a cada push ou pull request nas branches `main` e `staging`.
+
+## 🧪 Testes Automatizados
+Os testes são executados automaticamente na pipeline (`npm test`).
+Você também pode rodá-los localmente:
+```bash
+npm install
+npm test
+```
+
+## 🧠 Documentação da API
+O projeto utiliza o **Swagger** para gerar a documentação automaticamente.
+Após iniciar a aplicação, acesse:
+```bash
+http://localhost:3000/api
+```
 
 ## 🛠️ Tecnologias Utilizadas
-- **Nest.js**
-- **TypeORM** (MySQL)
-- **Mongoose** (MongoDB)
-- **Docker & Docker Compose**
-- **Swagger** para documentação
-- **JWT** para autenticação
+- Node.js
+- MySQL
+- MongoDB
+- Docker & Docker Compose
+- Kubernetes
+- Terraform
+- GitHub Actions (CI/CD)
+- Swagger
+- JWT Authentication
+
+## 🧪 Cenários de Teste
+Há um documento separado com 5 fluxos de testes completos, cobrindo cenários felizes e de erro.
+🔗 [Acessar os fluxos de teste](./TEST_FLOWS.md)
