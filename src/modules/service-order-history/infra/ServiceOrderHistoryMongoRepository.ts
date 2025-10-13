@@ -1,42 +1,51 @@
-import { ObjectId } from 'mongodb';
+import { Collection, ObjectId } from 'mongodb';
 import { getCollection } from '../../../infra/mongo/mongo';
-import { ServiceOrderHistoryEntity, ServiceOrderHistoryProps } from '../domain/ServiceOrderHistory';
-import { ServiceOrderHistoryRepository } from '../domain/ServiceOrderHistoryRepository';
-interface ServiceOrderHistoryMongoProps extends ServiceOrderHistoryProps {
-  _id?: ObjectId;
+import { IServiceOrderHistoryRepository } from '../domain/IServiceOrderHistoryRepository';
+import { ServiceOrderHistoryEntity, IServiceOrderHistoryProps } from '../domain/ServiceOrderHistory';
+
+interface ServiceOrderHistoryDocument extends Omit<IServiceOrderHistoryProps, 'id'> {
+  _id: ObjectId
 }
 
-export class ServiceOrderHistoryMongoRepository implements ServiceOrderHistoryRepository {
-  private collectionName = 'service_order_history';
+export class ServiceOrderHistoryMongoRepository implements IServiceOrderHistoryRepository {
+  private collectionPromise: Promise<Collection<ServiceOrderHistoryDocument>>;
 
-  async create(entry: ServiceOrderHistoryEntity): Promise<ServiceOrderHistoryEntity> {
-    const data = entry.toJSON();
-    
-    const { id, ...dataToInsert } = data; 
-    
-    const col = await getCollection<ServiceOrderHistoryMongoProps>(this.collectionName);
-    
-    const { insertedId } = await col.insertOne({ 
-      ...dataToInsert, 
-      changedAt: new Date() 
-    });
-    
-    return ServiceOrderHistoryEntity.restore({ ...data, id: insertedId.toString() });
+  constructor() {
+    this.collectionPromise = getCollection<ServiceOrderHistoryDocument>('service_order_history');
   }
 
-  async findByServiceOrder(idServiceOrder: number): Promise<ServiceOrderHistoryEntity[]> {
-    const col = await getCollection<ServiceOrderHistoryMongoProps>(this.collectionName);
-    
-    const items = await col
-      .find({ idServiceOrder: idServiceOrder })
-      .sort({ changedAt: -1 })
-      .toArray();
-      
-    return items.map((doc) => {
-      const id = doc._id?.toString();
-      const { _id, ...rest } = doc; 
-      
-      return ServiceOrderHistoryEntity.restore({ ...rest, id: id });
+  private async collection() {
+    return this.collectionPromise;
+  }
+
+  async log(entity: ServiceOrderHistoryEntity): Promise<ServiceOrderHistoryEntity> {
+    const data = entity.toJSON();
+    const col = await this.collection();
+    const { id, ...persist } = data;
+    const result = await col.insertOne(persist as any);
+
+    return ServiceOrderHistoryEntity.restore({
+      ...data,
+      id: result.insertedId.toHexString()
     });
+  }
+
+  async listByServiceOrder(idServiceOrder: number): Promise<ServiceOrderHistoryEntity[]> {
+    const col = await this.collection();
+    const cursor = col.find({ idServiceOrder }).sort({ changedAt: 1 });
+    const docs = await cursor.toArray();
+
+    return docs.map(d =>
+      ServiceOrderHistoryEntity.restore({
+        id: d._id.toHexString(),
+        idServiceOrder: d.idServiceOrder,
+        userId: d.userId,
+        oldStatus: d.oldStatus,
+        newStatus: d.newStatus,
+        changedAt: d.changedAt,
+        createdAt: d.createdAt,
+        updatedAt: d.updatedAt
+      })
+    );
   }
 }

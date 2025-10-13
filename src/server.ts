@@ -11,6 +11,7 @@ import { budgetVehicleServiceRouter } from './modules/budget-vehicle-service/htt
 import { budgetVehiclePartRouter } from './modules/budget-vehicle-part/http/budget-vehicle-part.routes';
 import { budgetRouter } from './modules/budget/http/budget.routes';
 import { serviceOrderRouter } from './modules/service-order/http/service-order.routes';
+import { serviceOrderHistoryRouter } from './modules/service-order-history/http/service-order-history.routes';
 
 dotenv.config();
 
@@ -27,6 +28,7 @@ app.use('/vehicle-services', vehicleServiceRouter);
 app.use('/diagnosis', diagnosisRouter);
 app.use('/budgets', budgetRouter);
 app.use('/service-orders', serviceOrderRouter);
+app.use('/service-order-history', serviceOrderHistoryRouter);
 app.use('/budget-vehicle-services', budgetVehicleServiceRouter);
 app.use('/budget-vehicle-parts', budgetVehiclePartRouter);
 
