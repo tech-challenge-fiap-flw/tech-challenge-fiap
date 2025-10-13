@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ "main" , "staging"]
+    branches: [ "main", "staging" ]
   pull_request:
-    branches: [ "main" , "staging"]
+    branches: [ "main", "staging" ]
 
 jobs:
   build-test-deploy:
@@ -24,23 +24,29 @@ jobs:
 
       - name: Run tests
         run: npm test
-
       - name: Build app
         run: npm run build
 
       - name: Build Docker image
         run: docker build -t app:latest .
 
-      - name: Run SonarQube scan
-        run: npm run sonar
+      - name: Setup Kind cluster
+        uses: engineerd/setup-kind@v0.6.0
+        with:
+          version: v0.20.0
 
-      - name: Setup Kubeconfig
+      - name: Load Docker image into Kind
+        run: kind load docker-image app:latest
+
+      - name: Apply config and secrets
         run: |
-          mkdir -p ~/.kube
-          echo "${{ secrets.KUBECONFIG_CONTENT }}" > ~/.kube/config
+          kubectl apply -f k8s/configmap.yaml
+          kubectl apply -f k8s/secret.yaml
 
       - name: Deploy databases
         run: |
+          kubectl apply -f k8s/mysql-pvc.yaml
+          kubectl apply -f k8s/mongo-pvc.yaml
           kubectl apply -f k8s/mysql-deployment.yaml
           kubectl apply -f k8s/mongo-deployment.yaml
           kubectl apply -f k8s/mysql-service.yaml
@@ -51,8 +57,14 @@ jobs:
           kubectl apply -f k8s/app-deployment.yaml
           kubectl apply -f k8s/app-service.yaml
 
-      - name: Apply configuration and autoscaling
+      - name: Apply HPA
+        run: kubectl apply -f k8s/hpa.yaml
+
+      - name: Check rollout status
         run: |
-          kubectl apply -f k8s/configmap.yaml
-          kubectl apply -f k8s/secret.yaml
-          kubectl apply -f k8s/hpa.yaml
+          kubectl rollout status deployment/app-deployment
+          kubectl get pods -o wide
+          kubectl get svc -o wide
+
+      - name: Run SonarQube scan
+        run: npm run sonar
