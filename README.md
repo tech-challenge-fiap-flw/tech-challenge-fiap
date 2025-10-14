@@ -11,7 +11,6 @@ O sistema permite o registro de veículos, criação e gerenciamento de ordens d
 - **Controle de estoque** de peças e materiais
 - **Registro de histórico de alterações** de status (MongoDB)
 - **Autenticação e autorização** com controle de permissões via *roles* (`admin`, `mechanic`)
-- **Documentação automática da API** via Swagger
 
 ---
 
@@ -49,24 +48,6 @@ Infraestrutura e deploy são totalmente automatizados com:
 3. **Acesse a aplicação**
    ```bash
    API: http://localhost:3000
-   Documentação Swagger: http://localhost:3000/api
-   ```   
-
-## ☸️ Deploy em Kubernetes (Docker Desktop)  
-
-### 📦 Estrutura Kubernetes
-Os manifests YAML estão na pasta `k8s/`:
-- `app-deployment.yaml`
-- `app-service.yaml`
-- `hpa.yaml`
-- `configmap.yaml`
-- `mysql-deployment.yaml / mysql-service.yaml`
-- `mongo-deployment.yaml / mongo-service.yaml`
-
-### 🧭 Passos para Deploy Manual
-1. **Verifique se o Kubernetes está ativo no Docker Desktop**
-   ```bash
-   kubectl config current-context
    ```
 
 2. **Criar a imagem `lastest`**   
@@ -91,11 +72,19 @@ Os manifests YAML estão na pasta `k8s/`:
    ``` 
    Caso queira testar, basta acessar http://localhost:3000/health
 
-## 📈 Escalabilidade Automática (HPA)
-A aplicação utiliza o **Horizontal Pod Autoscaler (HPA)** configurado no arquivo `k8s/hpa.yaml`.
-- Mínimo de pods: 2
-- Máximo de pods: 5
-- Métrica: utilização média de CPU de 50%
+## 🛠️ Tecnologias Utilizadas
+- **Nest.js**
+- **TypeORM** (MySQL)
+- **Mongoose** (MongoDB)
+- **Docker & Docker Compose**
+- **JWT** para autenticação
+
+---
+
+## ✅ Testes Automatizados
+O projeto utiliza **Jest** com **TypeScript (ts-jest)** para testes unitários. Os testes atuais cobrem a lógica de domínio e serviços do módulo de usuários, incluindo criação, atualização, remoção lógica, busca, listagem e contagem.
+
+### Scripts Disponíveis
 
 📌 Para testar localmente:
 ```bash
@@ -175,7 +164,6 @@ npm test
 - Kubernetes
 - Terraform
 - GitHub Actions (CI/CD)
-- Swagger
 - JWT Authentication
 
 ## 🧪 Cenários de Teste
