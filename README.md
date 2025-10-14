@@ -79,4 +79,27 @@ Os arquivos de teste ficam ao lado do código em pastas `__tests__` ou com sufix
 2. Use mocks para repositórios e serviços externos (exemplo em `src/modules/user/__tests__/mocks.ts`).
 3. Evite acessar infraestrutura real (DB, redes) em testes unitários.
 
+
+## ✉️ Notificações por E-mail de Status da OS
+O histórico de mudanças de status de uma Ordem de Serviço agora dispara um e-mail automático para o cliente (dono da OS) utilizando **Nodemailer** e SMTP.
+
+### Variáveis de Ambiente Necessárias
+Adicione ao seu `.env`:
+
+```
+EMAIL_HOST=smtp.seuprovedor.com
+EMAIL_PORT=587
+EMAIL_USER=seu_usuario
+EMAIL_PASS=seu_password
+EMAIL_FROM="Nome da Oficina <no-reply@seu-dominio.com>"
+```
+
+Se alguma variável crítica estiver ausente, o sistema continuará funcionando mas os e-mails serão ignorados (um aviso será exibido no log).
+
+### Personalização do Conteúdo
+O conteúdo padrão inclui: número da OS, status anterior e novo status, além da data da alteração. Ajustes podem ser feitos em `src/modules/service-order-history/application/ServiceOrderHistoryService.ts`.
+
+### Testes
+Os testes de `ServiceOrderHistoryService` agora validam que o serviço de e-mail é chamado quando apropriado.
+
 ---

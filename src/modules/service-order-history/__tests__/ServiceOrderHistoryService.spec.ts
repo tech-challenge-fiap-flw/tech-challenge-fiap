@@ -1,20 +1,30 @@
 import { ServiceOrderHistoryService } from '../application/ServiceOrderHistoryService';
 import { makeHistoryEntity } from './mocks';
+import 'jest';
 
-const repo = {
-  log: jest.fn(),
-  listByServiceOrder: jest.fn()
-};
+const repo = { log: jest.fn(), listByServiceOrder: jest.fn() };
+const emailService = { send: jest.fn() };
+const serviceOrderRepo = { findById: jest.fn() };
+const userRepo = { findById: jest.fn() };
 
 function setup() {
   return new ServiceOrderHistoryService(
-    repo as any
+    repo as any,
+    emailService as any,
+    serviceOrderRepo as any,
+    userRepo as any
   );
 }
 
 describe('ServiceOrderHistoryService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (serviceOrderRepo.findById as any).mockResolvedValue({
+      toJSON: () => ({ id: 1, customerId: 99 })
+    });
+    (userRepo.findById as any).mockResolvedValue({
+      toJSON: () => ({ id: 99, email: 'c@example.com', name: 'Cliente' })
+    });
   });
 
   describe('logStatusChange', () => {
@@ -36,6 +46,10 @@ describe('ServiceOrderHistoryService', () => {
       });
 
       expect(repo.log).toHaveBeenCalled();
+      expect(emailService.send).toHaveBeenCalledWith(expect.objectContaining({
+        to: 'c@example.com',
+        subject: expect.stringContaining('#1')
+      }));
       expect(out.id).toBe('newId');
       expect(out.changedAt).toBeInstanceOf(Date);
     });
