@@ -167,13 +167,6 @@ npm install
 npm test
 ```
 
-## 🧠 Documentação da API
-O projeto utiliza o **Swagger** para gerar a documentação automaticamente.
-Após iniciar a aplicação, acesse:
-```bash
-http://localhost:3000/api
-```
-
 ## 🛠️ Tecnologias Utilizadas
 - Node.js
 - MySQL
