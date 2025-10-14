@@ -42,25 +42,25 @@ jobs:
 
       - name: Apply config and secrets
         run: |
-          kubectl apply -f k8s/configmap.yaml
-          kubectl apply -f k8s/secret.yaml
+          kubectl apply -f .\k8s\configmap.yaml
+          kubectl apply -f .\k8s\secret.yaml
 
       - name: Deploy databases
         run: |
-          kubectl apply -f k8s/mysql-pvc.yaml
-          kubectl apply -f k8s/mongo-pvc.yaml
-          kubectl apply -f k8s/mysql-deployment.yaml
-          kubectl apply -f k8s/mongo-deployment.yaml
-          kubectl apply -f k8s/mysql-service.yaml
-          kubectl apply -f k8s/mongo-service.yaml
+          kubectl apply -f .\k8s\mysql-pvc.yaml
+          kubectl apply -f .\k8s\mongo-pvc.yaml
+          kubectl apply -f .\k8s\mysql-deployment.yaml
+          kubectl apply -f .\k8s\mongo-deployment.yaml
+          kubectl apply -f .\k8s\mysql-service.yaml
+          kubectl apply -f .\k8s\mongo-service.yaml
 
       - name: Deploy application
         run: |
-          kubectl apply -f k8s/app-deployment.yaml
-          kubectl apply -f k8s/app-service.yaml
+          kubectl apply -f .\k8s\app-deployment.yaml
+          kubectl apply -f .\k8s\app-service.yaml
 
       - name: Apply HPA
-        run: kubectl apply -f k8s/hpa.yaml
+        run: kubectl apply -f .\k8s\hpa.yaml
 
       - name: Check rollout status
         run: |
