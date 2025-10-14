@@ -34,9 +34,11 @@ jobs:
         uses: helm/kind-action@v1.10.0
         with:
           version: v0.20.0
+          cluster_name: ci-cluster
+          wait: 120s
 
       - name: Load Docker image into Kind
-        run: kind load docker-image app:latest
+        run: kind load docker-image app:latest --name ci-cluster
 
       - name: Apply config and secrets
         run: |
