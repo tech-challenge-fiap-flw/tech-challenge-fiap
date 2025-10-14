@@ -152,8 +152,7 @@ Etapas:
 2. Instalação e testes do Node.js
 3. Build da aplicação
 4. Build da imagem Docker
-5. Análise estática com SonarQube
-6. Deploy no cluster Kubernetes
+5. Deploy no cluster Kubernetes
    - Aplicação
    - MongoDB e MySQL
    - Configurações e HPA

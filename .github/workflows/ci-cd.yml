@@ -67,6 +67,3 @@ jobs:
           kubectl rollout status deployment/app-deployment
           kubectl get pods -o wide
           kubectl get svc -o wide
-
-      - name: Run SonarQube scan
-        run: npm run sonar
