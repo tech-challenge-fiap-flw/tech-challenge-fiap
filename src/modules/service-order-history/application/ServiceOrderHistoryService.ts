@@ -47,7 +47,6 @@ export class ServiceOrderHistoryService implements IServiceOrderHistoryService {
     if (this.emailService && this.serviceOrderRepo && this.userRepo) {
       try {
         const serviceOrder = await this.serviceOrderRepo.findById(input.idServiceOrder);
-        console.log('TOMA', { serviceOrder });
         if (serviceOrder) {
           const customerId = serviceOrder.toJSON().customerId;
           const user = await this.userRepo.findById(customerId);

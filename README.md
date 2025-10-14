@@ -38,7 +38,6 @@ O sistema permite o registro de veículos, criação e gerenciamento de ordens d
 4. **Acesse a aplicação**
    ```bash
    API: http://localhost:3000
-   Documentação Swagger: http://localhost:3000/api
    ```
 
 ---   
@@ -55,7 +54,6 @@ Para facilitar a validação do projeto, criamos um arquivo separado com **5 flu
 - **TypeORM** (MySQL)
 - **Mongoose** (MongoDB)
 - **Docker & Docker Compose**
-- **Swagger** para documentação
 - **JWT** para autenticação
 
 ---
