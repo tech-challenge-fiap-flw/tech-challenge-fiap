@@ -14,7 +14,8 @@ describe('budget.routes', () => {
 
     serviceCreateMock = jest.fn();
     serviceFindMock = jest.fn();
-    authMiddlewareMock = jest.fn((_req, _res, next) => {
+    authMiddlewareMock = jest.fn((req, _res, next) => {
+      (req as any).user = { sub: 1, type: 'admin' };
       next();
     });
 

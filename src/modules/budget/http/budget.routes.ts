@@ -20,6 +20,7 @@ import { VehicleMySqlRepository } from '../../../modules/vehicle/infra/VehicleMy
 import { VehicleService } from '../../../modules/vehicle/application/VehicleService';
 import { DiagnosisMySqlRepository } from '../../../modules/diagnosis/infra/DiagnosisMySqlRepository';
 import { FindBudgetController } from './controllers/FindBudgetController';
+import { requireRole } from '../../../modules/auth/RoleMiddleware';
 
 const budgetRepo = new BudgetMySqlRepository();
 
@@ -57,5 +58,5 @@ const budgetService = new BudgetService(
 
 export const budgetRouter = Router();
 
-budgetRouter.post('/', authMiddleware, adaptExpress(new CreateBudgetController(budgetService)));
+budgetRouter.post('/', authMiddleware, requireRole('admin'), adaptExpress(new CreateBudgetController(budgetService)));
 budgetRouter.get('/:id', authMiddleware, adaptExpress(new FindBudgetController(budgetService)));

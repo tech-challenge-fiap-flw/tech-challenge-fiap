@@ -54,7 +54,7 @@ export class BudgetService implements IBudgetService {
 
       const totalParts = await this.updateVehiclePart(input.vehicleParts);
 
-      const totalServices = vehicleServices.reduce((sum, vs) => sum + vs.price, 0);
+      const totalServices = vehicleServices.reduce((sum, vs) => sum + (+vs.price), 0);
 
       const entity = BudgetEntity.create({
         description: input.description,
