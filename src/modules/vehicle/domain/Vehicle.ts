@@ -1,6 +1,6 @@
 export type VehicleId = number;
 
-export interface VehicleProps {
+export interface IVehicleProps {
   id?: VehicleId;
   idPlate: string;
   type: string;
@@ -14,11 +14,11 @@ export interface VehicleProps {
 }
 
 export class VehicleEntity {
-  private props: VehicleProps;
-  private constructor(props: VehicleProps) { this.props = props; }
-  static create(props: Omit<VehicleProps, 'id' | 'deletedAt'>): VehicleEntity {
+  private props: IVehicleProps;
+  private constructor(props: IVehicleProps) { this.props = props; }
+  static create(props: Omit<IVehicleProps, 'id' | 'deletedAt'>): VehicleEntity {
     return new VehicleEntity({ ...props, deletedAt: null });
   }
-  static restore(props: VehicleProps): VehicleEntity { return new VehicleEntity(props); }
-  toJSON(): VehicleProps { return { ...this.props }; }
+  static restore(props: IVehicleProps): VehicleEntity { return new VehicleEntity(props); }
+  toJSON(): IVehicleProps { return { ...this.props }; }
 }

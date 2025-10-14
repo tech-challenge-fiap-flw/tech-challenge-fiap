@@ -1,59 +1,28 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router } from 'express';
+import { authMiddleware } from '../../auth/AuthMiddleware';
+import { adaptExpress } from '../../../shared/http/Controller';
 import { VehicleMySqlRepository } from '../infra/VehicleMySqlRepository';
 import { VehicleService } from '../application/VehicleService';
-import { getPagination, toPage } from '../../../shared/http/pagination';
-import { authMiddleware } from '../../auth/AuthMiddleware';
+import { CreateVehicleController } from './controllers/CreateVehicleController';
+import { GetVehicleController } from './controllers/GetVehicleController';
+import { UpdateVehicleController } from './controllers/UpdateVehicleController';
+import { DeleteVehicleController } from './controllers/DeleteVehicleController';
+import { ListVehiclesController } from './controllers/ListVehiclesController';
+import { UserMySqlRepository } from '../../../modules/user/infra/UserMySqlRepository';
+import { UserService } from '../../../modules/user/application/UserService';
+import { BcryptPasswordHasher } from '../../../modules/user/infra/BcryptPasswordHasher';
 
-const repo = new VehicleMySqlRepository();
-const service = new VehicleService(repo);
+const userRepository = new UserMySqlRepository();
+const userPasswordHasher = new BcryptPasswordHasher();
+const userService = new UserService(userRepository, userPasswordHasher);
+
+const repository = new VehicleMySqlRepository();
+const service = new VehicleService(repository, userService);
 
 export const vehicleRouter = Router();
 
-vehicleRouter.post('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const result = await service.createVehicle(req.body);
-    res.status(201).json(result);
-  } catch (err) {
-    next(err);
-  }
-});
-
-vehicleRouter.get('/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const id = Number(req.params.id);
-    const found = await repo.findById(id);
-    if (!found) return res.status(404).json({ error: 'Vehicle not found' });
-    res.json(found.toJSON());
-  } catch (err) { next(err); }
-});
-
-vehicleRouter.put('/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const id = Number(req.params.id);
-    const result = await service.updateVehicle(id, req.body);
-    res.status(200).json(result);
-  } catch (err) {
-    next(err);
-  }
-});
-
-vehicleRouter.delete('/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const id = Number(req.params.id);
-    await service.deleteVehicle(id);
-    res.status(204).send();
-  } catch (err) {
-    next(err);
-  }
-});
-
-vehicleRouter.get('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { page, limit, offset } = getPagination(req);
-    const [items, total] = await Promise.all([
-      repo.list(offset, limit),
-      repo.countAll(),
-    ]);
-    res.json(toPage(items.map(i => i.toJSON()), page, limit, total));
-  } catch (err) { next(err); }
-});
+vehicleRouter.post('/', authMiddleware, adaptExpress(new CreateVehicleController(service)));
+vehicleRouter.get('/:id', authMiddleware, adaptExpress(new GetVehicleController(service)));
+vehicleRouter.put('/:id', authMiddleware, adaptExpress(new UpdateVehicleController(service)));
+vehicleRouter.delete('/:id', authMiddleware, adaptExpress(new DeleteVehicleController(service)));
+vehicleRouter.get('/', authMiddleware, adaptExpress(new ListVehiclesController(service)));

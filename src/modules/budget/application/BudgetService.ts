@@ -1,48 +1,119 @@
-import { BudgetEntity, BudgetId } from '../domain/Budget';
-import { BudgetRepository, BudgetVehiclePartRepository, BudgetVehicleServiceRepository } from '../domain/BudgetRepositories';
-import { BudgetVehiclePartEntity } from '../domain/BudgetVehiclePart';
-import { BudgetVehicleServiceEntity } from '../domain/BudgetVehicleService';
+import { BudgetEntity } from '../domain/Budget';
+import { IBudgetRepository } from '../domain/IBudgetRepository';
+import { IBudgetVehiclePartService } from '../../budget-vehicle-part/application/BudgetVehiclePartService';
+import { IBudgetVehicleServiceService } from '../../budget-vehicle-service/application/BudgetVehicleServiceService';
+import { IVehiclePartService } from '../../vehicle-part/application/VehiclePartService';
+import { IVehicleServiceService } from '../../vehicle-service/application/VehicleServiceService';
+import { ForbiddenServerException, NotFoundServerException } from '../../../shared/application/ServerException';
+import { IUserService } from '../../../modules/user/application/UserService';
+import { IDiagnosisService } from '../../../modules/diagnosis/application/DiagnosisService';
+import { IServiceOrderHistoryService } from '../../../modules/service-order-history/application/ServiceOrderHistoryService';
 
-export class BudgetService {
+export type VehiclePartQuantity = {
+  vehiclePartId: number;
+  quantity: number;
+};
+
+export type CreateBudgetInput = {
+  description: string;
+  ownerId: number;
+  diagnosisId: number;
+  vehicleParts: VehiclePartQuantity[];
+  vehicleServicesIds?: number[];
+};
+
+export type UpdateBudgetInput = Partial<Omit<CreateBudgetInput, 'ownerId' | 'diagnosisId'>>;
+export type BudgetOutput = ReturnType<BudgetEntity['toJSON']> & { vehicleParts?: { id: number; quantity: number }[] };
+
+export interface IBudgetService {
+  create(input: CreateBudgetInput): Promise<BudgetOutput>;
+  findById(budgetId: number): Promise<BudgetOutput>;
+}
+
+export class BudgetService implements IBudgetService {
   constructor(
-    private readonly budgetRepo: BudgetRepository,
-    private readonly partRepo: BudgetVehiclePartRepository,
-    private readonly serviceRepo: BudgetVehicleServiceRepository,
+    private readonly repo: IBudgetRepository,
+    private readonly userService: IUserService,
+    private readonly diagnosisService: IDiagnosisService,
+    private readonly vehiclePartService: IVehiclePartService,
+    private readonly budgetVehiclePartService: IBudgetVehiclePartService,
+    private readonly vehicleServiceService: IVehicleServiceService,
+    private readonly budgetVehicleServiceService: IBudgetVehicleServiceService,
+    private readonly historyService: IServiceOrderHistoryService,
   ) {}
 
-  async createBudget(input: Omit<ReturnType<BudgetEntity['toJSON']>, 'id' | 'total' | 'creationDate' | 'deletedAt'>) {
-    const entity = BudgetEntity.create(input as any);
-    const created = await this.budgetRepo.create(entity);
-    return created.toJSON();
+  async create(input: CreateBudgetInput): Promise<BudgetOutput> {
+    return this.repo.transaction(async () => {
+      await this.userService.findById(input.ownerId);
+
+      await this.diagnosisService.findById(input.diagnosisId);
+
+      const vehicleServices = await this.vehicleServiceService.findByIds(input.vehicleServicesIds || []);
+
+      if (vehicleServices.length !== (input.vehicleServicesIds?.length || 0)) {
+        throw new NotFoundServerException('Um ou mais serviços não foram encontrados');
+      }
+
+      const totalParts = await this.updateVehiclePart(input.vehicleParts);
+
+      const totalServices = vehicleServices.reduce((sum, vs) => sum + vs.price, 0);
+
+      const entity = BudgetEntity.create({
+        description: input.description,
+        ownerId: input.ownerId,
+        diagnosisId: input.diagnosisId,
+        total: totalParts + totalServices,
+      });
+
+      const created = await this.repo.create(entity);
+      const budgetJson = created.toJSON();
+
+      await this.budgetVehiclePartService.createMany({
+        budgetId: budgetJson.id,
+        parts: input.vehicleParts
+      });
+
+      if (vehicleServices.length !== (input.vehicleServicesIds?.length || 0)) {
+        throw new NotFoundServerException('Um ou mais serviços não foram encontrados');
+      }
+
+      if (input.vehicleServicesIds?.length) {
+        await this.budgetVehicleServiceService.createMany({
+          budgetId: budgetJson.id,
+          vehicleServiceIds: input.vehicleServicesIds
+        });
+      }
+
+      return budgetJson;
+    });
   }
 
-  async addPart(budgetId: BudgetId, vehiclePartId: number, quantity: number, price: number) {
-    const entry = BudgetVehiclePartEntity.create({ budgetId, vehiclePartId, quantity, price });
-    await this.partRepo.add(entry);
-    await this.recomputeTotal(budgetId);
+  async findById(budgetId: number): Promise<BudgetOutput> {
+    const budget = await this.repo.findById(budgetId);
+
+    if (!budget) {
+      throw new NotFoundServerException('Budget not found');
+    }
+
+    return budget.toJSON();
   }
 
-  async addService(budgetId: BudgetId, vehicleServiceId: number, price: number) {
-    const entry = BudgetVehicleServiceEntity.create({ budgetId, vehicleServiceId, price });
-    await this.serviceRepo.add(entry);
-    await this.recomputeTotal(budgetId);
-  }
+  private async updateVehiclePart(vehicleParts: VehiclePartQuantity[]): Promise<number> {
+    let totalParts = 0;
 
-  async removePart(entryId: number, budgetId: BudgetId) {
-    await this.partRepo.remove(entryId);
-    await this.recomputeTotal(budgetId);
-  }
+    for (const part of vehicleParts) {
+      const vehiclePart = await this.vehiclePartService.findById(part.vehiclePartId);
 
-  async removeService(entryId: number, budgetId: BudgetId) {
-    await this.serviceRepo.remove(entryId);
-    await this.recomputeTotal(budgetId);
-  }
+      if (vehiclePart.quantity < part.quantity) {
+        throw new ForbiddenServerException(`Insufficient quantity for vehicle part with id ${part.vehiclePartId}`);
+      }
 
-  private async recomputeTotal(budgetId: BudgetId) {
-    const parts = await this.partRepo.listByBudget(budgetId);
-    const services = await this.serviceRepo.listByBudget(budgetId);
-    const total = parts.reduce((sum, p) => sum + p.toJSON().price * p.toJSON().quantity, 0) +
-                  services.reduce((sum, s) => sum + s.toJSON().price, 0);
-    await this.budgetRepo.updateTotal(budgetId, total);
+      vehiclePart.quantity -= part.quantity;
+      totalParts += vehiclePart.price * part.quantity;
+
+      await this.vehiclePartService.updateVehiclePart(Number(vehiclePart.id), { quantity: vehiclePart.quantity });
+    }
+
+    return totalParts;
   }
 }

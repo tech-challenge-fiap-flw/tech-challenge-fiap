@@ -1,18 +1,28 @@
-export interface ServiceOrderHistoryProps {
-  id?: string; // Mongo _id as string
+export type ServiceOrderHistoryId = string;
+
+export interface IServiceOrderHistoryProps {
+  id?: ServiceOrderHistoryId;
   idServiceOrder: number;
   userId: number;
   oldStatus?: string | null;
   newStatus: string;
   changedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export class ServiceOrderHistoryEntity {
-  private props: ServiceOrderHistoryProps;
-  private constructor(props: ServiceOrderHistoryProps) { this.props = props; }
-  static create(input: Omit<ServiceOrderHistoryProps, 'id' | 'changedAt'>) {
+  private constructor(private readonly props: IServiceOrderHistoryProps) {}
+
+  static create(input: Omit<IServiceOrderHistoryProps, 'id' | 'changedAt' | 'createdAt' | 'updatedAt'>) {
     return new ServiceOrderHistoryEntity({ ...input, changedAt: new Date() });
   }
-  static restore(props: ServiceOrderHistoryProps) { return new ServiceOrderHistoryEntity(props); }
-  toJSON(): ServiceOrderHistoryProps { return { ...this.props }; }
+
+  static restore(props: IServiceOrderHistoryProps) {
+    return new ServiceOrderHistoryEntity(props);
+  }
+
+  toJSON(): IServiceOrderHistoryProps {
+    return { ...this.props };
+  }
 }

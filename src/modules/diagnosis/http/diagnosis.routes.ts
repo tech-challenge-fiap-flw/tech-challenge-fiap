@@ -1,52 +1,33 @@
-import { Router, Request, Response, NextFunction } from 'express';
-import { DiagnosisMySqlRepository } from '../infra/DiagnosisMySqlRepository';
-import { DiagnosisEntity } from '../domain/Diagnosis';
-import { getPagination, toPage } from '../../../shared/http/pagination';
+import { Router } from 'express';
 import { authMiddleware } from '../../auth/AuthMiddleware';
+import { adaptExpress } from '../../../shared/http/Controller';
+import { DiagnosisMySqlRepository } from '../infra/DiagnosisMySqlRepository';
+import { DiagnosisService } from '../application/DiagnosisService';
+import { CreateDiagnosisController } from './controllers/CreateDiagnosisController';
+import { GetDiagnosisController } from './controllers/GetDiagnosisController';
+import { UpdateDiagnosisController } from './controllers/UpdateDiagnosisController';
+import { DeleteDiagnosisController } from './controllers/DeleteDiagnosisController';
+import { ListDiagnosesController } from './controllers/ListDiagnosesController';
+import { VehicleMySqlRepository } from '../../../modules/vehicle/infra/VehicleMySqlRepository';
+import { VehicleService } from '../../../modules/vehicle/application/VehicleService';
+import { UserMySqlRepository } from '../../../modules/user/infra/UserMySqlRepository';
+import { UserService } from '../../../modules/user/application/UserService';
+import { BcryptPasswordHasher } from '../../../modules/user/infra/BcryptPasswordHasher';
 
-const repo = new DiagnosisMySqlRepository();
+const userRepository = new UserMySqlRepository();
+const userPasswordHasher = new BcryptPasswordHasher();
+const userService = new UserService(userRepository, userPasswordHasher);
+
+const repositoryVehicle = new VehicleMySqlRepository();
+const serviceVehicle = new VehicleService(repositoryVehicle, userService);
+
+const repository = new DiagnosisMySqlRepository();
+const service = new DiagnosisService(repository, serviceVehicle, userService);
+
 export const diagnosisRouter = Router();
 
-diagnosisRouter.post('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const entity = DiagnosisEntity.create(req.body);
-    const created = await repo.create(entity);
-    res.status(201).json(created.toJSON());
-  } catch (err) { next(err); }
-});
-
-diagnosisRouter.get('/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const id = Number(req.params.id);
-    const found = await repo.findById(id);
-    if (!found) return res.status(404).json({ error: 'Diagnosis not found' });
-    res.json(found.toJSON());
-  } catch (err) { next(err); }
-});
-
-diagnosisRouter.put('/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const id = Number(req.params.id);
-    const updated = await repo.update(id, req.body);
-    res.json(updated.toJSON());
-  } catch (err) { next(err); }
-});
-
-diagnosisRouter.delete('/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const id = Number(req.params.id);
-    await repo.softDelete(id);
-    res.status(204).send();
-  } catch (err) { next(err); }
-});
-
-diagnosisRouter.get('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { page, limit, offset } = getPagination(req);
-    const [items, total] = await Promise.all([
-      repo.list(offset, limit),
-      repo.countAll(),
-    ]);
-    res.json(toPage(items.map(i => i.toJSON()), page, limit, total));
-  } catch (err) { next(err); }
-});
+diagnosisRouter.post('/', authMiddleware, adaptExpress(new CreateDiagnosisController(service)));
+diagnosisRouter.get('/:id', authMiddleware, adaptExpress(new GetDiagnosisController(service)));
+diagnosisRouter.put('/:id', authMiddleware, adaptExpress(new UpdateDiagnosisController(service)));
+diagnosisRouter.delete('/:id', authMiddleware, adaptExpress(new DeleteDiagnosisController(service)));
+diagnosisRouter.get('/', authMiddleware, adaptExpress(new ListDiagnosesController(service)));

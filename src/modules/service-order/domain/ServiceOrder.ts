@@ -1,15 +1,9 @@
+import { ServiceOrderStatus } from '../../../shared/ServiceOrderStatus'
+
 export type ServiceOrderId = number;
 
-export type ServiceOrderStatus =
-  | 'CREATED'
-  | 'APPROVED'
-  | 'IN_PROGRESS'
-  | 'PAUSED'
-  | 'COMPLETED'
-  | 'CANCELLED';
-
-export interface ServiceOrderProps {
-  id?: ServiceOrderId;
+export interface IServiceOrderProps {
+  id: ServiceOrderId;
   description: string;
   creationDate: Date;
   currentStatus: ServiceOrderStatus;
@@ -21,11 +15,25 @@ export interface ServiceOrderProps {
 }
 
 export class ServiceOrderEntity {
-  private props: ServiceOrderProps;
-  private constructor(props: ServiceOrderProps) { this.props = props; }
-  static create(input: Omit<ServiceOrderProps, 'id' | 'creationDate' | 'currentStatus' | 'active'>) {
-    return new ServiceOrderEntity({ ...input, creationDate: new Date(), currentStatus: 'CREATED', active: true });
+  private constructor(private props: IServiceOrderProps) {}
+
+  static create(input: Omit<IServiceOrderProps, 'id' | 'creationDate' | 'currentStatus' | 'active'>) {
+    return new ServiceOrderEntity({
+      id: 0,
+      description: input.description,
+      creationDate: new Date(),
+      currentStatus: ServiceOrderStatus.RECEBIDA,
+      budgetId: input.budgetId ?? null,
+      customerId: input.customerId,
+      mechanicId: input.mechanicId ?? null,
+      vehicleId: input.vehicleId,
+      active: true,
+    });
   }
-  static restore(props: ServiceOrderProps) { return new ServiceOrderEntity(props); }
-  toJSON(): ServiceOrderProps { return { ...this.props }; }
+
+  static restore(props: IServiceOrderProps) {
+    return new ServiceOrderEntity(props);
+  }
+
+  toJSON() { return { ...this.props }; }
 }

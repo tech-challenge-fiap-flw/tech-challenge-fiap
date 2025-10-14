@@ -1,70 +1,96 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router } from 'express';
+import { authMiddleware } from '../../auth/AuthMiddleware';
+import { adaptExpress } from '../../../shared/http/Controller';
 import { ServiceOrderMySqlRepository } from '../infra/ServiceOrderMySqlRepository';
 import { ServiceOrderService } from '../application/ServiceOrderService';
-import { ServiceOrderEntity } from '../domain/ServiceOrder';
-import { ServiceOrderHistoryMongoRepository } from '../../service-order-history/infra/ServiceOrderHistoryMongoRepository';
-import { authMiddleware } from '../../auth/AuthMiddleware';
-import { requireRole } from '../../auth/RoleMiddleware';
-import { getPagination, toPage } from '../../../shared/http/pagination';
+import { CreateServiceOrderController } from './controllers/CreateServiceOrderController';
+import { DiagnosisMySqlRepository } from '../../../modules/diagnosis/infra/DiagnosisMySqlRepository';
+import { DiagnosisService } from '../../../modules/diagnosis/application/DiagnosisService';
+import { VehicleMySqlRepository } from '../../../modules/vehicle/infra/VehicleMySqlRepository';
+import { VehicleService } from '../../../modules/vehicle/application/VehicleService';
+import { UserMySqlRepository } from '../../../modules/user/infra/UserMySqlRepository';
+import { UserService } from '../../../modules/user/application/UserService';
+import { BudgetMySqlRepository } from '../../../modules/budget/infra/BudgetMySqlRepository';
+import { BudgetService } from '../../../modules/budget/application/BudgetService';
+import { VehiclePartMySqlRepository } from '../../../modules/vehicle-part/infra/VehiclePartMySqlRepository';
+import { VehiclePartService } from '../../../modules/vehicle-part/application/VehiclePartService';
+import { BudgetVehiclePartMySqlRepository } from '../../../modules/budget-vehicle-part/infra/BudgetVehiclePartMySqlRepository';
+import { BudgetVehiclePartService } from '../../../modules/budget-vehicle-part/application/BudgetVehiclePartService';
+import { VehicleServiceMySqlRepository } from '../../../modules/vehicle-service/infra/VehicleServiceMySqlRepository';
+import { VehicleServiceService } from '../../../modules/vehicle-service/application/VehicleServiceService';
+import { BudgetVehicleServiceMySqlRepository } from '../../../modules/budget-vehicle-service/infra/BudgetVehicleServiceMySqlRepository';
+import { BudgetVehicleServiceService } from '../../../modules/budget-vehicle-service/application/BudgetVehicleServiceService';
+import { BcryptPasswordHasher } from '../../../modules/user/infra/BcryptPasswordHasher';
+import { AcceptServiceOrderController } from './controllers/AcceptServiceOrderController';
+import { AssignBudgetServiceOrderController } from './controllers/AssignBudgetServiceOrderController';
+import { StartRepairServiceOrderController } from './controllers/StartRepairServiceOrderController';
+import { FinishRepairServiceOrderController } from './controllers/FinishRepairServiceOrderController';
+import { DeliveredServiceOrderController } from './controllers/DeliveredServiceOrderController';
+import { DeleteServiceOrderController } from './controllers/DeleteServiceOrderController';
+import { GetServiceOrderController } from './controllers/GetServiceOrderController';
+import { ServiceOrderHistoryMongoRepository } from '../../../modules/service-order-history/infra/ServiceOrderHistoryMongoRepository';
+import { ServiceOrderHistoryService } from '../../../modules/service-order-history/application/ServiceOrderHistoryService';
+import { AcceptBudgetServiceOrderController } from './controllers/AcceptBudgetServiceOrderController';
+import { ExecutionTimeServiceOrderController } from './controllers/ExecutionTimeServiceOrderController';
+import { AverageExecutionTimeServiceOrderController } from './controllers/AverageExecutionTimeServiceOrderController';
 
-const repo = new ServiceOrderMySqlRepository();
-const historyRepo = new ServiceOrderHistoryMongoRepository();
-const service = new ServiceOrderService(repo, historyRepo);
+const userRepository = new UserMySqlRepository();
+const userPasswordHasher = new BcryptPasswordHasher();
+const userService = new UserService(userRepository, userPasswordHasher);
+
+const vehicleRepository = new VehicleMySqlRepository();
+const vehicleService = new VehicleService(vehicleRepository, userService);
+
+const diagnosisRepository = new DiagnosisMySqlRepository();
+const diagnosisService = new DiagnosisService(diagnosisRepository, vehicleService, userService);
+
+const vehiclePartRepo = new VehiclePartMySqlRepository();
+const vehiclePartService = new VehiclePartService(vehiclePartRepo);
+
+const budgetVehiclePartRepo = new BudgetVehiclePartMySqlRepository();
+const budgetVehiclePartService = new BudgetVehiclePartService(budgetVehiclePartRepo);
+
+const vehicleServiceRepo = new VehicleServiceMySqlRepository();
+const vehicleServiceService = new VehicleServiceService(vehicleServiceRepo);
+
+const budgetVehicleServiceRepo = new BudgetVehicleServiceMySqlRepository();
+const budgetVehicleServiceService = new BudgetVehicleServiceService(budgetVehicleServiceRepo);
+
+const historyRepository = new ServiceOrderHistoryMongoRepository();
+const historyService = new ServiceOrderHistoryService(historyRepository);
+
+const budgetRepository = new BudgetMySqlRepository();
+const budgetService = new BudgetService(
+  budgetRepository,
+  userService,
+  diagnosisService,
+  vehiclePartService,
+  budgetVehiclePartService,
+  vehicleServiceService,
+  budgetVehicleServiceService,
+  historyService
+);
+
+const repository = new ServiceOrderMySqlRepository();
+const service = new ServiceOrderService(
+  repository,
+  diagnosisService,
+  budgetService,
+  budgetVehiclePartService,
+  vehiclePartService,
+  historyService
+);
 
 export const serviceOrderRouter = Router();
 
-serviceOrderRouter.post('/', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const entity = ServiceOrderEntity.create(req.body);
-    const created = await repo.create(entity);
-    res.status(201).json(created.toJSON());
-  } catch (err) { next(err); }
-});
-
-serviceOrderRouter.get('/:id', authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const id = Number(req.params.id);
-    const found = await repo.findById(id);
-    if (!found) return res.status(404).json({ error: 'Service order not found' });
-    res.json(found.toJSON());
-  } catch (err) { next(err); }
-});
-
-serviceOrderRouter.post('/:id/status', authMiddleware, requireRole('admin'), async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const id = Number(req.params.id);
-    const { status } = req.body;
-    const userId = (req as any).user.sub as number;
-    const updated = await service.changeStatus(id, status, userId);
-    res.json(updated);
-  } catch (err) { next(err); }
-});
-
-serviceOrderRouter.post('/:id/assign/:mechanicId', authMiddleware, requireRole('admin'), async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const id = Number(req.params.id);
-    const mechanicId = Number(req.params.mechanicId);
-    const updated = await service.assignMechanic(id, mechanicId);
-    res.json(updated);
-  } catch (err) { next(err); }
-});
-
-serviceOrderRouter.delete('/:id', authMiddleware, requireRole('admin'), async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const id = Number(req.params.id);
-    await service.delete(id);
-    res.status(204).send();
-  } catch (err) { next(err); }
-});
-
-// Admin list service orders
-serviceOrderRouter.get('/', authMiddleware, requireRole('admin'), async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { page, limit, offset } = getPagination(req);
-    const [items, total] = await Promise.all([
-      repo.list(offset, limit),
-      repo.countAll(),
-    ]);
-    res.json(toPage(items.map(i => i.toJSON()), page, limit, total));
-  } catch (err) { next(err); }
-});
+serviceOrderRouter.post('/', authMiddleware, adaptExpress(new CreateServiceOrderController(service)));
+serviceOrderRouter.delete('/:id', authMiddleware, adaptExpress(new DeleteServiceOrderController(service)));
+serviceOrderRouter.get('/:id', authMiddleware, adaptExpress(new GetServiceOrderController(service)));
+serviceOrderRouter.post('/:id/accept', authMiddleware, adaptExpress(new AcceptServiceOrderController(service)));
+serviceOrderRouter.post('/:id/budget', authMiddleware, adaptExpress(new AssignBudgetServiceOrderController(service)));
+serviceOrderRouter.post('/:id/start', authMiddleware, adaptExpress(new StartRepairServiceOrderController(service)));
+serviceOrderRouter.post('/:id/finish', authMiddleware, adaptExpress(new FinishRepairServiceOrderController(service)));
+serviceOrderRouter.post('/:id/delivered', authMiddleware, adaptExpress(new DeliveredServiceOrderController(service)));
+serviceOrderRouter.post('/:id/accept-budget', authMiddleware, adaptExpress(new AcceptBudgetServiceOrderController(service)));
+serviceOrderRouter.get('/:id/execution-time', authMiddleware, adaptExpress(new ExecutionTimeServiceOrderController(service)));
+serviceOrderRouter.get('/execution-time/average', authMiddleware, adaptExpress(new AverageExecutionTimeServiceOrderController(service)));

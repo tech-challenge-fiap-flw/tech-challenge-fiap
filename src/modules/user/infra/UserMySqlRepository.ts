@@ -1,13 +1,15 @@
-import { RowDataPacket, ResultSetHeader } from 'mysql2';
-import { query } from '../../../infra/db/mysql';
-import { UserEntity, UserId, UserProps } from '../domain/User';
-import { UserRepository } from '../domain/UserRepository';
+import * as mysql from '../../../infra/db/mysql';
+import { UserEntity, UserId, IUserProps } from '../domain/User';
+import { IUserRepository } from '../domain/IUserRepository';
 
-export class UserMySqlRepository implements UserRepository {
+export class UserMySqlRepository implements IUserRepository {
+
   async create(user: UserEntity): Promise<UserEntity> {
     const data = user.toJSON();
+    
     const sql = `INSERT INTO users (name, email, password, type, active, creationDate, cpf, cnpj, phone, address, city, state, zipCode)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+                 
     const params = [
       data.name,
       data.email,
@@ -23,50 +25,63 @@ export class UserMySqlRepository implements UserRepository {
       data.state ?? null,
       data.zipCode ?? null,
     ];
-    const result = await query<ResultSetHeader>(sql, params);
-    const id = (result as any).insertId as number;
-    return UserEntity.restore({ ...data, id });
+
+    const result = await mysql.insertOne(sql, params);
+
+    return UserEntity.restore({ ...data, id: result.insertId });
   }
 
   async findById(id: UserId): Promise<UserEntity | null> {
-    const rows = await query<UserProps & RowDataPacket>(`SELECT * FROM users WHERE id = ?`, [id]);
-    if (!rows.length) return null;
-    return UserEntity.restore(rows[0] as any);
+    const rows = await mysql.query<IUserProps>(`SELECT * FROM users WHERE id = ?`, [id]);
+
+    if (rows.length === 0) {
+      return null;
+    }
+    
+    return UserEntity.restore(rows[0]);
   }
 
   async findByEmail(email: string): Promise<UserEntity | null> {
-    const rows = await query<UserProps & RowDataPacket>(`SELECT * FROM users WHERE email = ?`, [email]);
-    if (!rows.length) return null;
-    return UserEntity.restore(rows[0] as any);
+    const rows = await mysql.query<IUserProps>(`SELECT * FROM users WHERE email = ?`, [email]);
+    
+    if (rows.length === 0) {
+      return null;
+    }
+    
+    return UserEntity.restore(rows[0]);
   }
 
-  async update(id: UserId, partial: Partial<UserProps>): Promise<UserEntity> {
-    const keys = Object.keys(partial) as (keyof UserProps)[];
-    if (keys.length === 0) {
-      const found = await this.findById(id);
-      if (!found) throw Object.assign(new Error('User not found'), { status: 404 });
-      return found;
-    }
+  async update(id: UserId, partial: Partial<IUserProps>): Promise<UserEntity | null> {
+    const keys = Object.keys(partial) as (keyof IUserProps)[];
+
     const setClause = keys.map((k) => `${k} = ?`).join(', ');
     const params = keys.map((k) => (partial as any)[k]);
     params.push(id);
-    await query<ResultSetHeader>(`UPDATE users SET ${setClause} WHERE id = ?`, params as any);
-    const updated = await this.findById(id);
-    if (!updated) throw Object.assign(new Error('User not found'), { status: 404 });
-    return updated;
+
+    await mysql.update(`UPDATE users SET ${setClause} WHERE id = ?`, params);
+
+    return await this.findById(id);
   }
 
   async softDelete(id: UserId): Promise<void> {
-    await query<ResultSetHeader>(`UPDATE users SET active = 0 WHERE id = ?`, [id]);
+    await mysql.update(`UPDATE users SET active = 0 WHERE id = ?`, [id]);
   }
 
   async list(offset: number, limit: number): Promise<UserEntity[]> {
-    const rows = await query<UserProps & RowDataPacket>(`SELECT * FROM users WHERE active = 1 ORDER BY id LIMIT ? OFFSET ?`, [limit, offset]);
-    return rows.map((r: any) => UserEntity.restore(r));
+    const sql = `
+      SELECT * FROM users 
+      WHERE active = 1 
+      ORDER BY id 
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+
+    const rows = await mysql.query<IUserProps>(sql);
+
+    return rows.map((row) => UserEntity.restore(row));
   }
 
   async countAll(): Promise<number> {
-    const rows = await query<RowDataPacket & { c: number }>(`SELECT COUNT(*) AS c FROM users WHERE active = 1`);
-    return Number((rows as any)[0].c ?? 0);
+    const rows = await mysql.query<{ count: number }>(`SELECT COUNT(*) AS count FROM users WHERE active = 1`);
+    return Number(rows.at(0)?.count ?? 0);
   }
 }
