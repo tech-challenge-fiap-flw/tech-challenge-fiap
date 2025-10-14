@@ -7,7 +7,7 @@ import { IVehicleServiceService } from '../../vehicle-service/application/Vehicl
 import { ForbiddenServerException, NotFoundServerException } from '../../../shared/application/ServerException';
 import { IUserService } from '../../../modules/user/application/UserService';
 import { IDiagnosisService } from '../../../modules/diagnosis/application/DiagnosisService';
-import { IServiceOrderHistoryService } from '../../../modules/service-order-history/application/ServiceOrderHistoryService';
+import { AuthPayload } from '../../../modules/auth/AuthMiddleware';
 
 export type VehiclePartQuantity = {
   vehiclePartId: number;
@@ -27,7 +27,7 @@ export type BudgetOutput = ReturnType<BudgetEntity['toJSON']> & { vehicleParts?:
 
 export interface IBudgetService {
   create(input: CreateBudgetInput): Promise<BudgetOutput>;
-  findById(budgetId: number): Promise<BudgetOutput>;
+  findById(budgetId: number, user?: AuthPayload): Promise<BudgetOutput>;
 }
 
 export class BudgetService implements IBudgetService {
@@ -39,7 +39,6 @@ export class BudgetService implements IBudgetService {
     private readonly budgetVehiclePartService: IBudgetVehiclePartService,
     private readonly vehicleServiceService: IVehicleServiceService,
     private readonly budgetVehicleServiceService: IBudgetVehicleServiceService,
-    private readonly historyService: IServiceOrderHistoryService,
   ) {}
 
   async create(input: CreateBudgetInput): Promise<BudgetOutput> {
@@ -56,7 +55,7 @@ export class BudgetService implements IBudgetService {
 
       const totalParts = await this.updateVehiclePart(input.vehicleParts);
 
-      const totalServices = vehicleServices.reduce((sum, vs) => sum + vs.price, 0);
+      const totalServices = vehicleServices.reduce((sum, vs) => sum + (+vs.price), 0);
 
       const entity = BudgetEntity.create({
         description: input.description,
@@ -88,8 +87,10 @@ export class BudgetService implements IBudgetService {
     });
   }
 
-  async findById(budgetId: number): Promise<BudgetOutput> {
-    const budget = await this.repo.findById(budgetId);
+  async findById(budgetId: number, user?: AuthPayload): Promise<BudgetOutput> {
+    const userId = user ? this.checkUserPermission(user) : undefined;
+
+    const budget = await this.repo.findById(budgetId, userId);
 
     if (!budget) {
       throw new NotFoundServerException('Budget not found');
@@ -115,5 +116,9 @@ export class BudgetService implements IBudgetService {
     }
 
     return totalParts;
+  }
+
+  private checkUserPermission(user: AuthPayload): number | undefined {
+    return user.type !== 'admin' ? user.sub : undefined
   }
 }

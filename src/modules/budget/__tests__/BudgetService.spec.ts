@@ -62,7 +62,6 @@ describe('BudgetService', () => {
       d.budgetVehiclePartService as any,
       d.vehicleServiceService as any,
       d.budgetVehicleServiceService as any,
-      d.historyService as any
     );
 
     const res = await service.create({
@@ -105,7 +104,6 @@ describe('BudgetService', () => {
       d.budgetVehiclePartService as any,
       d.vehicleServiceService as any,
       d.budgetVehicleServiceService as any,
-      d.historyService as any
     );
 
     await expect(
@@ -139,7 +137,6 @@ describe('BudgetService', () => {
       d.budgetVehiclePartService as any,
       d.vehicleServiceService as any,
       d.budgetVehicleServiceService as any,
-      d.historyService as any
     );
 
     await expect(
@@ -173,7 +170,6 @@ describe('BudgetService', () => {
       d.budgetVehiclePartService as any,
       d.vehicleServiceService as any,
       d.budgetVehicleServiceService as any,
-      d.historyService as any
     );
 
     const res = await service.findById(1);
@@ -193,8 +189,7 @@ describe('BudgetService', () => {
       d.vehiclePartService as any,
       d.budgetVehiclePartService as any,
       d.vehicleServiceService as any,
-      d.budgetVehicleServiceService as any,
-      d.historyService as any
+      d.budgetVehicleServiceService as any
     );
 
     await expect(

@@ -1,3 +1,4 @@
+import { notFound } from '../../../../modules/diagnosis/__tests__/mocks';
 import { IController, HttpRequest, HttpResponse } from '../../../../shared/http/Controller';
 import { badRequest } from '../../../../shared/http/HttpError';
 import { IServiceOrderService } from '../../application/ServiceOrderService';
@@ -10,7 +11,11 @@ export class GetServiceOrderController implements IController {
       throw badRequest('ID is required');
     }
 
-    const created = await this.service.findById(req.params.id);
+    if (!req.user) {
+      throw notFound('User not found');
+    }
+
+    const created = await this.service.findById(req.params.id, req.user);
 
     return {
       status: 200,

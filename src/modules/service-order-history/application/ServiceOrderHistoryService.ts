@@ -1,5 +1,8 @@
 import { IServiceOrderHistoryRepository } from '../domain/IServiceOrderHistoryRepository';
 import { ServiceOrderHistoryEntity } from '../domain/ServiceOrderHistory';
+import { IEmailService } from '../../../shared/mail/EmailService';
+import { IServiceOrderRepository } from '../../service-order/domain/IServiceOrderRepository';
+import { IUserRepository } from '../../user/domain/IUserRepository';
 
 export interface LogStatusChangeInput {
   idServiceOrder: number;
@@ -16,16 +19,57 @@ export interface IServiceOrderHistoryService {
 }
 
 export class ServiceOrderHistoryService implements IServiceOrderHistoryService {
-  constructor(private readonly repo: IServiceOrderHistoryRepository) {}
+  constructor(
+    private readonly repo: IServiceOrderHistoryRepository,
+    private readonly emailService?: IEmailService,
+    private readonly serviceOrderRepo?: IServiceOrderRepository,
+    private readonly userRepo?: IUserRepository
+  ) {}
 
   async logStatusChange(input: LogStatusChangeInput): Promise<ServiceOrderHistoryOutput> {
     const entity = ServiceOrderHistoryEntity.create(input);
     const saved = await this.repo.log(entity);
+    await this.sendStatusChangeEmail(saved, input);
+
     return saved.toJSON();
   }
 
   async listByServiceOrder(idServiceOrder: number): Promise<ServiceOrderHistoryOutput[]> {
     const items = await this.repo.listByServiceOrder(idServiceOrder);
     return items.map(i => i.toJSON());
+  }
+
+  private async sendStatusChangeEmail(
+    history: ServiceOrderHistoryEntity,
+    input: LogStatusChangeInput
+  ) {
+    console.log('sendStatusChangeEmail', { input });
+    if (this.emailService && this.serviceOrderRepo && this.userRepo) {
+      try {
+        const serviceOrder = await this.serviceOrderRepo.findById(input.idServiceOrder);
+        console.log('TOMA', { serviceOrder });
+        if (serviceOrder) {
+          const customerId = serviceOrder.toJSON().customerId;
+          const user = await this.userRepo.findById(customerId);
+          console.log('Customer user for email', { customerId, user });
+          if (user) {
+            const userJson: any = user.toJSON();
+            const to = userJson.email;
+            const subject = `Atualização da OS #${serviceOrder.toJSON().id}`;
+            const html = `<p>Olá ${userJson.name},</p>
+              <p>O status da sua Ordem de Serviço <strong>#${serviceOrder.toJSON().id}</strong> foi alterado.</p>
+              <ul>
+                <li>Status anterior: <strong>${input.oldStatus ?? 'N/A'}</strong></li>
+                <li>Novo status: <strong>${input.newStatus}</strong></li>
+              </ul>
+              <p>Data da alteração: ${history.toJSON().changedAt.toLocaleString()}</p>
+              <p>Esta é uma mensagem automática. Por favor, não responda.</p>`;
+            await this.emailService.send({ to, subject, html, text: `Status alterado de ${input.oldStatus ?? 'N/A'} para ${input.newStatus}` });
+          }
+        }
+      } catch (err) {
+        console.error('[ServiceOrderHistoryService] Failed to send status update email', err);
+      }
+    }
   }
 }

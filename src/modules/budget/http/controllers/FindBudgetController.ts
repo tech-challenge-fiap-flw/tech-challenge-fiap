@@ -1,3 +1,4 @@
+import { notFound } from '../../../../shared/http/HttpError'
 import { IController, HttpRequest, HttpResponse } from '../../../../shared/http/Controller'
 import { IBudgetService } from '../../application/BudgetService'
 
@@ -7,7 +8,11 @@ export class FindBudgetController implements IController {
   async handle(req: HttpRequest): Promise<HttpResponse> {
     const { id } = req.params
 
-    const budget = await this.service.findById(id)
+    if (!req.user) {
+      throw notFound('User not found');
+    }
+
+    const budget = await this.service.findById(id, req.user)
 
     return {
       status: 200,

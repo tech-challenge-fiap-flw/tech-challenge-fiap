@@ -30,9 +30,11 @@ import { DeleteServiceOrderController } from './controllers/DeleteServiceOrderCo
 import { GetServiceOrderController } from './controllers/GetServiceOrderController';
 import { ServiceOrderHistoryMongoRepository } from '../../../modules/service-order-history/infra/ServiceOrderHistoryMongoRepository';
 import { ServiceOrderHistoryService } from '../../../modules/service-order-history/application/ServiceOrderHistoryService';
+import { NodemailerEmailService } from '../../../shared/mail/NodemailerEmailService';
 import { AcceptBudgetServiceOrderController } from './controllers/AcceptBudgetServiceOrderController';
 import { ExecutionTimeServiceOrderController } from './controllers/ExecutionTimeServiceOrderController';
 import { AverageExecutionTimeServiceOrderController } from './controllers/AverageExecutionTimeServiceOrderController';
+import { requireRole } from '../../../modules/auth/RoleMiddleware';
 
 const userRepository = new UserMySqlRepository();
 const userPasswordHasher = new BcryptPasswordHasher();
@@ -57,7 +59,8 @@ const budgetVehicleServiceRepo = new BudgetVehicleServiceMySqlRepository();
 const budgetVehicleServiceService = new BudgetVehicleServiceService(budgetVehicleServiceRepo);
 
 const historyRepository = new ServiceOrderHistoryMongoRepository();
-const historyService = new ServiceOrderHistoryService(historyRepository);
+const emailService = new NodemailerEmailService();
+const historyService = new ServiceOrderHistoryService(historyRepository, emailService, new ServiceOrderMySqlRepository(), userRepository);
 
 const budgetRepository = new BudgetMySqlRepository();
 const budgetService = new BudgetService(
@@ -68,7 +71,6 @@ const budgetService = new BudgetService(
   budgetVehiclePartService,
   vehicleServiceService,
   budgetVehicleServiceService,
-  historyService
 );
 
 const repository = new ServiceOrderMySqlRepository();
@@ -84,13 +86,13 @@ const service = new ServiceOrderService(
 export const serviceOrderRouter = Router();
 
 serviceOrderRouter.post('/', authMiddleware, adaptExpress(new CreateServiceOrderController(service)));
-serviceOrderRouter.delete('/:id', authMiddleware, adaptExpress(new DeleteServiceOrderController(service)));
+serviceOrderRouter.delete('/:id', authMiddleware, requireRole('admin'), adaptExpress(new DeleteServiceOrderController(service)));
 serviceOrderRouter.get('/:id', authMiddleware, adaptExpress(new GetServiceOrderController(service)));
-serviceOrderRouter.post('/:id/accept', authMiddleware, adaptExpress(new AcceptServiceOrderController(service)));
-serviceOrderRouter.post('/:id/budget', authMiddleware, adaptExpress(new AssignBudgetServiceOrderController(service)));
-serviceOrderRouter.post('/:id/start', authMiddleware, adaptExpress(new StartRepairServiceOrderController(service)));
-serviceOrderRouter.post('/:id/finish', authMiddleware, adaptExpress(new FinishRepairServiceOrderController(service)));
+serviceOrderRouter.post('/:id/accept', authMiddleware, requireRole('admin'), adaptExpress(new AcceptServiceOrderController(service)));
+serviceOrderRouter.post('/:id/budget', authMiddleware, requireRole('admin'), adaptExpress(new AssignBudgetServiceOrderController(service)));
+serviceOrderRouter.post('/:id/start', authMiddleware, requireRole('admin'), adaptExpress(new StartRepairServiceOrderController(service)));
+serviceOrderRouter.post('/:id/finish', authMiddleware, requireRole('admin'), adaptExpress(new FinishRepairServiceOrderController(service)));
 serviceOrderRouter.post('/:id/delivered', authMiddleware, adaptExpress(new DeliveredServiceOrderController(service)));
 serviceOrderRouter.post('/:id/accept-budget', authMiddleware, adaptExpress(new AcceptBudgetServiceOrderController(service)));
-serviceOrderRouter.get('/:id/execution-time', authMiddleware, adaptExpress(new ExecutionTimeServiceOrderController(service)));
-serviceOrderRouter.get('/execution-time/average', authMiddleware, adaptExpress(new AverageExecutionTimeServiceOrderController(service)));
+serviceOrderRouter.get('/:id/execution-time', authMiddleware, requireRole('admin'), adaptExpress(new ExecutionTimeServiceOrderController(service)));
+serviceOrderRouter.get('/execution-time/average', authMiddleware, requireRole('admin'), adaptExpress(new AverageExecutionTimeServiceOrderController(service)));

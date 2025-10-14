@@ -19,9 +19,8 @@ import { DiagnosisService } from '../../../modules/diagnosis/application/Diagnos
 import { VehicleMySqlRepository } from '../../../modules/vehicle/infra/VehicleMySqlRepository';
 import { VehicleService } from '../../../modules/vehicle/application/VehicleService';
 import { DiagnosisMySqlRepository } from '../../../modules/diagnosis/infra/DiagnosisMySqlRepository';
-import { ServiceOrderHistoryMongoRepository } from '../../service-order-history/infra/ServiceOrderHistoryMongoRepository';
-import { ServiceOrderHistoryService } from '../../service-order-history/application/ServiceOrderHistoryService';
 import { FindBudgetController } from './controllers/FindBudgetController';
+import { requireRole } from '../../../modules/auth/RoleMiddleware';
 
 const budgetRepo = new BudgetMySqlRepository();
 
@@ -47,9 +46,6 @@ const budgetVehicleServiceService = new BudgetVehicleServiceService(budgetVehicl
 const diagnosisRepo = new DiagnosisMySqlRepository();
 const diagnosisService = new DiagnosisService(diagnosisRepo, vehicleService, userService);
 
-const serviceOrderHistoryRepo = new ServiceOrderHistoryMongoRepository();
-const serviceOrderHistoryService = new ServiceOrderHistoryService(serviceOrderHistoryRepo);
-
 const budgetService = new BudgetService(
   budgetRepo,
   userService,
@@ -58,10 +54,9 @@ const budgetService = new BudgetService(
   budgetVehiclePartService,
   vehicleServiceService,
   budgetVehicleServiceService,
-  serviceOrderHistoryService
 );
 
 export const budgetRouter = Router();
 
-budgetRouter.post('/', authMiddleware, adaptExpress(new CreateBudgetController(budgetService)));
+budgetRouter.post('/', authMiddleware, requireRole('admin'), adaptExpress(new CreateBudgetController(budgetService)));
 budgetRouter.get('/:id', authMiddleware, adaptExpress(new FindBudgetController(budgetService)));

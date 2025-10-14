@@ -3,12 +3,16 @@ import express from 'express';
 import { vehiclePartRouter } from '../http/vehicle-part.routes';
 import * as mysql from '../../../infra/db/mysql';
 
-jest.mock(
-  '../../auth/AuthMiddleware',
-  () => ({
-    authMiddleware: (_req: any, _res: any, next: any) => next()
-  })
-);
+const authMiddlewareMock = jest.fn((req: any, _res: any, next: any) => { req.user = { sub: 1, type: 'admin' }; next(); });
+const roleMiddlewareMock = jest.fn((_req: any, _res: any, next: any) => next());
+
+jest.mock('../../auth/AuthMiddleware', () => ({
+  authMiddleware: (...args: any[]) => authMiddlewareMock(...args as [any, any, any])
+}));
+
+jest.mock('../../auth/RoleMiddleware', () => ({
+  requireRole: () => (...args: any[]) => roleMiddlewareMock(...args as [any, any, any])
+}));
 
 jest.mock('../../../infra/db/mysql');
 
@@ -22,6 +26,8 @@ describe('vehicle-part routes', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
+    authMiddlewareMock.mockImplementation((req: any, _res: any, next: any) => { req.user = { sub: 1, type: 'admin' }; next(); });
+    roleMiddlewareMock.mockImplementation((_req: any, _res: any, next: any) => next());
   });
 
   it('POST /vehicle-parts cria peça', async () => {
@@ -41,6 +47,8 @@ describe('vehicle-part routes', () => {
 
     expect(res.status).toBe(201);
     expect(res.body.id).toBe(42);
+    expect(authMiddlewareMock).toHaveBeenCalled();
+    expect(roleMiddlewareMock).toHaveBeenCalled();
   });
 
   it('POST /vehicle-parts retorna 400 em validação', async () => {
@@ -75,6 +83,8 @@ describe('vehicle-part routes', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.id).toBe(1);
+    expect(authMiddlewareMock).toHaveBeenCalled();
+    expect(roleMiddlewareMock).toHaveBeenCalled();
   });
 
   it('GET /vehicle-parts/:id not found', async () => {
@@ -109,6 +119,8 @@ describe('vehicle-part routes', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.name).toBe('Atualizada');
+    expect(authMiddlewareMock).toHaveBeenCalled();
+    expect(roleMiddlewareMock).toHaveBeenCalled();
   });
 
   it('PUT /vehicle-parts/:id validação inválida', async () => {
@@ -140,6 +152,8 @@ describe('vehicle-part routes', () => {
     const res = await request(app).delete('/vehicle-parts/1');
 
     expect(res.status).toBe(204);
+    expect(authMiddlewareMock).toHaveBeenCalled();
+    expect(roleMiddlewareMock).toHaveBeenCalled();
   });
 
   it('GET /vehicle-parts lista paginada', async () => {
@@ -167,5 +181,25 @@ describe('vehicle-part routes', () => {
     expect(res.status).toBe(200);
     expect(res.body.items.length).toBe(1);
     expect(res.body.total).toBe(1);
+    expect(authMiddlewareMock).toHaveBeenCalled();
+    expect(roleMiddlewareMock).toHaveBeenCalled();
+  });
+
+  it('POST /vehicle-parts retorna 403 sem role admin', async () => {
+    authMiddlewareMock.mockImplementationOnce((req: any, _res: any, next: any) => { req.user = { sub: 2, type: 'customer' }; next(); });
+    roleMiddlewareMock.mockImplementationOnce((_req: any, res: any, _next: any) => res.status(403).json({ error: 'Forbidden' }));
+
+    const res = await request(app)
+      .post('/vehicle-parts')
+      .send({
+        type: 'ENGINE',
+        name: 'Filtro',
+        description: 'Descricao longa ok',
+        quantity: 1,
+        price: 10
+      });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toBe('Forbidden');
   });
 });

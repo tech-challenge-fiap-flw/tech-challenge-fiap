@@ -22,5 +22,5 @@ userRouter.post('/', adaptExpress(new CreateUserController(service)));
 userRouter.put('/', authMiddleware, adaptExpress(new UpdateCurrentUserController(service)));
 userRouter.delete('/', authMiddleware, adaptExpress(new DeleteCurrentUserController(service)));
 userRouter.get('/me', authMiddleware, adaptExpress(new GetUserProfileController(service)));
-userRouter.get('/:id', authMiddleware, adaptExpress(new GetUserByIdController(service)));
+userRouter.get('/:id', authMiddleware, requireRole('admin'), adaptExpress(new GetUserByIdController(service)));
 userRouter.get('/', authMiddleware, requireRole('admin'), adaptExpress(new ListUsersController(service)));

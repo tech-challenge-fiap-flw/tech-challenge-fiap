@@ -25,7 +25,8 @@ describe('budget-vehicle-part.routes (custom lightweight harness)', () => {
     const { CreateBudgetVehiclePartController } = await import('../http/controllers/CreateBudgetVehiclePartController');
     const { adaptExpress } = await import('../../../shared/http/Controller');
 
-    const auth = (_req: any, _res: any, next: any) => {
+    const auth = (req: any, _res: any, next: any) => {
+      req.user = { sub: 1, type: 'admin' };
       next();
     };
 
@@ -93,6 +94,7 @@ describe('budget-vehicle-part.routes (actual file import)', () => {
   let app: express.Express;
   let createManyMock: jest.Mock;
   let authMock: jest.Mock;
+  let roleMock: jest.Mock;
 
   beforeEach(async () => {
     jest.resetModules();
@@ -100,12 +102,17 @@ describe('budget-vehicle-part.routes (actual file import)', () => {
     app = express();
     app.use(express.json());
 
-    authMock = jest.fn((_req, _res, next) => {
+    authMock = jest.fn((req, _res, next) => {
+      (req as any).user = { sub: 99, type: 'admin' };
       next();
     });
+    roleMock = jest.fn((_req, _res, next) => next());
 
     jest.doMock('../../auth/AuthMiddleware', () => ({
       authMiddleware: authMock
+    }));
+    jest.doMock('../../auth/RoleMiddleware', () => ({
+      requireRole: () => roleMock
     }));
 
     const repoCreateSpy = jest.fn();
@@ -155,7 +162,8 @@ describe('budget-vehicle-part.routes (actual file import)', () => {
         ]
       });
 
-    expect(authMock).toHaveBeenCalledTimes(1);
+  expect(authMock).toHaveBeenCalledTimes(1);
+  expect(roleMock).toHaveBeenCalledTimes(1);
 
     expect(createManyMock).toHaveBeenCalledWith({
       budgetId: 2,
@@ -180,6 +188,7 @@ describe('budget-vehicle-part.routes (actual file import)', () => {
   });
 
   it('should return 400 when quantity invalid (0)', async () => {
+    authMock.mockImplementationOnce((req, _res, next) => { (req as any).user = { sub: 99, type: 'admin' }; next(); });
     const res = await request(app)
       .post('/budget-vehicle-parts')
       .send({
@@ -198,6 +207,7 @@ describe('budget-vehicle-part.routes (actual file import)', () => {
   });
 
   it('should return 500 when service throws unexpected error', async () => {
+    authMock.mockImplementationOnce((req, _res, next) => { (req as any).user = { sub: 99, type: 'admin' }; next(); });
     createManyMock.mockRejectedValueOnce(new Error('boom'));
 
     const res = await request(app)
@@ -214,5 +224,35 @@ describe('budget-vehicle-part.routes (actual file import)', () => {
 
     expect(res.status).toBe(500);
     expect(res.body.error).toBe('Internal server error');
+  });
+
+  it('should return 403 when user without admin role', async () => {
+    authMock.mockImplementationOnce((req, _res, next) => { (req as any).user = { sub: 77, type: 'customer' }; next(); });
+    roleMock.mockImplementationOnce((_req, res, _next) => res.status(403).json({ error: 'Forbidden' }));
+
+    const res = await request(app)
+      .post('/budget-vehicle-parts')
+      .send({
+        budgetId: 2,
+        parts: [ { vehiclePartId: 33, quantity: 1 } ]
+      });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toBe('Forbidden');
+    expect(createManyMock).not.toHaveBeenCalled();
+  });
+
+  it('should return 400 when parts array empty (actual file import)', async () => {
+    authMock.mockImplementationOnce((req, _res, next) => { (req as any).user = { sub: 1, type: 'admin' }; next(); });
+    const res = await request(app)
+      .post('/budget-vehicle-parts')
+      .send({
+        budgetId: 2,
+        parts: []
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Validation failed');
+    expect(createManyMock).not.toHaveBeenCalled();
   });
 });

@@ -8,10 +8,13 @@ const makeSut = () => {
 
   const sut = new VehicleService(repo, userSvc);
 
+  const user: any = { sub: 1, type: 'customer' };
+
   return {
     sut,
     repo,
-    userSvc
+    userSvc,
+    user
   };
 };
 
@@ -21,10 +24,13 @@ const makeSutUserNotFound = () => {
 
   const sut = new VehicleService(repo, userSvc);
 
+  const user: any = { sub: 1, type: 'customer' };
+
   return {
     sut,
     repo,
-    userSvc
+    userSvc,
+    user
   };
 };
 
@@ -94,99 +100,99 @@ describe('VehicleService.createVehicle', () => {
 
 describe('VehicleService.updateVehicle', () => {
   it('atualiza veículo existente', async () => {
-    const { sut, repo } = makeSut();
+    const { sut, repo, user } = makeSut();
 
     const existing = makeVehicle();
 
-    repo.update.mockImplementation(async (_id, partial) => {
+    repo.update.mockImplementation(async (_id, partial, _userId) => {
       return makeVehicle({ ...existing.toJSON(), ...partial });
     });
 
-    const result = await sut.updateVehicle(1, { color: 'Green' });
+    const result = await sut.updateVehicle(1, { color: 'Green' }, user);
 
     expect(result!.color).toBe('Green');
   });
 
   it('erro se veículo não encontrado', async () => {
-    const { sut, repo } = makeSut();
+  const { sut, repo, user } = makeSut();
 
-    repo.update.mockResolvedValueOnce(null as any);
+  repo.update.mockResolvedValueOnce(null as any);
 
     await expect(() =>
-      sut.updateVehicle(1, { color: 'Purple' })
+      sut.updateVehicle(1, { color: 'Purple' }, user)
     ).rejects.toBeInstanceOf(NotFoundServerException);
   });
 });
 
 describe('VehicleService.deleteVehicle', () => {
   it('soft delete após encontrar veículo', async () => {
-    const { sut, repo } = makeSut();
+  const { sut, repo, user } = makeSut();
 
     const existing = makeVehicle();
 
-    repo.findById.mockResolvedValue(existing);
+  repo.findById.mockResolvedValue(existing);
 
-    await sut.deleteVehicle(1);
+  await sut.deleteVehicle(1, user);
 
     expect(repo.softDelete).toHaveBeenCalledWith(1);
   });
 
   it('erro se veículo não existe', async () => {
-    const { sut, repo } = makeSut();
+  const { sut, repo, user } = makeSut();
 
     repo.findById.mockResolvedValue(null);
 
     await expect(() =>
-      sut.deleteVehicle(1)
+      sut.deleteVehicle(1, user)
     ).rejects.toBeInstanceOf(NotFoundServerException);
   });
 });
 
 describe('VehicleService.findById', () => {
   it('retorna veículo', async () => {
-    const { sut, repo } = makeSut();
+  const { sut, repo, user } = makeSut();
 
     const existing = makeVehicle({ id: 5 });
 
-    repo.findById.mockResolvedValue(existing);
+  repo.findById.mockResolvedValue(existing);
 
-    const result = await sut.findById(5);
+  const result = await sut.findById(5, user);
 
     expect(result.id).toBe(5);
   });
 
   it('erro not found', async () => {
-    const { sut, repo } = makeSut();
+  const { sut, repo, user } = makeSut();
 
     repo.findById.mockResolvedValue(null);
 
     await expect(() =>
-      sut.findById(5)
+      sut.findById(5, user)
     ).rejects.toBeInstanceOf(NotFoundServerException);
   });
 });
 
 describe('VehicleService.list & countAll', () => {
   it('lista veículos', async () => {
-    const { sut, repo } = makeSut();
+  const { sut, repo, user } = makeSut();
 
     repo.list.mockResolvedValue([
       makeVehicle({ id: 1 }),
       makeVehicle({ id: 2, idPlate: 'DEF5678' })
     ]);
 
-    const result = await sut.list(0, 10);
+  const result = await sut.list(0, 10, user);
 
     expect(result).toHaveLength(2);
     expect(result[1].idPlate).toBe('DEF5678');
   });
 
   it('countAll retorna número', async () => {
-    const { sut, repo } = makeSut();
+  const { sut, repo, user } = makeSut();
 
     repo.countAll.mockResolvedValue(7);
 
-    const count = await sut.countAll();
+  const count = await sut.countAll(user);
 
     expect(count).toBe(7);
   });

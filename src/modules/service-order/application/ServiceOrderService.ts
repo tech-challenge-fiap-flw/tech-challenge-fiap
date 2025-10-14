@@ -31,7 +31,7 @@ export type AssignBudgetServiceOrderInput = Omit<CreateServiceOrderInput, 'vehic
 
 export interface IServiceOrderService {
   create(user: AuthPayload, input: CreateServiceOrderInput): Promise<CreateServiceOrderOutput>;
-  findById(id: number): Promise<CreateServiceOrderOutput>;
+  findById(id: number, user?: AuthPayload): Promise<CreateServiceOrderOutput>;
   delete(id: number): Promise<void>;
   accept(mechanic: AuthPayload, id: number, input: AcceptServiceOrderInput): Promise<CreateServiceOrderOutput>;
   assignBudget(mechanic: AuthPayload, id: number, input: AssignBudgetServiceOrderInput): Promise<CreateServiceOrderOutput>;
@@ -55,8 +55,10 @@ export class ServiceOrderService implements IServiceOrderService {
     private readonly historyService: IServiceOrderHistoryService
   ) {}
 
-  async findById(id: number): Promise<CreateServiceOrderOutput> {
-    const serviceOrder = await this.repo.findById(id);
+  async findById(id: number, user?: AuthPayload): Promise<CreateServiceOrderOutput> {
+    const userId = user ? this.checkUserPermission(user) : undefined;
+
+    const serviceOrder = await this.repo.findById(id, userId);
 
     if (!serviceOrder) {
       throw new NotFoundServerException('Service Order not found');
@@ -435,5 +437,9 @@ export class ServiceOrderService implements IServiceOrderService {
     const sum = times.reduce((acc, cur) => acc + cur, 0);
 
     return { averageExecutionTimeMs: sum / times.length };
+  }
+
+  private checkUserPermission(user: AuthPayload): number | undefined {
+    return user.type !== 'admin' ? user.sub : undefined
   }
 }

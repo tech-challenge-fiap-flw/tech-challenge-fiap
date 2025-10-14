@@ -1,6 +1,4 @@
-import type { Config } from 'jest';
-
-const config: Config = {
+const config = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
@@ -18,6 +16,7 @@ const config: Config = {
   ],
 
   coverageDirectory: 'coverage',
+  setupFiles: ['<rootDir>/.jest/setup-env.ts'],
 };
 
 export default config;

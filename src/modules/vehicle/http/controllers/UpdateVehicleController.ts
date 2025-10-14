@@ -1,3 +1,4 @@
+import { notFound } from '../../../../modules/diagnosis/__tests__/mocks';
 import { IController, HttpRequest, HttpResponse } from '../../../../shared/http/Controller';
 import { badRequest } from '../../../../shared/http/HttpError';
 import { IVehicleService } from '../../application/VehicleService';
@@ -15,7 +16,11 @@ export class UpdateVehicleController implements IController {
       throw badRequest('Validation failed', parsed.error.format());
     }
 
-    const updated = await this.service.updateVehicle(id, parsed.data);
+    if (!req.user) {
+      throw notFound('User not found');
+    }
+
+    const updated = await this.service.updateVehicle(id, parsed.data, req.user);
 
     return {
       status: 200,

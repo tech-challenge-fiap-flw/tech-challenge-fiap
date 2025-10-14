@@ -3,6 +3,7 @@ import express from 'express';
 
 let serviceMocks: any;
 let authMock: jest.Mock;
+let roleMock: jest.Mock;
 
 describe('vehicle-service.routes', () => {
   let app: express.Express;
@@ -11,9 +12,11 @@ describe('vehicle-service.routes', () => {
     jest.resetModules();
     jest.clearAllMocks();
 
-    authMock = jest.fn((_req, _res, next) => {
+    authMock = jest.fn((req, _res, next) => {
+      (req as any).user = { sub: 1, type: 'admin' };
       next();
     });
+    roleMock = jest.fn((_req, _res, next) => next());
 
     serviceMocks = {
       createVehicleService: jest.fn(),
@@ -24,9 +27,8 @@ describe('vehicle-service.routes', () => {
       countAll: jest.fn()
     };
 
-    jest.doMock('../../auth/AuthMiddleware', () => {
-      return { authMiddleware: authMock };
-    });
+    jest.doMock('../../auth/AuthMiddleware', () => ({ authMiddleware: authMock }));
+    jest.doMock('../../auth/RoleMiddleware', () => ({ requireRole: () => roleMock }));
 
     jest.doMock('../application/VehicleServiceService', () => {
       return {
@@ -69,6 +71,8 @@ describe('vehicle-service.routes', () => {
 
     expect(res.status).toBe(201);
     expect(serviceMocks.createVehicleService).toHaveBeenCalled();
+    expect(authMock).toHaveBeenCalled();
+    expect(roleMock).toHaveBeenCalled();
   });
 
   it('POST /vehicle-services 400 validation', async () => {
@@ -96,6 +100,7 @@ describe('vehicle-service.routes', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.id).toBe(5);
+    expect(authMock).toHaveBeenCalled();
   });
 
   it('PUT /vehicle-services/:id 200', async () => {
@@ -114,6 +119,7 @@ describe('vehicle-service.routes', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.name).toBe('Y');
+    expect(roleMock).toHaveBeenCalled();
   });
 
   it('PUT /vehicle-services/:id 400 validation', async () => {
@@ -134,6 +140,7 @@ describe('vehicle-service.routes', () => {
       .delete('/vehicle-services/7');
 
     expect(res.status).toBe(204);
+    expect(roleMock).toHaveBeenCalled();
   });
 
   it('GET /vehicle-services lista paginação', async () => {
@@ -153,5 +160,19 @@ describe('vehicle-service.routes', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.items.length).toBe(1);
+    expect(authMock).toHaveBeenCalled();
+  });
+
+  it('POST /vehicle-services 403 sem role admin', async () => {
+    authMock.mockImplementationOnce((req, _res, next) => { (req as any).user = { sub: 2, type: 'customer' }; next(); });
+    roleMock.mockImplementationOnce((_req, res, _next) => res.status(403).json({ error: 'Forbidden' }));
+
+    const res = await request(app)
+      .post('/vehicle-services')
+      .send({ name: 'S', price: 10, description: null });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toBe('Forbidden');
+    expect(serviceMocks.createVehicleService).not.toHaveBeenCalled();
   });
 });
