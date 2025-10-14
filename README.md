@@ -49,6 +49,23 @@ Infraestrutura e deploy são totalmente automatizados com:
    ```bash
    API: http://localhost:3000
    ```
+   
+## ☸️ Deploy em Kubernetes (Docker Desktop)  
+
+### 📦 Estrutura Kubernetes
+Os manifests YAML estão na pasta `k8s/`:
+- `app-deployment.yaml`
+- `app-service.yaml`
+- `hpa.yaml`
+- `configmap.yaml`
+- `mysql-deployment.yaml / mysql-service.yaml`
+- `mongo-deployment.yaml / mongo-service.yaml`
+
+### 🧭 Passos para Deploy Manual
+1. **Verifique se o Kubernetes está ativo no Docker Desktop**
+   ```bash
+   kubectl config current-context
+   ```
 
 2. **Criar a imagem `lastest`**   
    ```bash
