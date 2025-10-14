@@ -11,6 +11,7 @@
     "start": "node dist/server.js",
     "start:dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "start:prod": "node dist/server.js",
+    "sonar": "sonar-scanner",
     "lint": "eslint \"src/**/*.ts\" --fix",
     "test": "jest --passWithNoTests",
     "test:watch": "jest --watch",
