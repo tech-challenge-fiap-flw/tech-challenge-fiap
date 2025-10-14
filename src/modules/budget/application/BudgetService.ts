@@ -7,7 +7,6 @@ import { IVehicleServiceService } from '../../vehicle-service/application/Vehicl
 import { ForbiddenServerException, NotFoundServerException } from '../../../shared/application/ServerException';
 import { IUserService } from '../../../modules/user/application/UserService';
 import { IDiagnosisService } from '../../../modules/diagnosis/application/DiagnosisService';
-import { IServiceOrderHistoryService } from '../../../modules/service-order-history/application/ServiceOrderHistoryService';
 
 export type VehiclePartQuantity = {
   vehiclePartId: number;
@@ -39,7 +38,6 @@ export class BudgetService implements IBudgetService {
     private readonly budgetVehiclePartService: IBudgetVehiclePartService,
     private readonly vehicleServiceService: IVehicleServiceService,
     private readonly budgetVehicleServiceService: IBudgetVehicleServiceService,
-    private readonly historyService: IServiceOrderHistoryService,
   ) {}
 
   async create(input: CreateBudgetInput): Promise<BudgetOutput> {

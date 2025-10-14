@@ -2,7 +2,10 @@ import request from 'supertest';
 import express from 'express';
 
 let serviceCreateMock: jest.Mock;
+let executionTimeMock: jest.Mock;
+let averageExecutionTimeMock: jest.Mock;
 let authMock: jest.Mock;
+let Exceptions: any;
 
 describe('service-order.routes', () => {
   let app: express.Express;
@@ -11,11 +14,13 @@ describe('service-order.routes', () => {
     jest.resetModules();
     jest.clearAllMocks();
 
-    serviceCreateMock = jest.fn();
+  serviceCreateMock = jest.fn();
+  executionTimeMock = jest.fn();
+  averageExecutionTimeMock = jest.fn();
     authMock = jest.fn((_req, _res, next) => { (_req as any).user = { sub: 1 }; next(); });
 
     jest.doMock('../../auth/AuthMiddleware', () => ({ authMiddleware: authMock }));
-    jest.doMock('../application/ServiceOrderService', () => ({ ServiceOrderService: class { create = serviceCreateMock } }));
+    jest.doMock('../application/ServiceOrderService', () => ({ ServiceOrderService: class { create = serviceCreateMock; getExecutionTimeById = executionTimeMock; getAverageExecutionTime = averageExecutionTimeMock; } }));
 
     const emptyClass = class {};
     jest.doMock('../infra/ServiceOrderMySqlRepository', () => ({ ServiceOrderMySqlRepository: emptyClass }));
@@ -40,6 +45,7 @@ describe('service-order.routes', () => {
     jest.doMock('../../service-order-history/application/ServiceOrderHistoryService', () => ({ ServiceOrderHistoryService: emptyClass }));
 
     const { serviceOrderRouter } = await import('../http/service-order.routes');
+    Exceptions = await import('../../../shared/application/ServerException');
 
     app = express();
     app.use(express.json());
@@ -64,5 +70,33 @@ describe('service-order.routes', () => {
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('Validation failed');
     expect(serviceCreateMock).not.toHaveBeenCalled();
+  });
+
+  it('GET /service-orders/:id/execution-time retorna tempo', async () => {
+    executionTimeMock.mockResolvedValue({ executionTimeMs: 5000 });
+    const res = await request(app).get('/service-orders/10/execution-time');
+    expect(res.status).toBe(200);
+    expect(res.body.executionTimeMs).toBe(5000);
+  });
+
+  it('GET /service-orders/:id/execution-time retorna 400 quando erro de negócio', async () => {
+    executionTimeMock.mockRejectedValue(new Exceptions.BadRequestServerException('Histórico da OS não encontrado.'));
+    const res = await request(app).get('/service-orders/11/execution-time');
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Histórico da OS não encontrado.');
+  });
+
+  it('GET /service-orders/execution-time/average retorna média', async () => {
+    averageExecutionTimeMock.mockResolvedValue({ averageExecutionTimeMs: 3000 });
+    const res = await request(app).get('/service-orders/execution-time/average');
+    expect(res.status).toBe(200);
+    expect(res.body.averageExecutionTimeMs).toBe(3000);
+  });
+
+  it('GET /service-orders/execution-time/average retorna 400 quando erro de negócio', async () => {
+    averageExecutionTimeMock.mockRejectedValue(new Exceptions.BadRequestServerException('Nenhuma OS ativa encontrada.'));
+    const res = await request(app).get('/service-orders/execution-time/average');
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Nenhuma OS ativa encontrada.');
   });
 });
