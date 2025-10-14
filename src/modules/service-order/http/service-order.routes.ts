@@ -68,7 +68,6 @@ const budgetService = new BudgetService(
   budgetVehiclePartService,
   vehicleServiceService,
   budgetVehicleServiceService,
-  historyService
 );
 
 const repository = new ServiceOrderMySqlRepository();
