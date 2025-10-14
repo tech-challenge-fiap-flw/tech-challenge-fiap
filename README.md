@@ -189,5 +189,32 @@ http://localhost:3000/api
 Há um documento separado com 5 fluxos de testes completos, cobrindo cenários felizes e de erro.
 🔗 [Acessar os fluxos de teste](./TEST_FLOWS.md)
 
+## 🧊 Collection Postman
+[tech_challenge.postman_collection.json](./tech_challenge.postman_collection.json)
+
+## ✉️ Notificações por E-mail de Status da OS
+O histórico de mudanças de status de uma Ordem de Serviço agora dispara um e-mail automático para o cliente (dono da OS) utilizando **Nodemailer** e SMTP.
+
+### Variáveis de Ambiente Necessárias
+Adicione ao seu `.env`:
+
+```
+EMAIL_HOST=smtp.seuprovedor.com
+EMAIL_PORT=587
+EMAIL_USER=seu_usuario
+EMAIL_PASS=seu_password
+EMAIL_FROM="Nome da Oficina <no-reply@seu-dominio.com>"
+```
+
+Se alguma variável crítica estiver ausente, o sistema continuará funcionando mas os e-mails serão ignorados (um aviso será exibido no log).
+
+### Personalização do Conteúdo
+O conteúdo padrão inclui: número da OS, status anterior e novo status, além da data da alteração. Ajustes podem ser feitos em `src/modules/service-order-history/application/ServiceOrderHistoryService.ts`.
+
+### Testes
+Os testes de `ServiceOrderHistoryService` agora validam que o serviço de e-mail é chamado quando apropriado.
+
+---
+
 ## ✏️ Arquitetura Infraestrutura
 ![Alt text](arquitetura-infra.png)
