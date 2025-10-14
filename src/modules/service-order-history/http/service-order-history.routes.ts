@@ -3,11 +3,17 @@ import { adaptExpress } from '../../../shared/http/Controller';
 import { authMiddleware } from '../../auth/AuthMiddleware';
 import { ServiceOrderHistoryMongoRepository } from '../infra/ServiceOrderHistoryMongoRepository';
 import { ServiceOrderHistoryService } from '../application/ServiceOrderHistoryService';
+import { NodemailerEmailService } from '../../../shared/mail/NodemailerEmailService';
+import { ServiceOrderMySqlRepository } from '../../service-order/infra/ServiceOrderMySqlRepository';
+import { UserMySqlRepository } from '../../user/infra/UserMySqlRepository';
 import { LogServiceOrderHistoryController } from './controllers/LogServiceOrderHistoryController';
 import { ListServiceOrderHistoryController } from './controllers/ListServiceOrderHistoryController';
 
 const repository = new ServiceOrderHistoryMongoRepository();
-const service = new ServiceOrderHistoryService(repository);
+const emailService = new NodemailerEmailService();
+const serviceOrderRepo = new ServiceOrderMySqlRepository();
+const userRepo = new UserMySqlRepository();
+const service = new ServiceOrderHistoryService(repository, emailService, serviceOrderRepo, userRepo);
 
 export const serviceOrderHistoryRouter = Router();
 

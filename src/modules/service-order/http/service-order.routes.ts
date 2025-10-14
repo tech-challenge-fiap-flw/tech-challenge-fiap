@@ -30,6 +30,7 @@ import { DeleteServiceOrderController } from './controllers/DeleteServiceOrderCo
 import { GetServiceOrderController } from './controllers/GetServiceOrderController';
 import { ServiceOrderHistoryMongoRepository } from '../../../modules/service-order-history/infra/ServiceOrderHistoryMongoRepository';
 import { ServiceOrderHistoryService } from '../../../modules/service-order-history/application/ServiceOrderHistoryService';
+import { NodemailerEmailService } from '../../../shared/mail/NodemailerEmailService';
 import { AcceptBudgetServiceOrderController } from './controllers/AcceptBudgetServiceOrderController';
 
 const userRepository = new UserMySqlRepository();
@@ -55,7 +56,8 @@ const budgetVehicleServiceRepo = new BudgetVehicleServiceMySqlRepository();
 const budgetVehicleServiceService = new BudgetVehicleServiceService(budgetVehicleServiceRepo);
 
 const historyRepository = new ServiceOrderHistoryMongoRepository();
-const historyService = new ServiceOrderHistoryService(historyRepository);
+const emailService = new NodemailerEmailService();
+const historyService = new ServiceOrderHistoryService(historyRepository, emailService, new ServiceOrderMySqlRepository(), userRepository);
 
 const budgetRepository = new BudgetMySqlRepository();
 const budgetService = new BudgetService(

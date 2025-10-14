@@ -1,6 +1,6 @@
+import 'dotenv/config'; // Load environment variables BEFORE any other imports to ensure availability
 import express, { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
-import dotenv from 'dotenv';
 import { userRouter } from './modules/user/http/user.routes';
 import { vehicleRouter } from './modules/vehicle/http/vehicle.routes';
 import { authRouter } from './modules/auth/auth.routes';
@@ -12,8 +12,6 @@ import { budgetVehiclePartRouter } from './modules/budget-vehicle-part/http/budg
 import { budgetRouter } from './modules/budget/http/budget.routes';
 import { serviceOrderRouter } from './modules/service-order/http/service-order.routes';
 import { serviceOrderHistoryRouter } from './modules/service-order-history/http/service-order-history.routes';
-
-dotenv.config();
 
 const app = express();
 
