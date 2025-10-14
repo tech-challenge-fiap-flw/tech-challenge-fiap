@@ -28,13 +28,21 @@ export class VehicleMySqlRepository implements IVehicleRepository {
     return VehicleEntity.restore({ id: result.insertId, ...data });
   }
 
-  async findById(id: VehicleId): Promise<VehicleEntity | null> {
-    const rows = await mysql.query<IVehicleProps>(`SELECT * FROM vehicles WHERE id = ?`, [id]);
-    
+  async findById(id: VehicleId, userId?: number): Promise<VehicleEntity | null> {
+    let sql = `SELECT * FROM vehicles WHERE id = ?`;
+    const params: any[] = [id];
+
+    if (userId) {
+      sql += ` AND ownerId = ?`;
+      params.push(userId);
+    }
+
+    const rows = await mysql.query<IVehicleProps>(sql, params);
+
     if (rows.length === 0) {
       return null;
     }
-    
+
     return VehicleEntity.restore(rows[0]);
   }
 
@@ -48,26 +56,33 @@ export class VehicleMySqlRepository implements IVehicleRepository {
     return VehicleEntity.restore(rows[0]);
   }
 
-  async update(id: VehicleId, partial: Partial<IVehicleProps>): Promise<VehicleEntity | null> {
+  async update(id: VehicleId, partial: Partial<IVehicleProps>, userId?: number): Promise<VehicleEntity | null> {
     const keys = Object.keys(partial) as (keyof IVehicleProps)[];
-
     const setClause = keys.map((k) => `${k} = ?`).join(', ');
     const params = keys.map((k) => (partial as any)[k]);
     params.push(id);
 
-    await mysql.query<ResultSetHeader>(`UPDATE vehicles SET ${setClause} WHERE id = ?`, params);
-    
-    return await this.findById(id);
+    let sql = `UPDATE vehicles SET ${setClause} WHERE id = ?`;
+
+    if (userId) {
+      sql += ` AND ownerId = ?`;
+      params.push(userId);
+    }
+
+    await mysql.query<ResultSetHeader>(sql, params);
+
+    return await this.findById(id, userId);
   }
 
   async softDelete(id: VehicleId): Promise<void> {
     await mysql.query<ResultSetHeader>(`UPDATE vehicles SET deletedAt = NOW() WHERE id = ?`, [id]);
   }
 
-  async list(offset: number, limit: number): Promise<VehicleEntity[]> {
+  async list(offset: number, limit: number, userId?: number): Promise<VehicleEntity[]> {
     const sql = `
       SELECT * FROM vehicles 
       WHERE deletedAt IS NULL
+      ${userId ? 'AND ownerId = ' + userId : ''}
       ORDER BY id 
       LIMIT ${limit} OFFSET ${offset}
     `;
@@ -77,8 +92,8 @@ export class VehicleMySqlRepository implements IVehicleRepository {
     return rows.map((row) => VehicleEntity.restore(row));
   }
 
-  async countAll(): Promise<number> {
-    const rows = await mysql.query<{ count: number }>(`SELECT COUNT(*) AS count FROM vehicles WHERE deletedAt IS NULL`);
+  async countAll(userId?: number): Promise<number> {
+    const rows = await mysql.query<{ count: number }>(`SELECT COUNT(*) AS count FROM vehicles WHERE deletedAt IS NULL ${userId ? 'AND ownerId = ' + userId : ''}`);
     return Number(rows.at(0)?.count ?? 0);
   }
 }

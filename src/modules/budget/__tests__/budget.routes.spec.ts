@@ -4,6 +4,7 @@ import express from 'express';
 let serviceCreateMock: jest.Mock;
 let serviceFindMock: jest.Mock;
 let authMiddlewareMock: jest.Mock;
+let roleMiddlewareMock: jest.Mock;
 
 describe('budget.routes', () => {
   let app: express.Express;
@@ -18,9 +19,13 @@ describe('budget.routes', () => {
       (req as any).user = { sub: 1, type: 'admin' };
       next();
     });
+    roleMiddlewareMock = jest.fn((_req, _res, next) => next());
 
     jest.doMock('../../auth/AuthMiddleware', () => ({
       authMiddleware: authMiddlewareMock
+    }));
+    jest.doMock('../../auth/RoleMiddleware', () => ({
+      requireRole: () => roleMiddlewareMock
     }));
 
     jest.doMock('../application/BudgetService', () => ({
@@ -77,7 +82,8 @@ describe('budget.routes', () => {
         vehicleServicesIds: []
       });
 
-    expect(authMiddlewareMock).toHaveBeenCalled();
+  expect(authMiddlewareMock).toHaveBeenCalled();
+  expect(roleMiddlewareMock).toHaveBeenCalled();
     expect(serviceCreateMock).toHaveBeenCalled();
     expect(res.status).toBe(201);
     expect(res.body.id).toBe(1);
@@ -111,7 +117,7 @@ describe('budget.routes', () => {
 
     const res = await request(app).get('/budgets/9');
 
-    expect(serviceFindMock).toHaveBeenCalledWith('9');
+  expect(serviceFindMock).toHaveBeenCalledWith('9', { sub: 1, type: 'admin' });
     expect(res.status).toBe(200);
     expect(res.body.id).toBe(9);
   });

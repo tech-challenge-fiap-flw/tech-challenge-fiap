@@ -27,8 +27,16 @@ export class BudgetMySqlRepository extends BaseRepository implements IBudgetRepo
     return BudgetEntity.restore({ ...data, id: result.insertId });
   }
 
-  async findById(id: BudgetId): Promise<BudgetEntity | null> {
-    const rows = await mysql.query<BudgetProps>(`SELECT * FROM budgets WHERE id = ?`, [id]);
+  async findById(id: BudgetId, userId?: number): Promise<BudgetEntity | null> {
+    let sql = `SELECT * FROM budgets WHERE id = ?`;
+    const params: any[] = [id];
+
+    if (userId) {
+      sql += ` AND ownerId = ?`;
+      params.push(userId);
+    }
+
+    const rows = await mysql.query<BudgetProps>(sql, params);
     if (!rows.length) return null;
     return BudgetEntity.restore(rows[0]);
   }

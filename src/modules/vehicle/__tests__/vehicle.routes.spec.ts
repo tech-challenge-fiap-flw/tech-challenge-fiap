@@ -11,7 +11,8 @@ describe('vehicle.routes', () => {
     jest.resetModules();
     jest.clearAllMocks();
 
-    authMock = jest.fn((_req, _res, next) => {
+    authMock = jest.fn((req, _res, next) => {
+      (req as any).user = { sub: 1, type: 'admin' };
       next();
     });
 

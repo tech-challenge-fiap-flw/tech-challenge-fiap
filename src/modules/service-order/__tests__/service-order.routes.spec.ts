@@ -17,7 +17,7 @@ describe('service-order.routes', () => {
   serviceCreateMock = jest.fn();
   executionTimeMock = jest.fn();
   averageExecutionTimeMock = jest.fn();
-    authMock = jest.fn((_req, _res, next) => { (_req as any).user = { sub: 1 }; next(); });
+    authMock = jest.fn((_req, _res, next) => { (_req as any).user = { sub: 1, type: 'admin' }; next(); });
 
     jest.doMock('../../auth/AuthMiddleware', () => ({ authMiddleware: authMock }));
     jest.doMock('../application/ServiceOrderService', () => ({ ServiceOrderService: class { create = serviceCreateMock; getExecutionTimeById = executionTimeMock; getAverageExecutionTime = averageExecutionTimeMock; } }));

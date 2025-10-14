@@ -38,8 +38,16 @@ export class ServiceOrderMySqlRepository extends BaseRepository implements IServ
     return ServiceOrderEntity.restore({ ...data, id: response.insertId });
   }
 
-  async findById(id: ServiceOrderId): Promise<ServiceOrderEntity | null> {
-    const rows = await mysql.query<IServiceOrderProps>(`SELECT * FROM service_orders WHERE id = ?`, [id]);
+  async findById(id: ServiceOrderId, userId?: number): Promise<ServiceOrderEntity | null> {
+    let sql = `SELECT * FROM service_orders WHERE id = ?`;
+    const params: any[] = [id];
+
+    if (userId !== undefined) {
+      sql += ` AND customerId = ?`;
+      params.push(userId);
+    }
+
+    const rows = await mysql.query<IServiceOrderProps>(sql, params);
 
     if (rows.length === 0) {
       return null;

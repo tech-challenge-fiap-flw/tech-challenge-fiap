@@ -7,13 +7,14 @@ import { authMiddleware } from '../../../modules/auth/AuthMiddleware';
 import { UpdateBudgetVehicleServiceController } from './controllers/UpdateBudgetVehicleServiceController';
 import { GetBudgetVehicleServiceController } from './controllers/GetBudgetVehicleServiceController';
 import { DeleteBudgetVehicleServiceController } from './controllers/DeleteCurrentUserController';
+import { requireRole } from '../../../modules/auth/RoleMiddleware';
 
 const repository = new BudgetVehicleServiceMySqlRepository();
 const service = new BudgetVehicleServiceService(repository);
 
 export const budgetVehicleServiceRouter = Router();
 
-budgetVehicleServiceRouter.post('/', adaptExpress(new CreateBudgetVehicleServiceController(service)));
-budgetVehicleServiceRouter.put('/:id', authMiddleware, adaptExpress(new UpdateBudgetVehicleServiceController(service)));
-budgetVehicleServiceRouter.delete('/:id', authMiddleware, adaptExpress(new DeleteBudgetVehicleServiceController(service)));
-budgetVehicleServiceRouter.get('/:id', authMiddleware, adaptExpress(new GetBudgetVehicleServiceController(service)));
+budgetVehicleServiceRouter.post('/', authMiddleware, requireRole('admin'), adaptExpress(new CreateBudgetVehicleServiceController(service)));
+budgetVehicleServiceRouter.put('/:id', authMiddleware, requireRole('admin'), adaptExpress(new UpdateBudgetVehicleServiceController(service)));
+budgetVehicleServiceRouter.delete('/:id', authMiddleware, requireRole('admin'), adaptExpress(new DeleteBudgetVehicleServiceController(service)));
+budgetVehicleServiceRouter.get('/:id', authMiddleware, requireRole('admin'), adaptExpress(new GetBudgetVehicleServiceController(service)));

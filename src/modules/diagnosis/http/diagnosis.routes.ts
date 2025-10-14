@@ -13,6 +13,7 @@ import { VehicleService } from '../../../modules/vehicle/application/VehicleServ
 import { UserMySqlRepository } from '../../../modules/user/infra/UserMySqlRepository';
 import { UserService } from '../../../modules/user/application/UserService';
 import { BcryptPasswordHasher } from '../../../modules/user/infra/BcryptPasswordHasher';
+import { requireRole } from '../../../modules/auth/RoleMiddleware';
 
 const userRepository = new UserMySqlRepository();
 const userPasswordHasher = new BcryptPasswordHasher();
@@ -26,8 +27,8 @@ const service = new DiagnosisService(repository, serviceVehicle, userService);
 
 export const diagnosisRouter = Router();
 
-diagnosisRouter.post('/', authMiddleware, adaptExpress(new CreateDiagnosisController(service)));
-diagnosisRouter.get('/:id', authMiddleware, adaptExpress(new GetDiagnosisController(service)));
-diagnosisRouter.put('/:id', authMiddleware, adaptExpress(new UpdateDiagnosisController(service)));
-diagnosisRouter.delete('/:id', authMiddleware, adaptExpress(new DeleteDiagnosisController(service)));
-diagnosisRouter.get('/', authMiddleware, adaptExpress(new ListDiagnosesController(service)));
+diagnosisRouter.post('/', authMiddleware, requireRole('admin'), adaptExpress(new CreateDiagnosisController(service)));
+diagnosisRouter.get('/:id', authMiddleware, requireRole('admin'), adaptExpress(new GetDiagnosisController(service)));
+diagnosisRouter.put('/:id', authMiddleware, requireRole('admin'), adaptExpress(new UpdateDiagnosisController(service)));
+diagnosisRouter.delete('/:id', authMiddleware, requireRole('admin'), adaptExpress(new DeleteDiagnosisController(service)));
+diagnosisRouter.get('/', authMiddleware, requireRole('admin'), adaptExpress(new ListDiagnosesController(service)));

@@ -5,11 +5,12 @@ import { ServiceOrderHistoryMongoRepository } from '../infra/ServiceOrderHistory
 import { ServiceOrderHistoryService } from '../application/ServiceOrderHistoryService';
 import { LogServiceOrderHistoryController } from './controllers/LogServiceOrderHistoryController';
 import { ListServiceOrderHistoryController } from './controllers/ListServiceOrderHistoryController';
+import { requireRole } from '../../../modules/auth/RoleMiddleware';
 
 const repository = new ServiceOrderHistoryMongoRepository();
 const service = new ServiceOrderHistoryService(repository);
 
 export const serviceOrderHistoryRouter = Router();
 
-serviceOrderHistoryRouter.post('/', authMiddleware, adaptExpress(new LogServiceOrderHistoryController(service)));
-serviceOrderHistoryRouter.get('/:idServiceOrder', authMiddleware, adaptExpress(new ListServiceOrderHistoryController(service)));
+serviceOrderHistoryRouter.post('/', authMiddleware, requireRole('admin'), adaptExpress(new LogServiceOrderHistoryController(service)));
+serviceOrderHistoryRouter.get('/:idServiceOrder', authMiddleware, requireRole('admin'), adaptExpress(new ListServiceOrderHistoryController(service)));
