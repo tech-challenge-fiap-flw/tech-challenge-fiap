@@ -3,8 +3,10 @@ kind: ConfigMap
 metadata:
   name: app-config
 data:
-  DB_HOST: mysql-service
+  # RDS MySQL endpoint - Substitua pelo valor real do projeto 3 (Infra DB)
+  DB_HOST: rds-mysql-endpoint.amazonaws.com
   DB_PORT: "3306"
-  DB_USERNAME: root
   DB_DATABASE: tech_challenge_fiap
-  MONGO_URI: mongodb://mongo-service:27017/tech_challenge_fiap
+  # DocumentDB MongoDB URI - Substitua pelo valor real do projeto 3 (Infra DB), incluindo user/pass via secrets
+  MONGO_URI: mongodb://mongo-user:mongo-pass@docdb-cluster-endpoint.amazonaws.com:27017/tech_challenge_fiap?ssl=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false
+  MONGO_DB: tech_challenge_fiap
