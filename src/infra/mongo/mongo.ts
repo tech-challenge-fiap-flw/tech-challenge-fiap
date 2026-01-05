@@ -11,7 +11,16 @@ export async function getMongo(): Promise<Db> {
   const uri = process.env.MONGO_URI || 'mongodb://localhost:27017/tech_challenge';
   const dbName = process.env.MONGO_DB || 'tech_challenge';
 
-  client = new MongoClient(uri);
+  // Options for AWS DocumentDB compatibility
+  const options = {
+    ssl: true,
+    tls: true,
+    tlsAllowInvalidCertificates: false, // Set to true only for development if needed
+    maxPoolSize: 10,
+    serverSelectionTimeoutMS: 5000,
+  };
+
+  client = new MongoClient(uri, options);
   await client.connect();
 
   db = client.db(dbName);

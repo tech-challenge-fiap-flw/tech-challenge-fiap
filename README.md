@@ -11,28 +11,29 @@ O sistema permite o registro de veículos, criação e gerenciamento de ordens d
 - **Controle de estoque** de peças e materiais
 - **Registro de histórico de alterações** de status (MongoDB)
 - **Autenticação e autorização** com controle de permissões via *roles* (`admin`, `mechanic`)
-- **Documentação automática da API** via Swagger
 
 ---
 
 ## 🧩 Arquitetura Geral
-A aplicação foi desenvolvida em **Node.js** com banco de dados **MySQL** e **MongoDB**.  
-Todo o ambiente é conteinerizado e pode ser executado localmente via **Docker Desktop com Kubernetes ativado**.
+A aplicação foi desenvolvida em **Node.js** com bancos de dados gerenciados na AWS: **RDS (MySQL)** e **DocumentDB (MongoDB)**.  
+A validação de CPF é feita via **Lambda** no **API Gateway**.  
+O deploy é feito em **Kubernetes** na AWS, provisionado via **Terraform**.
 
 Infraestrutura e deploy são totalmente automatizados com:
-- **Docker** e **Docker Compose**
-- **Kubernetes**
-- **Terraform**
+- **Docker** para containerização
+- **Kubernetes** para orquestração
+- **Terraform** para infraestrutura (projetos separados)
 - **GitHub Actions (CI/CD)**
 
 ---
 
-## 🚀 Execução Local (Docker Compose)
+## 🚀 Deploy na AWS
 
 ### 🧱 Pré-requisitos
-- [Docker Desktop](https://www.docker.com/products/docker-desktop) com **Kubernetes ativado**
-- [Node.js](https://nodejs.org/) (para executar testes ou build local)
-- [Git](https://git-scm.com/)
+- Acesso à AWS com permissões para EKS, RDS, DocumentDB, API Gateway, Lambda
+- [kubectl](https://kubernetes.io/docs/tasks/tools/) configurado para o cluster EKS
+- [Terraform](https://www.terraform.io/) (nos projetos de infraestrutura)
+- [Node.js](https://nodejs.org/) (para build local)
 
 ### 🧰 Passos
 1. **Clone o repositório**
@@ -41,61 +42,35 @@ Infraestrutura e deploy são totalmente automatizados com:
    cd tech-challenge-fiap
    ```
 
-2. **Suba os containers**
-   ```bash
-   docker compose up --build
-   ```
+2. **Provisionar infraestrutura (projetos 2 e 3)**
+   - Execute Terraform nos projetos de Infra K8s e Infra DB para criar EKS, RDS, DocumentDB, API Gateway, Lambda.
 
-3. **Acesse a aplicação**
-   ```bash
-   API: http://localhost:3000
-   Documentação Swagger: http://localhost:3000/api
-   ```   
+3. **Atualizar configurações**
+   - Edite `k8s/configmap.yaml` e `k8s/secrets.yaml` com os endpoints e credenciais reais da AWS.
+   - Substitua placeholders por valores reais (ex: rds-mysql-endpoint.amazonaws.com).
 
-## ☸️ Deploy em Kubernetes (Docker Desktop)  
-
-### 📦 Estrutura Kubernetes
-Os manifests YAML estão na pasta `k8s/`:
-- `app-deployment.yaml`
-- `app-service.yaml`
-- `hpa.yaml`
-- `configmap.yaml`
-- `mysql-deployment.yaml / mysql-service.yaml`
-- `mongo-deployment.yaml / mongo-service.yaml`
-
-### 🧭 Passos para Deploy Manual
-1. **Verifique se o Kubernetes está ativo no Docker Desktop**
-   ```bash
-   kubectl config current-context
-   ```
-
-2. **Criar a imagem `lastest`**   
-   ```bash
-   docker build -t app:latest .
-   ```  
-
-3. **Aplique os manifests**
+4. **Deploy no K8s**
    ```bash
    kubectl apply -f k8s/
-   ```   
+   ```
 
-4. **Verifique os pods e serviços**
-   ```bash
-   kubectl get pods
-   ``` 
+5. **Acesse a aplicação**
+   - Via API Gateway (URL fornecida pelo projeto 2).
 
-4. **Acesse a aplicação**   
-- Como o `Service` é do tipo `ClusterIP`, acesse via `port-forward`:
-   ```bash
-   kubectl port-forward svc/app-service 3000:3000
-   ``` 
-   Caso queira testar, basta acessar http://localhost:3000/health
+## 🛠️ Tecnologias Utilizadas
+- **Node.js** com **Express**
+- **MySQL2** (RDS)
+- **MongoDB Driver** (DocumentDB)
+- **Docker**
+- **JWT** para autenticação
+- **Zod** para validação
 
-## 📈 Escalabilidade Automática (HPA)
-A aplicação utiliza o **Horizontal Pod Autoscaler (HPA)** configurado no arquivo `k8s/hpa.yaml`.
-- Mínimo de pods: 2
-- Máximo de pods: 5
-- Métrica: utilização média de CPU de 50%
+---
+
+## ✅ Testes Automatizados
+O projeto utiliza **Jest** com **TypeScript (ts-jest)** para testes unitários. Os testes atuais cobrem a lógica de domínio e serviços do módulo de usuários, incluindo criação, atualização, remoção lógica, busca, listagem e contagem.
+
+### Scripts Disponíveis
 
 📌 Para testar localmente:
 ```bash
@@ -105,35 +80,21 @@ kubectl get pods
 Simule carga e observe o aumento de réplicas automaticamente.   
 
 ## 🏗️ Provisionamento da Infraestrutura com Terraform 
-Toda a infraestrutura Kubernetes pode ser criada automaticamente com Terraform, conforme definido na pasta `infra/terraform`.
+A infraestrutura AWS (EKS, RDS, DocumentDB) é provisionada automaticamente com Terraform nos projetos 2 e 3.
 
 ### 📋 O que é criado automaticamente
-- Namespace do projeto `(tech-challenge-fiap)`
-- Secrets e ConfigMaps
-- Deployments e Services para:
-- Aplicação principal
-- MySQL
-- MongoDB
-- PVCs para persistência
-- Configuração de réplicas e variáveis de ambiente
+- Cluster EKS
+- RDS MySQL
+- DocumentDB MongoDB
+- API Gateway com Lambda para validação de CPF
 
 ### ⚙️ Passos para provisionar
-1. **Entre na pasta do Terraform**
-   ```bash
-   cd infra/terraform
-   ```
-
-2. **Inicialize o Terraform**
+1. **Nos projetos 2 e 3, execute Terraform**
    ```bash
    terraform init
-   ```   
-
-3. **Valide e visualize o plano**
-   ```bash
    terraform plan
-   ```   
-   
-4. **Aplique a infraestrutura**
+   terraform apply
+   ```
    ```bash
    terraform apply -auto-approve
    ``` 
@@ -175,7 +136,6 @@ npm test
 - Kubernetes
 - Terraform
 - GitHub Actions (CI/CD)
-- Swagger
 - JWT Authentication
 
 ## 🧪 Cenários de Teste
