@@ -63,7 +63,7 @@ jobs:
         run: |
           IMAGE_TAG=${{ github.sha }}
           ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY=tc-fiap-app
+          ECR_REPOSITORY=tech-challenge-app
 
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
