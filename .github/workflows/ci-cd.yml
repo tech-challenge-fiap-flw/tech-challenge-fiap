@@ -53,7 +53,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1  # Substitua pela sua região
+          aws-region: us-east-1
 
       - name: Login to Amazon ECR
         id: login-ecr
@@ -63,7 +63,7 @@ jobs:
         run: |
           IMAGE_TAG=${{ github.sha }}
           ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY=tech-challenge-app  # Substitua pelo nome do repositório ECR
+          ECR_REPOSITORY=tc-fiap-app
 
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
@@ -94,10 +94,10 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1  # Substitua pela sua região
+          aws-region: us-east-1
 
       - name: Update kubeconfig
-        run: aws eks update-kubeconfig --region us-east-1 --name tech-challenge-cluster  # Substitua pelo nome do cluster EKS
+        run: aws eks update-kubeconfig --region us-east-1 --name tc-fiap-${{ github.ref == 'refs/heads/main' && 'prod' || 'staging' }}
 
       - name: Deploy to Kubernetes
         run: |
