@@ -15,6 +15,21 @@ import express, { Request, Response, NextFunction } from 'express';
 
 const app = express();
 
+import { getCollection } from './infra/mongo/mongo';
+// Endpoint de teste para salvar dado no DocumentDB
+app.get('/test-mongo', async (_req: Request, res: Response) => {
+  try {
+    // Conexão com o endpoint real do DocumentDB
+    process.env.MONGO_URI = 'mongodb://docdbadmin:Docdb#1234!@docdb-cluster-staging.cluster-crcq28iy2w6l.us-east-1.docdb.amazonaws.com:27017/?ssl=true&tls=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false';
+    process.env.MONGO_DB = 'tech_challenge';
+    const collection = await getCollection('test_collection');
+    const result = await collection.insertOne({ msg: 'Teste DocumentDB', date: new Date() });
+    res.json({ insertedId: result.insertedId });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
 // app.use(helmet());
 // app.use(express.json());
 
