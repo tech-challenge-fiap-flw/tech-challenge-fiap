@@ -23,7 +23,7 @@ app.get('/test-mongo', async (_req: Request, res: Response) => {
     const mongoUser = 'docdbadmin';
     const mongoPassword = encodeURIComponent('Docdb#1234!');
     const mongoHost = 'docdb-cluster-staging.cluster-crcq28iy2w6l.us-east-1.docdb.amazonaws.com:27017';
-    process.env.MONGO_URI = `mongodb://${mongoUser}:${mongoPassword}@${mongoHost}/?ssl=true&tls=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false&tlsAllowInvalidCertificates=true`;
+    process.env.MONGO_URI = `mongodb://${mongoUser}:${mongoPassword}@${mongoHost}/?replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false&tlsAllowInvalidCertificates=true`;
     const collection = await getCollection('test_collection');
     const result = await collection.insertOne({ msg: 'Teste DocumentDB', date: new Date() });
     res.json({ insertedId: result.insertedId });
