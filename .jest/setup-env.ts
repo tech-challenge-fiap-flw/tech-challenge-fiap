@@ -11,7 +11,8 @@ if (existsSync('.env.test')) {
 }
 
 // Minimal sanity log (won't expose secrets)
+import { logger } from '../src/utils/logger';
+
 if (process.env.EMAIL_HOST) {
-  // eslint-disable-next-line no-console
-  console.log('[JestEnv] EMAIL_HOST loaded');
+  logger.info({ service: 'JestEnv', event: 'EMAIL_HOST loaded' });
 }
