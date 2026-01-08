@@ -12,9 +12,9 @@
     "start:dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "start:prod": "node dist/server.js",
     "lint": "eslint \"src/**/*.ts\" --fix",
-    "test": "jest --passWithNoTests",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test": "NEW_RELIC_ENABLED=false jest --passWithNoTests --forceExit",
+    "test:watch": "NEW_RELIC_ENABLED=false jest --watch",
+    "test:coverage": "NEW_RELIC_ENABLED=false jest --coverage --forceExit"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
