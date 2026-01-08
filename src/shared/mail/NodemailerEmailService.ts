@@ -1,5 +1,6 @@
 import nodemailer, { Transporter } from 'nodemailer';
 import { IEmailService, SendEmailOptions } from './EmailService';
+import { logger } from '../../utils/logger';
 
 export class NodemailerEmailService implements IEmailService {
   private transporter: Transporter;
@@ -11,10 +12,10 @@ export class NodemailerEmailService implements IEmailService {
     const pass = process.env.EMAIL_PASS;
 
     const safePass = pass ? `${pass.substring(0, 2)}***` : undefined;
-    console.log('[EmailService] Initializing transporter', { host, port, user, pass: safePass });
+    logger.info({ service: 'EmailService', event: 'Initializing transporter', host, port, user, pass: safePass });
 
     if (!host || !user || !pass) {
-      console.warn('[EmailService] Missing SMTP environment variables. Emails will be skipped.');
+      logger.warn({ service: 'EmailService', event: 'Missing SMTP environment variables. Emails will be skipped.' });
     }
 
     this.transporter = nodemailer.createTransport({
@@ -30,7 +31,7 @@ export class NodemailerEmailService implements IEmailService {
       return;
     }
 
-    console.log('[EmailService] Sending email', { to: options.to, subject: options.subject });
+    logger.info({ service: 'EmailService', event: 'Sending email', to: options.to, subject: options.subject });
 
     const response = await this.transporter.sendMail({
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
@@ -41,6 +42,6 @@ export class NodemailerEmailService implements IEmailService {
     });
     
 
-    console.log(`[EmailService] Email sent to ${options.to} with subject "${options.subject}". Response data: ${JSON.stringify(response)}`);
+    logger.info({ service: 'EmailService', event: 'Email sent', to: options.to, subject: options.subject, response });
   }
 }

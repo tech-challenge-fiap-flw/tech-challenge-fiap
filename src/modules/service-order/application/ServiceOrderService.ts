@@ -8,6 +8,7 @@ import { ServiceOrderStatus } from '../../../shared/ServiceOrderStatus';
 import { IBudgetVehiclePartService } from '../../../modules/budget-vehicle-part/application/BudgetVehiclePartService';
 import { IVehiclePartService } from '../../../modules/vehicle-part/application/VehiclePartService';
 import { IServiceOrderHistoryService } from '../../../modules/service-order-history/application/ServiceOrderHistoryService';
+import { logger } from '../../../utils/logger';
 
 export type CreateServiceOrderInput = {
   description: string;
@@ -135,7 +136,7 @@ export class ServiceOrderService implements IServiceOrderService {
   }
 
   async delete(id: number): Promise<void> {
-    console.log('Deletando OS com id:', id);
+    logger.info({ service: 'ServiceOrder', event: 'delete', id });
     await this.findById(id);
     await this.repo.softDelete(id);
   }
