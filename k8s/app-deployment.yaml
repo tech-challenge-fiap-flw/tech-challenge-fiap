@@ -20,6 +20,20 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
+          env:
+            - name: NEW_RELIC_APP_NAME
+              value: "tech-challenge-app-staging"
+            - name: NEW_RELIC_DISTRIBUTED_TRACING_ENABLED
+              value: "true"
+            - name: NEW_RELIC_LOG
+              value: "stdout"
+            - name: NEW_RELIC_NO_CONFIG_FILE
+              value: "true"
+            - name: NEW_RELIC_LICENSE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: NEW_RELIC_LICENSE_KEY  
           envFrom:
             - configMapRef:
                 name: app-config
