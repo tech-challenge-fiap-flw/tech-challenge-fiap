@@ -1,4 +1,4 @@
-import 'dotenv/config'; // Load environment variables BEFORE any other imports to ensure availability
+// import 'dotenv/config'; // Load environment variables BEFORE any other imports to ensure availability
 import express, { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
 import { userRouter } from './modules/user/http/user.routes';
