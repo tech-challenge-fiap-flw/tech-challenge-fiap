@@ -1,5 +1,9 @@
-// import 'dotenv/config'; // Load environment variables BEFORE any other imports to ensure availability
+import { UserMySqlRepository } from './modules/user/infra/UserMySqlRepository';
+import { UserEntity } from './modules/user/domain/User';
 import express, { Request, Response, NextFunction } from 'express';
+
+// Endpoint de teste para salvar um usuário real no MySQL
+// import 'dotenv/config'; // Load environment variables BEFORE any other imports to ensure availability
 // import helmet from 'helmet';
 // import { userRouter } from './modules/user/http/user.routes';
 // import { vehicleRouter } from './modules/vehicle/http/vehicle.routes';
@@ -18,6 +22,34 @@ const app = express();
 import { getCollection } from './infra/mongo/mongo';
 import mysql from 'mysql2/promise';
 // Endpoint de teste para salvar dado no RDS MySQL
+
+
+app.get('/test-mysql-user', async (_req: Request, res: Response) => {
+  try {
+    const repo = new UserMySqlRepository();
+    const user = UserEntity.create({
+      name: 'Usuário Teste',
+      email: `teste${Date.now()}@exemplo.com`,
+      password: 'senha123',
+      type: 'admin',
+      // active: 1,
+      // creationDate: new Date(),
+      cpf: '12345678901',
+      cnpj: null,
+      phone: '11999999999',
+      address: 'Rua Teste',
+      city: 'São Paulo',
+      state: 'SP',
+      zipCode: '01000-000',
+    });
+    const saved = await repo.create(user);
+    const savedJson = saved.toJSON();
+    res.json({ id: savedJson.id, email: savedJson.email });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
 app.get('/test-mysql', async (_req: Request, res: Response) => {
   try {
     // Substitua pelos valores reais do seu RDS ou use variáveis de ambiente
