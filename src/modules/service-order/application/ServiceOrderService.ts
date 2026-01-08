@@ -1,3 +1,4 @@
+import newrelic from 'newrelic';
 import { ServiceOrderEntity } from '../domain/ServiceOrder';
 import { IServiceOrderRepository } from '../domain/IServiceOrderRepository';
 import { AuthPayload } from '../../../modules/auth/AuthMiddleware';
@@ -207,6 +208,11 @@ export class ServiceOrderService implements IServiceOrderService {
       }
 
       const oldStatus = serviceOrderJson.currentStatus;
+      
+      if (oldStatus === ServiceOrderStatus.AGUARDANDO_APROVACAO) {
+          await this.trackTimeInStatus(serviceOrderJson.id, oldStatus);
+      }
+
       const newStatus = input.accept ? ServiceOrderStatus.AGUARDANDO_INICIO : ServiceOrderStatus.RECUSADA;
 
       const updatedOrder = await this.update(serviceOrderJson.id, { currentStatus: newStatus });
@@ -249,6 +255,10 @@ export class ServiceOrderService implements IServiceOrderService {
       }
 
       const oldStatus = order.currentStatus;
+
+      if (oldStatus === ServiceOrderStatus.EM_DIAGNOSTICO) {
+        await this.trackTimeInStatus(id, oldStatus);
+      }
 
       const diagnosis = await this.diagnosisService.create({
         description: input.description,
@@ -300,6 +310,10 @@ export class ServiceOrderService implements IServiceOrderService {
 
       const oldStatus = order.currentStatus;
 
+      if (oldStatus === ServiceOrderStatus.AGUARDANDO_INICIO) {
+        await this.trackTimeInStatus(id, oldStatus);
+      }
+
       const updatedOrder = await this.repo.update(id, {
         currentStatus: ServiceOrderStatus.EM_EXECUCAO,
       });
@@ -334,6 +348,10 @@ export class ServiceOrderService implements IServiceOrderService {
       }
 
       const oldStatus = order.currentStatus;
+
+      if (oldStatus === ServiceOrderStatus.EM_EXECUCAO) {
+        await this.trackTimeInStatus(id, oldStatus);
+      }
 
       const updatedOrder = await this.repo.update(id, {
         currentStatus: ServiceOrderStatus.FINALIZADA,
@@ -370,6 +388,10 @@ export class ServiceOrderService implements IServiceOrderService {
 
       const oldStatus = order.currentStatus;
       
+      if (oldStatus === ServiceOrderStatus.FINALIZADA) {
+        await this.trackTimeInStatus(id, oldStatus);
+      }
+
       const updatedOrder = await this.repo.update(id, {
         currentStatus: ServiceOrderStatus.ENTREGUE,
       });
@@ -442,5 +464,42 @@ export class ServiceOrderService implements IServiceOrderService {
 
   private checkUserPermission(user: AuthPayload): number | undefined {
     return user.type !== 'admin' ? user.sub : undefined
+  }
+
+  private async trackTimeInStatus(orderId: number, statusEnding: ServiceOrderStatus): Promise<void> {
+    try {
+      const history = await this.historyService.listByServiceOrder(orderId);
+      
+      if (!history || history.length === 0) return;
+
+      const lastEntry = history
+        .filter(h => h.newStatus === statusEnding)
+        .sort((a, b) => new Date(b.changedAt).getTime() - new Date(a.changedAt).getTime())[0];
+
+      if (lastEntry) {
+        const startTime = new Date(lastEntry.changedAt).getTime();
+        const endTime = Date.now();
+        const durationInSeconds = (endTime - startTime) / 1000;
+        const durationInMinutes = durationInSeconds / 60;
+
+        newrelic.recordCustomEvent('ServiceOrderBusinessMetrics', {
+          orderId: orderId,
+          status: statusEnding,
+          durationSeconds: durationInSeconds,
+          durationMinutes: durationInMinutes,
+          timestamp: Date.now()
+        });
+        
+        logger.info({ 
+            service: 'Metric', 
+            event: 'TimeInStatus', 
+            orderId,
+            status: statusEnding, 
+            durationMinutes: durationInMinutes 
+        });
+      }
+    } catch (error) {
+      logger.error({ message: 'Error reporting business metrics to New Relic', error });
+    }
   }
 }
