@@ -16,6 +16,32 @@ import express, { Request, Response, NextFunction } from 'express';
 const app = express();
 
 import { getCollection } from './infra/mongo/mongo';
+import mysql from 'mysql2/promise';
+// Endpoint de teste para salvar dado no RDS MySQL
+app.get('/test-mysql', async (_req: Request, res: Response) => {
+  try {
+    // Substitua pelos valores reais do seu RDS ou use variáveis de ambiente
+    const connection = await mysql.createConnection({
+      host: 'tech-challenge-db-staging.crcq28iy2w6l.us-east-1.rds.amazonaws.com', // ajuste para seu endpoint
+      user: 'admin',
+      password: 'Staging#1234!',
+      database: 'tech_challenge_fiap_staging',
+      port: 3306,
+      ssl: { rejectUnauthorized: false }, // para evitar erro de certificado
+    });
+    const [result] = await connection.execute(
+      'CREATE TABLE IF NOT EXISTS test_table (id INT AUTO_INCREMENT PRIMARY KEY, msg VARCHAR(255), created_at DATETIME)'
+    );
+    const [insertResult] = await connection.execute(
+      'INSERT INTO test_table (msg, created_at) VALUES (?, ?)',
+      ['Teste RDS MySQL', new Date()]
+    );
+    await connection.end();
+    res.json({ insertResult });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
 // Endpoint de teste para salvar dado no DocumentDB
 app.get('/test-mongo', async (_req: Request, res: Response) => {
   try {
