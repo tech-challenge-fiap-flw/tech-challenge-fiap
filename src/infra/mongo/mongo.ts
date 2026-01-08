@@ -9,7 +9,12 @@ export async function getMongo(mongoUri?: string, mongoDb?: string): Promise<Db>
     return db;
   }
 
-  const uri = mongoUri || process.env.MONGO_URI || 'mongodb://localhost:27017/tech_challenge';
+  const mongoUser = 'docdbadmin';
+  const mongoPassword = encodeURIComponent('Docdb#1234!');
+  const mongoHost = 'docdb-cluster-staging.cluster-crcq28iy2w6l.us-east-1.docdb.amazonaws.com:27017';
+  const MONGO_URI = `mongodb://${mongoUser}:${mongoPassword}@${mongoHost}/?tls=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false`;
+
+  const uri = mongoUri || MONGO_URI || 'mongodb://localhost:27017/tech_challenge';
   const dbName = mongoDb || process.env.MONGO_DB || 'tech_challenge';
 
   // Caminho do arquivo de CA da AWS
