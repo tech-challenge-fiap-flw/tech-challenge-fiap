@@ -4,13 +4,13 @@ import fs from 'fs';
 let client: MongoClient | null = null;
 let db: Db | null = null;
 
-export async function getMongo(): Promise<Db> {
+export async function getMongo(mongoUri?: string, mongoDb?: string): Promise<Db> {
   if (db) {
     return db;
   }
 
-  const uri = process.env.MONGO_URI || 'mongodb://localhost:27017/tech_challenge';
-  const dbName = process.env.MONGO_DB || 'tech_challenge';
+  const uri = mongoUri || process.env.MONGO_URI || 'mongodb://localhost:27017/tech_challenge';
+  const dbName = mongoDb || process.env.MONGO_DB || 'tech_challenge';
 
   // Caminho do arquivo de CA da AWS
   const caPath = './certs/rds-combined-ca-bundle.pem';
@@ -31,8 +31,7 @@ export async function getMongo(): Promise<Db> {
   return db;
 }
 
-export async function getCollection<TSchema extends Document = Document>(name: string): Promise<Collection<TSchema>> {
-  const database = await getMongo();
-
+export async function getCollection<TSchema extends Document = Document>(name: string, mongoUri?: string, mongoDb?: string): Promise<Collection<TSchema>> {
+  const database = await getMongo(mongoUri, mongoDb);
   return database.collection<TSchema>(name);
 }
