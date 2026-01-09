@@ -15,7 +15,7 @@ export async function getMongo(mongoUri?: string, mongoDb?: string): Promise<Db>
   const mongoDbName = mongoDb || process.env.MONGO_DB || '';
   const mongoUriInternal = 
     mongoUser && mongoPassword && mongoHost && mongoDbName
-    ? `mongodb://${mongoUser}:${mongoPassword}@${mongoHost}/${mongoDbName}?tls=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false`
+    ? `mongodb://${mongoUser}:${mongoPassword}@${mongoHost}/${mongoDbName}?tls=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false&authMechanism=SCRAM-SHA-1`
     : 'mongodb://localhost:27017/tech_challenge';
   const uri = mongoUri || mongoUriInternal;
 
