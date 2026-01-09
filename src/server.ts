@@ -1,12 +1,12 @@
 // Handlers globais para capturar erros fatais não tratados
 import { logger } from './utils/logger';
 
-process.on('uncaughtException', (err) => {
-  logger.error('Uncaught Exception:', err);
-});
-process.on('unhandledRejection', (reason) => {
-  logger.error('Unhandled Rejection:', reason);
-});
+// process.on('uncaughtException', (err) => {
+//   logger.error('Uncaught Exception:', err);
+// });
+// process.on('unhandledRejection', (reason) => {
+//   logger.error('Unhandled Rejection:', reason);
+// });
 import 'newrelic';
 
 import express, { Request, Response, NextFunction } from 'express';
