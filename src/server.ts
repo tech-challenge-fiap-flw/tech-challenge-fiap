@@ -1,12 +1,12 @@
 // Handlers globais para capturar erros fatais não tratados
 import { logger } from './utils/logger';
 
-// process.on('uncaughtException', (err) => {
-//   logger.error('Uncaught Exception:', err);
-// });
-// process.on('unhandledRejection', (reason) => {
-//   logger.error('Unhandled Rejection:', reason);
-// });
+process.on('uncaughtException', (err) => {
+  logger.error('Uncaught Exception:', err);
+});
+process.on('unhandledRejection', (reason) => {
+  logger.error('Unhandled Rejection:', reason);
+});
 import 'newrelic';
 
 import express, { Request, Response, NextFunction } from 'express';
@@ -82,9 +82,8 @@ app.use('/budgets', budgetRouter);
 app.use('/service-orders', serviceOrderRouter);
 app.use('/service-order-history', serviceOrderHistoryRouter);
 
-
-// app.use('/budget-vehicle-services', budgetVehicleServiceRouter);
-// app.use('/budget-vehicle-parts', budgetVehiclePartRouter);
+app.use('/budget-vehicle-services', budgetVehicleServiceRouter);
+app.use('/budget-vehicle-parts', budgetVehiclePartRouter);
 
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   const status = err?.status ?? 500;
