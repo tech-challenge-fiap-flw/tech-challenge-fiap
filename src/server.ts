@@ -68,10 +68,12 @@ app.use('/vehicles', vehicleRouter);
 app.use('/vehicle-parts', vehiclePartRouter);
 app.use('/vehicle-services', vehicleServiceRouter);
 
-// app.use('/diagnosis', diagnosisRouter);
-// app.use('/budgets', budgetRouter);
-// app.use('/service-orders', serviceOrderRouter);
-// app.use('/service-order-history', serviceOrderHistoryRouter);
+app.use('/diagnosis', diagnosisRouter);
+app.use('/budgets', budgetRouter);
+app.use('/service-orders', serviceOrderRouter);
+app.use('/service-order-history', serviceOrderHistoryRouter);
+
+
 // app.use('/budget-vehicle-services', budgetVehicleServiceRouter);
 // app.use('/budget-vehicle-parts', budgetVehiclePartRouter);
 
