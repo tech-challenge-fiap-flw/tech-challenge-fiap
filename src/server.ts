@@ -16,7 +16,6 @@ import { serviceOrderHistoryRouter } from './modules/service-order-history/http/
 const app = express();
 
 app.use(helmet());
-
 app.use(express.json());
 
 app.get('/health', (_req: Request, res: Response) => {
