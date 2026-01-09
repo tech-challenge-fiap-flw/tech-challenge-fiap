@@ -1,17 +1,9 @@
-// Handlers globais para capturar erros fatais não tratados
-import { logger } from './utils/logger';
-
-process.on('uncaughtException', (err) => {
-  logger.error('Uncaught Exception:', err);
-});
-process.on('unhandledRejection', (reason) => {
-  logger.error('Unhandled Rejection:', reason);
-});
 import 'newrelic';
 
 import express, { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
 import { v4 as uuidv4 } from 'uuid';
+import { logger } from './utils/logger';
 
 import { userRouter } from './modules/user/http/user.routes';
 import { vehicleRouter } from './modules/vehicle/http/vehicle.routes';
@@ -60,20 +52,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 app.get('/health', (_req: Request, res: Response) => {
-  const mongoUser = process.env.MONGO_USER || '';
-  const mongoPassword = encodeURIComponent(process.env.MONGO_PASSWORD || '');
-  const mongoHost = process.env.MONGO_HOST || '';
-  const mongoDbName = process.env.MONGO_DB || '';
-  const mongoUriInternal = 
-    mongoUser && mongoPassword && mongoHost && mongoDbName
-    ? `mongodb://${mongoUser}:${mongoPassword}@${mongoHost}/${mongoDbName}?tls=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false`
-    : 'mongodb://localhost:27017/tech_challenge';
-
-  res.status(200).json({
-    envs: process.env,
-    mongoUri: mongoUriInternal,
-    status: 'ok'
-  });
+  res.status(200).json({ status: 'ok' });
 });
 
 app.get('/cpu-load', (req, res) => {
