@@ -62,29 +62,29 @@ app.get('/cpu-load', (req, res) => {
 });
 
 app.use('/auth', authRouter);
-// app.use('/users', userRouter);
-// app.use('/vehicles', vehicleRouter);
-// app.use('/vehicle-parts', vehiclePartRouter);
-// app.use('/vehicle-services', vehicleServiceRouter);
-// app.use('/diagnosis', diagnosisRouter);
-// app.use('/budgets', budgetRouter);
-// app.use('/service-orders', serviceOrderRouter);
-// app.use('/service-order-history', serviceOrderHistoryRouter);
-// app.use('/budget-vehicle-services', budgetVehicleServiceRouter);
-// app.use('/budget-vehicle-parts', budgetVehiclePartRouter);
+app.use('/users', userRouter);
+app.use('/vehicles', vehicleRouter);
+app.use('/vehicle-parts', vehiclePartRouter);
+app.use('/vehicle-services', vehicleServiceRouter);
+app.use('/diagnosis', diagnosisRouter);
+app.use('/budgets', budgetRouter);
+app.use('/service-orders', serviceOrderRouter);
+app.use('/service-order-history', serviceOrderHistoryRouter);
+app.use('/budget-vehicle-services', budgetVehicleServiceRouter);
+app.use('/budget-vehicle-parts', budgetVehiclePartRouter);
 
-// app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-//   const status = err?.status ?? 500;
-//   const message = err?.message ?? 'Internal Server Error';
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  const status = err?.status ?? 500;
+  const message = err?.message ?? 'Internal Server Error';
   
-//   logger.error({
-//     message: 'Error processing request',
-//     error: message,
-//     stack: err.stack
-//   });
+  logger.error({
+    message: 'Error processing request',
+    error: message,
+    stack: err.stack
+  });
 
-//   res.status(status).json({ error: message });
-// });
+  res.status(status).json({ error: message });
+});
 
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;
 app.listen(port, () => {
