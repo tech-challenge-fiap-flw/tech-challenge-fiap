@@ -1,5 +1,4 @@
 import 'newrelic';
-
 import express, { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
 import { v4 as uuidv4 } from 'uuid';
@@ -20,6 +19,7 @@ import { serviceOrderHistoryRouter } from './modules/service-order-history/http/
 const app = express();
 
 app.use(helmet());
+
 app.use(express.json());
 
 app.use((req: Request, res: Response, next: NextFunction) => {
