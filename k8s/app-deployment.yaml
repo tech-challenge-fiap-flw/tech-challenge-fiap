@@ -84,6 +84,31 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: JWT_SECRET
+            - name: EMAIL_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: EMAIL_HOST
+            - name: EMAIL_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: EMAIL_PORT
+            - name: EMAIL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: EMAIL_USER
+            - name: EMAIL_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: EMAIL_PASS
+            - name: EMAIL_FROM
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: EMAIL_FROM
           envFrom:
             - configMapRef:
                 name: app-config
