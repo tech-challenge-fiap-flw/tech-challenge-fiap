@@ -22,7 +22,7 @@ spec:
             - containerPort: 3000
           env:
             - name: NEW_RELIC_APP_NAME
-              value: "tech-challenge-app-staging"
+              value: "tech-challenge-app"
             - name: NEW_RELIC_DISTRIBUTED_TRACING_ENABLED
               value: "true"
             - name: NEW_RELIC_LOG
@@ -34,6 +34,56 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: NEW_RELIC_LICENSE_KEY  
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DB_PORT
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DB_USERNAME
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DB_PASSWORD
+            - name: DB_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DB_DATABASE
+            - name: MONGO_USER
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: MONGO_USER
+            - name: MONGO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: MONGO_PASSWORD
+            - name: MONGO_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: MONGO_HOST
+            - name: MONGO_DB
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: MONGO_DB
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: JWT_SECRET
           envFrom:
             - configMapRef:
                 name: app-config

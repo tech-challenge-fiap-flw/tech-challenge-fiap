@@ -9,13 +9,15 @@ export async function getMongo(mongoUri?: string, mongoDb?: string): Promise<Db>
     return db;
   }
 
-  const mongoUser = 'docdbadmin';
-  const mongoPassword = encodeURIComponent('Docdb#1234!');
-  const mongoHost = 'docdb-cluster-staging.cluster-crcq28iy2w6l.us-east-1.docdb.amazonaws.com:27017';
-  const MONGO_URI = `mongodb://${mongoUser}:${mongoPassword}@${mongoHost}/?tls=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false`;
-
-  const uri = mongoUri || MONGO_URI || 'mongodb://localhost:27017/tech_challenge';
-  const dbName = mongoDb || process.env.MONGO_DB || 'tech_challenge';
+  const mongoUser = process.env.MONGO_USER || '';
+  const mongoPassword = encodeURIComponent(process.env.MONGO_PASSWORD || '');
+  const mongoHost = process.env.MONGO_HOST || '';
+  const mongoDbName = mongoDb || process.env.MONGO_DB || '';
+  const mongoUriInternal = 
+    mongoUser && mongoPassword && mongoHost && mongoDbName
+    ? `mongodb://${mongoUser}:${mongoPassword}@${mongoHost}/${mongoDbName}?tls=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false`
+    : 'mongodb://localhost:27017/tech_challenge';
+  const uri = mongoUri || mongoUriInternal;
 
   // Caminho do arquivo de CA da AWS
   const caPath = './certs/rds-combined-ca-bundle.pem';
@@ -32,7 +34,7 @@ export async function getMongo(mongoUri?: string, mongoDb?: string): Promise<Db>
   }
   client = new MongoClient(uri, options);
   await client.connect();
-  db = client.db(dbName);
+  db = client.db(mongoDbName);
   return db;
 }
 
