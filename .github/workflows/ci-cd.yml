@@ -120,11 +120,6 @@ jobs:
           export MONGO_HOST="${{ secrets.MONGO_HOST }}"
           export MONGO_DB="${{ secrets.MONGO_DB }}"
           export JWT_SECRET="${{ secrets.JWT_SECRET }}"
-          export EMAIL_HOST="${{ secrets.EMAIL_HOST }}"
-          export EMAIL_PORT="${{ secrets.EMAIL_PORT }}"
-          export EMAIL_USER="${{ secrets.EMAIL_USER }}"
-          export EMAIL_PASS="${{ secrets.EMAIL_PASS }}"
-          export EMAIL_FROM="${{ secrets.EMAIL_FROM }}"
           envsubst < k8s/secrets.yaml | kubectl apply -f -
           kubectl apply -f k8s/configmap.yaml
           kubectl apply -f k8s/app-deployment.yaml
