@@ -16,13 +16,12 @@ const connectionStorage = new AsyncLocalStorage<mysql.PoolConnection>();
 export function getPool(): Pool {
   if (!pool) {
     const config: DbConfig = {
-      host: process.env.DB_HOST || 'localhost',
+      host: process.env.DB_HOST || '',
       port: Number(process.env.DB_PORT || 3306),
-      user: process.env.DB_USERNAME || 'root',
+      user: process.env.DB_USERNAME || '',
       password: process.env.DB_PASSWORD || '',
-      database: process.env.DB_DATABASE || 'tech_challenge',
+      database: process.env.DB_DATABASE || '',
     };
-
     pool = mysql.createPool({
       host: config.host,
       port: config.port,
@@ -34,7 +33,6 @@ export function getPool(): Pool {
       queueLimit: 0,
     });
   }
-
   return pool;
 }
 

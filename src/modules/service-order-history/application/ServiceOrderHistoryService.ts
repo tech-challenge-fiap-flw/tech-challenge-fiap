@@ -3,6 +3,7 @@ import { ServiceOrderHistoryEntity } from '../domain/ServiceOrderHistory';
 import { IEmailService } from '../../../shared/mail/EmailService';
 import { IServiceOrderRepository } from '../../service-order/domain/IServiceOrderRepository';
 import { IUserRepository } from '../../user/domain/IUserRepository';
+import { logger } from '../../../utils/logger';
 
 export interface LogStatusChangeInput {
   idServiceOrder: number;
@@ -43,14 +44,14 @@ export class ServiceOrderHistoryService implements IServiceOrderHistoryService {
     history: ServiceOrderHistoryEntity,
     input: LogStatusChangeInput
   ) {
-    console.log('sendStatusChangeEmail', { input });
+    logger.info({ service: 'ServiceOrderHistory', event: 'sendStatusChangeEmail', input });
     if (this.emailService && this.serviceOrderRepo && this.userRepo) {
       try {
         const serviceOrder = await this.serviceOrderRepo.findById(input.idServiceOrder);
         if (serviceOrder) {
           const customerId = serviceOrder.toJSON().customerId;
           const user = await this.userRepo.findById(customerId);
-          console.log('Customer user for email', { customerId, user });
+          logger.info({ service: 'ServiceOrderHistory', event: 'Customer user for email', customerId, user: user ? user.toJSON() : null });
           if (user) {
             const userJson: any = user.toJSON();
             const to = userJson.email;
@@ -67,7 +68,7 @@ export class ServiceOrderHistoryService implements IServiceOrderHistoryService {
           }
         }
       } catch (err) {
-        console.error('[ServiceOrderHistoryService] Failed to send status update email', err);
+        logger.error({ service: 'ServiceOrderHistory', event: 'Failed to send status update email', error: err });
       }
     }
   }

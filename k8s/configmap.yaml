@@ -3,8 +3,4 @@ kind: ConfigMap
 metadata:
   name: app-config
 data:
-  DB_HOST: mysql-service
-  DB_PORT: "3306"
-  DB_USERNAME: root
-  DB_DATABASE: tech_challenge_fiap
-  MONGO_URI: mongodb://mongo-service:27017/tech_challenge_fiap
+  # Adicione aqui apenas variáveis não sensíveis, se necessário

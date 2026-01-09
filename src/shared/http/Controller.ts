@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { HttpError } from './HttpError';
 import { BadRequestServerException, ForbiddenServerException, NotFoundServerException } from '../application/ServerException';
 import { AuthPayload } from '../../modules/auth/AuthMiddleware';
+import { logger } from '../../utils/logger';
 
 export interface HttpRequest<TBody = any, TParams = any, TQuery = any> {
   body: TBody;
@@ -39,7 +40,7 @@ export function adaptExpress(controller: IController) {
 
       return res.status(httpResponse.status).json(httpResponse.body);
     } catch (err: any) {
-      console.error(err);
+      logger.error({ service: 'Controller', event: 'unhandled_error', error: err });
 
       if (err instanceof HttpError) {
         return res.status(err.status).json({

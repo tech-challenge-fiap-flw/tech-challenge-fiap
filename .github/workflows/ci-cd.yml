@@ -2,12 +2,12 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ "main", "staging" ]
-  pull_request:
-    branches: [ "main", "staging" ]
+    branches:
+      - main
+      - staging
 
 jobs:
-  build-test-deploy:
+  build-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,43 +24,108 @@ jobs:
 
       - name: Run tests
         run: npm test
+
       - name: Build app
         run: npm run build
 
-      - name: Build Docker image
-        run: docker build -t app:latest .
+  build-and-push:
+    runs-on: ubuntu-latest
+    needs: build-test
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
 
-      - name: Setup Kind cluster
-        uses: helm/kind-action@v1.10.0
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          version: v0.20.0
-          cluster_name: ci-cluster
-          wait: 120s
+          node-version: 22
 
-      - name: Load Docker image into Kind
-        run: kind load docker-image app:latest --name ci-cluster
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Apply config and secrets
+      - name: Build app
+        run: npm run build
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push Docker image
         run: |
+          IMAGE_TAG=${{ github.sha }}
+          ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY=tech-challenge-app
+
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+          # Tag latest para staging
+          if [ "${{ github.ref }}" == "refs/heads/staging" ]; then
+            docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest-staging
+            docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest-staging
+          fi
+
+          # Tag latest para main
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+            docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          fi
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region us-east-1 --name tc-fiap-${{ github.ref == 'refs/heads/main' && 'prod' || 'staging' }}
+
+      - name: Deploy to Kubernetes
+        run: |
+          IMAGE_TAG=${{ github.sha }}
+          ECR_REGISTRY=$(aws sts get-caller-identity --query Account --output text).dkr.ecr.us-east-1.amazonaws.com
+          ECR_REPOSITORY=tech-challenge-app
+
+          # Atualizar a imagem no deployment
+          sed -i "s|image: app:latest|image: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG|" k8s/app-deployment.yaml
+
+          # Substituir variáveis do GitHub Secrets no secrets.yaml antes do apply
+          export DB_HOST="${{ secrets.DB_HOST }}"
+          export DB_PORT="${{ secrets.DB_PORT }}"
+          export DB_USERNAME="${{ secrets.DB_USERNAME }}"
+          export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
+          export DB_DATABASE="${{ secrets.DB_DATABASE }}"
+          export NEW_RELIC_LICENSE_KEY="${{ secrets.NEW_RELIC_LICENSE_KEY }}"
+          export MONGO_USER="${{ secrets.MONGO_USER }}"
+          export MONGO_PASSWORD="${{ secrets.MONGO_PASSWORD }}"
+          export MONGO_HOST="${{ secrets.MONGO_HOST }}"
+          export MONGO_DB="${{ secrets.MONGO_DB }}"
+          export JWT_SECRET="${{ secrets.JWT_SECRET }}"
+          envsubst < k8s/secrets.yaml | kubectl apply -f -
           kubectl apply -f k8s/configmap.yaml
-          kubectl apply -f k8s/secrets.yaml
-
-      - name: Deploy databases
-        run: |
-          kubectl apply -f k8s/mysql-pvc.yaml
-          kubectl apply -f k8s/mongo-pvc.yaml
-          kubectl apply -f k8s/mysql-deployment.yaml
-          kubectl apply -f k8s/mongo-deployment.yaml
-          kubectl apply -f k8s/mysql-service.yaml
-          kubectl apply -f k8s/mongo-service.yaml
-
-      - name: Deploy application
-        run: |
           kubectl apply -f k8s/app-deployment.yaml
           kubectl apply -f k8s/app-service.yaml
-
-      - name: Apply HPA
-        run: kubectl apply -f k8s/hpa.yaml
+          kubectl apply -f k8s/hpa.yaml
 
       - name: Check rollout status
         run: |
