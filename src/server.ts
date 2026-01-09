@@ -60,14 +60,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 app.get('/health', (_req: Request, res: Response) => {
-  res.status(200).json({ status: 'ok' });
-});
-
-app.get('/envs', (_req: Request, res: Response) => {
-  res.status(200).json(process.env);
-});
-
-app.get('/mongo-connection', (_req: Request, res: Response) => {
   const mongoUser = process.env.MONGO_USER || '';
   const mongoPassword = encodeURIComponent(process.env.MONGO_PASSWORD || '');
   const mongoHost = process.env.MONGO_HOST || '';
@@ -77,7 +69,11 @@ app.get('/mongo-connection', (_req: Request, res: Response) => {
     ? `mongodb://${mongoUser}:${mongoPassword}@${mongoHost}/${mongoDbName}?tls=true&replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false`
     : 'mongodb://localhost:27017/tech_challenge';
 
-  res.status(200).json({ mongoUri: mongoUriInternal });
+  res.status(200).json({
+    envs: process.env,
+    mongoUri: mongoUriInternal,
+    status: 'ok'
+  });
 });
 
 app.get('/cpu-load', (req, res) => {
