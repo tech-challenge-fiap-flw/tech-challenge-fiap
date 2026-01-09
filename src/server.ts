@@ -70,8 +70,8 @@ app.use('/vehicle-services', vehicleServiceRouter);
 
 app.use('/diagnosis', diagnosisRouter);
 app.use('/budgets', budgetRouter);
-app.use('/service-orders', serviceOrderRouter);
-app.use('/service-order-history', serviceOrderHistoryRouter);
+// app.use('/service-orders', serviceOrderRouter);
+// app.use('/service-order-history', serviceOrderHistoryRouter);
 
 
 // app.use('/budget-vehicle-services', budgetVehicleServiceRouter);
