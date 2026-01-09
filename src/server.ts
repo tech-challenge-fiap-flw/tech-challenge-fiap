@@ -7,7 +7,7 @@ import { logger } from './utils/logger';
 
 // import { userRouter } from './modules/user/http/user.routes';
 // import { vehicleRouter } from './modules/vehicle/http/vehicle.routes';
-// import { authRouter } from './modules/auth/auth.routes';
+import { authRouter } from './modules/auth/auth.routes';
 // import { vehiclePartRouter } from './modules/vehicle-part/http/vehicle-part.routes';
 // import { vehicleServiceRouter } from './modules/vehicle-service/http/vehicle-service.routes';
 // import { diagnosisRouter } from './modules/diagnosis/http/diagnosis.routes';
@@ -61,7 +61,7 @@ app.get('/cpu-load', (req, res) => {
   res.send({ status: 'done' });
 });
 
-// app.use('/auth', authRouter);
+app.use('/auth', authRouter);
 // app.use('/users', userRouter);
 // app.use('/vehicles', vehicleRouter);
 // app.use('/vehicle-parts', vehiclePartRouter);
