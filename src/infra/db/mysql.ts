@@ -15,21 +15,13 @@ const connectionStorage = new AsyncLocalStorage<mysql.PoolConnection>();
 
 export function getPool(): Pool {
   if (!pool) {
-
-    const host = 'tech-challenge-db-staging.crcq28iy2w6l.us-east-1.rds.amazonaws.com';
-    const user = 'admin';
-    const password = 'Staging#1234!';
-    const database = 'tech_challenge_fiap_staging';
-    const port = 3306;
-
     const config: DbConfig = {
-      host: host,
-      port: port,
-      user: user,
-      password: password,
-      database: database,
+      host: process.env.DB_HOST || '',
+      port: Number(process.env.DB_PORT || 3306),
+      user: process.env.DB_USERNAME || '',
+      password: process.env.DB_PASSWORD || '',
+      database: process.env.DB_DATABASE || '',
     };
-
     pool = mysql.createPool({
       host: config.host,
       port: config.port,
@@ -41,7 +33,6 @@ export function getPool(): Pool {
       queueLimit: 0,
     });
   }
-
   return pool;
 }
 

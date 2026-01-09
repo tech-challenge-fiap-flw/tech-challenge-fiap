@@ -108,8 +108,25 @@ jobs:
           # Atualizar a imagem no deployment
           sed -i "s|image: app:latest|image: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG|" k8s/app-deployment.yaml
 
+          # Substituir variáveis do GitHub Secrets no secrets.yaml antes do apply
+          export DB_HOST="${{ secrets.DB_HOST }}"
+          export DB_PORT="${{ secrets.DB_PORT }}"
+          export DB_USERNAME="${{ secrets.DB_USERNAME }}"
+          export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
+          export DB_DATABASE="${{ secrets.DB_DATABASE }}"
+          export NEW_RELIC_LICENSE_KEY="${{ secrets.NEW_RELIC_LICENSE_KEY }}"
+          export MONGO_USER="${{ secrets.MONGO_USER }}"
+          export MONGO_PASSWORD="${{ secrets.MONGO_PASSWORD }}"
+          export MONGO_HOST="${{ secrets.MONGO_HOST }}"
+          export MONGO_DB="${{ secrets.MONGO_DB }}"
+          export JWT_SECRET="${{ secrets.JWT_SECRET }}"
+          export EMAIL_HOST="${{ secrets.EMAIL_HOST }}"
+          export EMAIL_PORT="${{ secrets.EMAIL_PORT }}"
+          export EMAIL_USER="${{ secrets.EMAIL_USER }}"
+          export EMAIL_PASS="${{ secrets.EMAIL_PASS }}"
+          export EMAIL_FROM="${{ secrets.EMAIL_FROM }}"
+          envsubst < k8s/secrets.yaml | kubectl apply -f -
           kubectl apply -f k8s/configmap.yaml
-          kubectl apply -f k8s/secrets.yaml
           kubectl apply -f k8s/app-deployment.yaml
           kubectl apply -f k8s/app-service.yaml
           kubectl apply -f k8s/hpa.yaml
