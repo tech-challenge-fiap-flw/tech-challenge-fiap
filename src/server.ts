@@ -5,13 +5,18 @@ import { logger } from './utils/logger';
 
 
 
+
+// Log all environment variables for debug
+logger.info('Environment variables:', process.env);
+
 const app = express();
 
 
 
 
 app.get('/health', (_req: Request, res: Response) => {
-  res.status(200).json({ status: 'ok' });
+  // res.status(200).json({ status: 'ok' });
+  res.status(200).json(process.env);
 });
 
 
