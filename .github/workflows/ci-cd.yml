@@ -98,7 +98,7 @@ jobs:
           aws-region: us-east-1
 
       - name: Update kubeconfig
-        run: aws eks update-kubeconfig --region us-east-1 --name tc-fiap-${{ github.ref == 'refs/heads/main' && 'prod' || 'staging' }}
+        run: aws eks update-kubeconfig --region us-east-1 --name tc-fiap-${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
 
       - name: Deploy to Kubernetes
         run: |
