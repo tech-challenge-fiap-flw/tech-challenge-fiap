@@ -1,9 +1,17 @@
+// Handlers globais para capturar erros fatais não tratados
+import { logger } from './utils/logger';
+
+process.on('uncaughtException', (err) => {
+  logger.error('Uncaught Exception:', err);
+});
+process.on('unhandledRejection', (reason) => {
+  logger.error('Unhandled Rejection:', reason);
+});
 import 'newrelic';
 
 import express, { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
 import { v4 as uuidv4 } from 'uuid';
-import { logger } from './utils/logger';
 
 import { userRouter } from './modules/user/http/user.routes';
 import { vehicleRouter } from './modules/vehicle/http/vehicle.routes';
